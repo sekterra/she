@@ -30,6 +30,7 @@ import VeeValidate from 'vee-validate';
 import { library } from '@fortawesome/fontawesome-svg-core'
 import { faAngleRight, faAngleLeft, faGenderless, faAddressCard, faListAlt, faUserEdit, faCircle, faSearch, faTimes } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
+import 'jquery';
 /** /import npm module **/
 
 /** font awesome setting **/
@@ -48,7 +49,7 @@ library.add(faTimes);
 import BootstrapVue from 'bootstrap-vue'
 import 'bootstrap/dist/css/bootstrap.css'
 import 'bootstrap-vue/dist/bootstrap-vue.css'
-import 'bootstrap-xxl/dist/css/bootstrap.css'
+// import 'bootstrap-xxl/dist/css/bootstrap.css'
 import 'bootstrap-xxl/dist/js/bootstrap.min.js'
 /** import vue bootstrap **/
 

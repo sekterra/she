@@ -59,17 +59,18 @@ examples:
             <b-input-group-prepend 
               v-if="prependIcon">
               <f-icon 
-                v-for="item in appendIcon"
+                v-for="item in prependIcon"
                 :key="item.icon"
                 :icon="item.icon" 
                 :size="item.iconSize ? item.iconSize : iconSize" 
                 :style="{color: item.iconColor ? item.iconColor : iconColor, 'cursor': 'pointer'}"
                 @click.stop="iconClicked(item)"
-                class="mt-1 mr-1"/>
+                class="mt-2 mr-1"/>
                 <slot name="customPrependIcon"></slot>
           </b-input-group-prepend>
           <!-- /앞쪽에 ICON을 추가해야 할 경우 -->
             <b-form-input 
+              ref="input"
               v-model.trim="vValue"
               :label="label"
               :name="name"
@@ -78,17 +79,26 @@ examples:
               :state="state"
               :maxlength="maxlength"
               :disabled="disabled"
+              :class="{clear: false}"
               @input="input">
             </b-form-input>
+            <span class="form-control-clear form-control-feedback">
+              <f-icon 
+                icon="times" 
+                size="sm" 
+                :style="{'cursor': 'pointer', color: iconColor}"
+                @click.stop="clearableClicked"
+                class="mt-1"/>
+            </span>
             <!-- clearable -->
-            <b-input-group-append v-if="clearable">
+            <!-- <b-input-group-append v-if="clearable">
               <f-icon 
                 icon="times" 
                 :size="iconSize" 
                 :style="{'cursor': 'pointer', color: iconColor}"
                 @click.stop="clearableClicked"
                 class="mt-1 ml-1"/>
-            </b-input-group-append>
+            </b-input-group-append> -->
             <!-- clearable -->
             <!-- 컴포넌트 뒷편에 아이콘을 추가해야 할 경우 -->
             <b-input-group-append 
@@ -293,7 +303,8 @@ export default {
       return this.limitAsByte ? 'byte' : '자';
     },
     inputLength () {
-      return this.limitAsByte ? byteLength(this.vValue)  : this.vValue.length;
+      if (!this.vValue) return 0;
+      else return this.limitAsByte ? byteLength(this.vValue)  : this.vValue.length;
     },
     inputInfo () {
       var length = '';
@@ -333,6 +344,7 @@ export default {
     this.vValue = this.value;
   },
   mounted () {
+    // $(this.$refs.input.$el).addClear();
   },
   beforeDestroy () {
   },
@@ -342,6 +354,9 @@ export default {
     this.$nextTick(() => {
       // 모든 화면이 렌더링된 후 실행합니다.
       this.vValue = this.value;
+      $('.clear').click(() => {
+        this.vValue = '';
+      });
     });
   },
   /* methods */
@@ -353,6 +368,7 @@ export default {
       //   // this.vValue = truncStr;
       //   // console.log(this.vValue);
       // }
+      
       var value = this.limitAsByte ? this.truncValue : this.vValue;
       // TODO : 부모에게 변경여부 전달
       this.$emit('input', value);
@@ -393,6 +409,33 @@ export default {
 :-ms-input-placeholder {  
    font-style: italic;
    font-size: 1rem; 
+}
+
+/****/
+.clear {
+  padding-right: 2.25rem;
+  background-repeat: no-repeat;
+  background-position: center right calc(2.25rem / 4);
+  background-size: calc(2.25rem / 2) calc(2.25rem / 2);
+  cursor:pointer;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='%23BDBDBD' viewBox='-2 -2 7 7'%3e%3cpath stroke='%23BDBDBD' d='M0 0l3 3m0-3L0 3'/%3e%3ccircle r='.5'/%3e%3ccircle cx='3' r='.5'/%3e%3ccircle cy='3' r='.5'/%3e%3ccircle cx='3' cy='3' r='.5'/%3e%3c/svg%3E");
+}
+.form-control-feedback {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 2;
+  display: block;
+  width: 34px;
+  height: 34px;
+  line-height: 34px;
+  text-align: center;
+  pointer-events: none;
+}
+.form-control-clear {
+    z-index: 10;
+    pointer-events: auto;
+    cursor: pointer;
 }
 </style>
 

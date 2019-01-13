@@ -546,11 +546,11 @@ export default {
     shuttleboxItems: [],
     icons: [
       { 'icon': 'search', callbackName: 'iconCallback' },
-      { 'icon': 'times', callbackName: 'iconCallback' }
+      // { 'icon': 'times', callbackName: 'iconCallback' }
     ],
     preprenIcons: [
-      { 'icon': 'search', callbackName: 'iconCallback' },
-      { 'icon': 'times', callbackName: 'iconCallback' }
+      // { 'icon': 'search', callbackName: 'iconCallback' },
+      // { 'icon': 'times', callbackName: 'iconCallback' }
     ],
     searchParam: {
       year: 2018,
@@ -609,10 +609,13 @@ export default {
       ];
 
       this.gridHeaderOptions = [
-        { text: '판정', name: 'heaDiagnoseNm', type: 'text', width: '20%', align: 'center' },
-        { text: '질환종류', name: 'heaDiseaseClassNm', width: '20%' },
-        { text: '질환', name: 'heaDiseaseNm', width: '10%' },
-        { text: '유해인자', name: 'heaHazardNm', width: '10%' },
+        { text: '텍스트', name: 'text', width: '20%', align: 'center', type: 'text' },
+        { text: '숫자', name: 'number', width: '20%', type: 'number' },
+        { text: 'select', name: 'select', width: '10%', type: 'select' },
+        { text: 'datepicker', name: 'datepicker', width: '10%' },
+        { text: '기간', name: 'period', width: '10%' },
+        { text: '라디오', name: 'radio', width: '10%' },
+        { text: '버튼', name: 'button', width: '10%' },
       ];
 
       // TODO : backend에서 데이터를 조회해 올것

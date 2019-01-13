@@ -4,6 +4,8 @@ const utils = require('./utils')
 const config = require('../config')
 const { VueLoaderPlugin } = require('vue-loader')
 const vueLoaderConfig = require('./vue-loader.conf')
+// TODO : jquery를 전역에서 사용할 수 있도록 하는 설정 추가
+const webpack = require('webpack')
 // polyfill 적용 : IE
 require('babel-polyfill')
 
@@ -99,7 +101,16 @@ module.exports = {
       }
     ]
   },
-  plugins: [new VueLoaderPlugin()],
+  plugins: [
+    new VueLoaderPlugin(),
+    // TODO : jquery를 전역에서 사용할 수 있도록 하는 설정 추가
+    new webpack.ProvidePlugin({
+      $: 'jquery',
+      jquery: 'jquery',
+      'window.jQuery': 'jquery',
+      jQuery: 'jquery'
+    })
+  ],
   node: {
     // prevent webpack from injecting useless setImmediate polyfill because Vue
     // source contains it (although only uses it if it's native).

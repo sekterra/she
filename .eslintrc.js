@@ -1,5 +1,10 @@
 module.exports = {
   root: true,
+  // TODO : jquery를 전역에서 사용할 수 있도록 하는 설정 추가
+  globals: {
+    "$": true,
+    "jQuery": true
+  },
   parserOptions: {
     parser: 'babel-eslint',
     sourceType: 'module'
