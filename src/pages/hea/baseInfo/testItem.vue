@@ -167,7 +167,6 @@
                       title="초기화"
                       size="small"
                       color="info"
-                      icon="el-icon-edit"
                       @btnClicked="btnClearClickedCallback" 
                     />
                     <y-btn 
@@ -179,7 +178,6 @@
                       title="신규등록"
                       size="small"
                       color="warning"
-                      icon="el-icon-edit"
                       action-type="POST"
                       beforeSubmit = "beforeInsert"
                       @beforeInsert="beforeInsert"
@@ -195,7 +193,6 @@
                       title="수정"
                       size="small"
                       color="warning"
-                      icon="el-icon-edit-outline"
                       action-type="PUT"
                       beforeSubmit = "beforeSubmit"
                       @beforeSubmit="beforeSubmit"
@@ -288,7 +285,7 @@ export default {
     },
 
     getComboItems (codeGroupCd) {
-      this.$http.url = this.$format(selectConfig.codeMaster.options.url, codeGroupCd);
+      this.$http.url = this.$format(selectConfig.codeMaster.getSelect.url, codeGroupCd);
       this.$http.type = 'GET';
       // this.$http.param = {
       //   "codeGroupCd": codeGroupCd
@@ -314,11 +311,11 @@ export default {
 
     /** 수정 하기전 UI단 유효성 검사 **/
     beforeSubmit () {
-      this.isSubmit2 = true;
+      this.isSubmit2 = this.checkValidation();
       this.saveUrl = transactionConfig.testItem.edit.url;
     },
     beforeInsert () {
-      this.checkValidation();
+      this.isSubmit = this.checkValidation();
       this.insertUrl = transactionConfig.testItem.insert.url;
     },
     /**
@@ -326,12 +323,13 @@ export default {
      */
     checkValidation () {
       this.$validator.validateAll().then((_result) => {
-        this.isSubmit = _result;
+        if (!_result) window.getApp.$emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
+        console.log(_result);
+        return _result;
         // TODO : 전역 성공 메시지 처리
         // 이벤트는 ./event.js 파일에 선언되어 있음
-        if (!this.isSubmit) window.getApp.$emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
       }).catch(() => {
-        this.isSubmit = false;
+        return false;
       });
     },
     validateState (ref) {
@@ -343,10 +341,11 @@ export default {
     getItemList () {
       this.$http.url = selectConfig.testItem.list.url;
       this.$http.type = 'GET';
-      this.$http.param = {
-        "heaTestClassCd": ''
-      };
+      // this.$http.param = {
+      //   "heaTestClassCd": ''
+      // };
       this.$http.request((_result) => {
+        console.log("보자");
         console.log(JSON.parse(JSON.stringify(_result.data)));
         this.gridItemData = _result.data;
       }, (_error) => {
@@ -362,13 +361,18 @@ export default {
     btnSaveClickedCallback (_result) {
       // this.$emit('APP_REQUEST_SUCCESS', '수정 버튼이 클릭 되었습니다.');
       this.getItemList();
+      this.btnClearClickedCallback();
       this.isSubmit2 = false;
     },
     btnInsertClickedCallback (_result) {
       this.getItemList();
+      this.btnClearClickedCallback();
       this.isSubmit = false;
     },
     btnClickedErrorCallback (_result) {
+      this.isSubmit = false;
+      this.isSubmit2 = false;
+      this.btnClearClickedCallback();
       this.$emit('APP_REQUEST_ERROR', _result);
     },
     btnClearClickedCallback () {

@@ -152,7 +152,7 @@ export default {
     // 부모로 부터 select option을 받아올 경우
     comboItems: {
       type: Array,
-      default: []
+      default: () => []
     },
     // comboItems의 여러 항목 중 화면에 text로 보여지는 정보를 가진 attribute 명(option 생성시 사용됨)
     itemText: {

@@ -25,6 +25,9 @@ let selectConfig = {
   checkupOrg: {
     list: {
       url: '/api/hea/baseinfo/checkuporgs'
+    },
+    get: {
+      url: '/api/hea/baseinfo/checkuporg/{0}'
     }
   },
   testItem: {
@@ -116,7 +119,12 @@ let selectConfig = {
     update: {
       url: '/api/manage/process/process'
     }
-  }
+  },
+  hazard: {
+    list: {
+      url: '/api/hea/workingenvmanage/hazards'
+    }
+  },
 };
 
 export default selectConfig;

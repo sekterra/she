@@ -41,7 +41,7 @@ examples:
         <v-card-text class="pa-0">
         <v-data-table
           v-model="selected"
-          ref="dataTable"
+          ref="datatable"
           :headers="headers"
           :items="items"
           :search="search"
@@ -206,6 +206,7 @@ examples:
       <slot name="header">
       </slot>
       <el-table
+        ref="datatable"
         :data="items"
         :stripe="rowStripe"
         :border="true"
@@ -214,12 +215,12 @@ examples:
         style="width: 100%;"
         :height="height"
         :rows="rows"
-        @selection-change="handleSelectionChange">
+        @selection-change="selectionChanged">
         <!-- check box 등 컨트롤이 추가되는 영역 -->
         <slot name="selection"></slot>
         <el-table-column
           v-for="(header, index) in headers"
-          :key="header.name"
+          :key="header.name + '_' + index"
           :prop="header.name"
           :label="header.text"
           :min-width="header.width"
@@ -227,33 +228,71 @@ examples:
           :sortable="!header.hasOwnProperty('sortable') || header.sortable "
           :fixed="header.fixed"
           :header-align	="header.hasOwnProperty('headerAlign') ? header.headerAlign : headerAlign"
-        >   
-            <template 
-              v-if="header.type"
-              slot-scope="scope"
+        >
+          <template 
+            slot-scope="scope"
+            >
+              <el-button 
+                v-if="header.url"
+                type="text" 
+                size="small"
+                @click.stop="linkClicked(header, scope.row)"
               >
+              {{scope.row[header.name]}}
+              </el-button>
               <y-text
-                v-if="header.type.toLowerCase() === 'text'"
+                v-else-if="header.type && header.type.toLowerCase() === 'text'"
                 :editable="editable"
                 ui="bootstrap"
-                v-model="scope.row.name"
-                class="mt-1"
+                v-model="scope.row[header.name]"
               />
               <y-number
-                v-else-if="header.type.toLowerCase() === 'number'"
+                v-else-if="header.type && header.type.toLowerCase() === 'number'"
                 :editable="editable"
-                name="test"
                 ui="bootstrap"
-                v-model="scope.row.name"
+                v-model="scope.row[header.name]"
               />
               <y-datepicker
-                v-else-if="header.type.toLowerCase() === 'datepicker'"
+                v-else-if="header.type && header.type.toLowerCase() === 'datepicker'"
                 :editable="editable"
-                name="test"
+                :range="header.range ? header.range : false"
+                :default="header.default ? header.default : 'today'"
+                label=""
                 ui="bootstrap"
-                v-model="scope.row.name"
+                v-model="scope.row[header.name]"
               />
-            </template>
+              <y-select
+                v-else-if="header.type && header.type.toLowerCase() === 'select'"
+                :editable="editable"
+                :comboItems="header.items ? header.items : []"
+                :itemText="header.itemText ? header.itemText : ''"
+                :itemValue="header.itemValue ? header.itemValue : ''"
+                ui="bootstrap"
+                v-model="scope.row[header.name]"
+              />
+              <span v-else-if="header.type && header.type.toLowerCase() === 'select'">{{header.items}}</span>
+              <y-radio
+                v-else-if="header.type && header.type.toLowerCase() === 'radio'"
+                :editable="editable"
+                :items="header.items ? header.items : []"
+                :itemText="header.itemText ? header.itemText : ''"
+                :itemValue="header.itemValue ? header.itemValue : ''"
+                ui="bootstrap"
+                v-model="scope.row[header.name]"
+              />
+              <y-checkbox
+                v-else-if="header.type && header.type.toLowerCase() === 'checkbox'"
+                :editable="editable"
+                :items="header.items ? header.items : []"
+                :itemText="header.itemText ? header.itemText : ''"
+                :itemValue="header.itemValue ? header.itemValue : ''"
+                ui="bootstrap"
+                v-model="scope.row[header.name]"
+              />
+              <div v-else class="cell">
+                {{scope.row[header.name]}}
+              </div>
+          </template>
             <el-table-column
               v-for="_header in header.child"
               :key="_header.name"
@@ -281,6 +320,7 @@ examples:
         </el-table-column>
       </el-table>
     </template>
+    <div>datatable: {{itemsString}}</div>
   </div>
 </template>
 
@@ -403,6 +443,9 @@ export default {
       var rowHeight = 44;
       var border = 1;
       return headerHeight + (rowHeight * this.rows) + border;
+    },
+    itemsString () {
+      return JSON.stringify(this.items);
     }
   },
   watch: {
@@ -416,9 +459,18 @@ export default {
     }
   },
   /* Vue lifecycle: created, mounted, destroyed, etc */
-  mounted () {
+  beforeMount () {
+    // 이유 : vue.js는 SPA기반으로 동작하기 때문에 페이지를 이동하더라도 기존 입력된 정보가 그대로 남아 있는 문제가 있음
+    Object.assign(this.$data, this.$options.data());
+    // TODO : 팝업이 닫힐때 선택 초기화
+    window.getApp.$on('POPUP_CLOSED', () => {
+      this.$refs.datatable.clearSelection();
+    });
   },
-  activated () {
+  mounted () {
+    console.log(':::::::::::::::: mounted ');
+  },
+  beforeDestroy () {
   },
   /* methods */
   methods: {
@@ -428,7 +480,7 @@ export default {
       setTimeout(() => { _prop.selected = false }, 1000);
     },
     deleteItem (_prop) {
-      this.$emit('APP_ON_READY');
+      // this.$emit('APP_ON_READY');
     },
     hideLoading () {
       var self = this;
@@ -471,10 +523,22 @@ export default {
     clearSelected () {
       this.selected = [];
     },
-    handleSelectionChange (val) {
+    selectionChanged (val) {
       this.multipleSelection = val;
-      this.$emit('selectedData', this.multipleSelection);
+      this.$emit('input', this.multipleSelection);
+      this.$emit('selectionChanged', this.multipleSelection);
     },
+    getDatatableItems () {
+      return this.items;
+    },
+    /**
+     * 링크 정보를 클릭했을 때
+     */
+    linkClicked (_header, _row) {
+      // 링크 타겟의 기본은 팝업
+      // var target = _header.target ? _header.target : 'popup';
+      window.alert('해당 기능은 준비중입니다.');
+    }
   }
 };
 </script>

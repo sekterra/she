@@ -13,8 +13,8 @@
       :editable="popup.editable"
       :type="popup.type"
       :is-popup-open="popup.isPopupOpen"
+      :path="popup.path"
     />
-    popup.isPopupOpen: {{popup.isPopupOpen}}
     </div>
 </template>
 
@@ -64,8 +64,8 @@ export default {
       this.popup = _option;
     },
     popupClosed (_result) {
-      console.log('this.popup.isPopupOpen:' + this.popup.isPopupOpen);
       this.popup.isPopupOpen = false;
+      console.log('::::::::: popupClosed');
     }
   }
 }

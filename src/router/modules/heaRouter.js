@@ -62,6 +62,7 @@ const heaRouter = {
         {
           path: 'checkupResult',
           component: () => import('@/pages/hea/checkup/checkupResult'),
+          props: (route) => ({ query: route.query.pk }),
           name: 'checkupResult',
           meta: { title: 'checkupResult' },
         },

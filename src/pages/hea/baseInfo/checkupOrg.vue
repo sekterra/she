@@ -53,7 +53,7 @@
                   </b-col>
                   <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
                     <y-text
-                      :width="8"
+                      :width="7"
                       :editable="editable"
                       :maxlength="15"
                       ui="bootstrap"
@@ -77,7 +77,7 @@
                   </b-col>
                   <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
                     <y-text
-                    :width="8"
+                    :width="7"
                     :editable="editable"
                     :maxlength="30"
                     ui="bootstrap"
@@ -113,7 +113,7 @@
                   </b-col>
                   <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
                     <y-number
-                    :width="8"
+                    :width="7"
                     :editable="editable"
                     :maxlength="5"
                     :hasSeperator="false"
@@ -157,7 +157,6 @@
                       title="초기화"
                       size="small"
                       color="info"
-                      icon="el-icon-edit"
                       @btnClicked="btnClearClickedCallback" 
                       />
                     <y-btn
@@ -169,7 +168,6 @@
                       title="신규등록"
                       size="small"
                       color="warning"
-                      icon="el-icon-edit"
                       action-type="POST"
                       beforeSubmit = "beforeInsert"
                       @beforeInsert="beforeInsert"
@@ -185,7 +183,6 @@
                       title="수정"
                       size="small"
                       color="warning"
-                      icon="el-icon-edit-outline"
                       action-type="PUT"
                       beforeSubmit = "beforeSubmit"
                       @beforeSubmit="beforeSubmit"
@@ -255,6 +252,11 @@ export default {
   //* methods */
   methods: {
     init () {
+      // URL setting
+      this.saveUrl = transactionConfig.checkupOrg.edit.url;
+      this.insertUrl = transactionConfig.checkupOrg.insert.url;
+      this.deleteUrl = this.$format(transactionConfig.checkupOrg.delete.url, this.healthOrgan.heaCheckupOrgNo);
+      // Radio button setting
       setTimeout(() => {
         this.radioItems = [
           { useYn: 'Y', useName: '사용' },
@@ -275,6 +277,17 @@ export default {
       ];
     },
     ReceivesData (data) {
+      this.$http.url = selectConfig.checkupOrg.get.url;
+      this.$http.type = 'GET';
+      this.$http.param = {
+        'heaCheckupOrgNo': data.heaCheckupOrgNo
+      };
+      this.$http.request((_result) => {
+        this.gridData = _result.data;
+      }, (_error) => {
+        console.log(_error);
+      });
+
       Object.assign(this.healthOrgan, data);
       this.healthOrgan.useYn = data.useYn === '사용' ? 'Y' : 'N';
     },
@@ -282,16 +295,13 @@ export default {
     beforeSubmit () {
       // this.checkValidation();
       this.isSubmit2 = true;
-      this.saveUrl = transactionConfig.examinationOrgan.edit.url;
     },
     beforeInsert () {
       this.checkValidation();
-      this.insertUrl = transactionConfig.examinationOrgan.insert.url;
     },
     beforeDelete () {
       // this.checkValidation();
       this.isSubmit3 = true;
-      this.deleteUrl = this.$format(transactionConfig.examinationOrgan.delete.url, this.healthOrgan.heaCheckupOrgNo);
     },
     /**
      * 수정전 유효성 검사

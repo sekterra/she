@@ -128,7 +128,7 @@ export default {
     // 부모로 부터 radio 항목들을 받아올 경우
     comboItems: {
       type: Array,
-      default: []
+      default: () => []
     },
     // veeValidate 유효성 검사
     state: {

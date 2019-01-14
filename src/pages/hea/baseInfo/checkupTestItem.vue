@@ -113,7 +113,6 @@
                       title="초기화"
                       size="small"
                       color="info"
-                      icon="el-icon-edit"
                       @btnClicked="btnClearClickedCallback" 
                       />
                     <y-btn
@@ -125,7 +124,6 @@
                       title="신규등록"
                       size="small"
                       color="warning"
-                      icon="el-icon-edit"
                       action-type="POST"
                       beforeSubmit = "beforeInsert"
                       @beforeInsert="beforeInsert"
@@ -141,7 +139,6 @@
                       title="수정"
                       size="small"
                       color="warning"
-                      icon="el-icon-edit-outline"
                       action-type="PUT"
                       beforeSubmit = "beforeSubmit"
                       @beforeSubmit="beforeSubmit"
@@ -235,7 +232,7 @@ export default {
     },
 
     getComboItems (codeGroupCd) {
-      this.$http.url = this.$format(selectConfig.codeMaster.options.url, codeGroupCd);
+      this.$http.url = this.$format(selectConfig.codeMaster.getSelect.url, codeGroupCd);
       this.$http.type = 'GET';
       this.$http.request((_result) => {
         if (codeGroupCd === 'HEA_CHECKUP_CLASS') 
@@ -271,6 +268,18 @@ export default {
     },
 
     ReceivesData (data) {
+      this.$http.url = selectConfig.checkupTestItem.list.url;
+      this.$http.type = 'GET';
+      this.$http.param = {
+        'heaCheckupClassCd': data.heaCheckupClassCd,
+        'heaCheckupTypeCd': data.heaCheckupTypeCd // 01
+      };
+      this.$http.request((_result) => {
+        this.gridData = _result.data;
+      }, (_error) => {
+        console.log(_error);
+      });
+
       Object.assign(this.checkupTestItem, data);
       // this.checkupTestItem.useYn = data.useYn === '사용' ? 'Y' : 'N';
     },

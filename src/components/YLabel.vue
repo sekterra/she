@@ -94,61 +94,6 @@ export default {
       // TODO : 여기에 초기 설정용 함수를 호출하거나 로직을 입력하세요.
     },
     /** /초기화 관련 함수 **/
-    
-    /** Call API service
-    * Naming Rule: get, post, put 등의 RESTFul verb를 접두사로 사용하고 그 뒤에 관련 모델명을 Camel case로 추가하세요.
-    * Naming Rule: get의 경우 복수의 데이터조회(리스트 데이터 등)시에는 복수를 나타내는 접미사 "s"를 붙여주세요.
-    * ex) getExamData () {}
-    * ex) getExamDatas () {}
-    */
-    
-    /** /Call API service **/
-    
-    /** validation checking(필요없으면 지워주세요) **/
-    checkValidation () {
-      this.validator.validateAll().then((_result) => {
-        this.isSubmit = _result;
-        // TODO : 전역 성공 메시지 처리
-        // 이벤트는 ./event.js 파일에 선언되어 있음
-        if (!this.isSubmit) window.getApp.emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
-      }).catch(() => {
-        this.isSubmit = false;
-      });
-    },
-    validateState (_ref) {
-      if (this.veeBag[_ref] && (this.veeBag[_ref].dirty || this.veeBag[_ref].validated)) {
-        return !this.errors.has(_ref);
-      }
-      return null;
-    },
-    /** /validation checking **/
-    
-    /** Component Events, Callbacks (버튼 제외) **/
-    
-    /** /Component, Callbacks (버튼 제외) **/
-    
-    /** Button Event **/
-    /**
-    * 저장 버튼 처리용 샘플함수
-    */
-    btnSaveClickedCallback (_result) {
-      this.isSubmit = false;  // 반드시 isSubmit을 false로 초기화 하세요. 그렇지 않으면 버튼을 다시 클릭해도 동작하지 않습니다.
-      // TODO : 여기에 추가 로직 삽입(로직 삽입시 지워주세요)
-      window.getApp.emit('APP_REQUEST_SUCCESS', "정상적으로 저장 되었습니다.");
-    },
-    /**
-    * 버튼 에러 처리용 공통함수
-    */
-    btnClickedErrorCallback (_result) {
-      this.isSubmit = false;  // 반드시 isSubmit을 false로 초기화 하세요. 그렇지 않으면 버튼을 다시 클릭해도 동작하지 않습니다.
-      // TODO : 여기에 추가 로직 삽입(로직 삽입시 지워주세요)
-      window.getApp.emit('APP_REQUEST_ERROR', _result);
-    },
-    /** /Button Event **/
-    
-    /** 기타 function **/
-    
-    /** /기타 function **/
   }
 };
 </script>

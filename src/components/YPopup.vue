@@ -13,35 +13,36 @@
     </template>
     <template v-else>
       <el-dialog
-        title="Warning"
+        :title="label"
         :visible.sync="isOpen"
         :fullscreen="true"
         center
         @close="popupClose"
-        @sendDataToPopup="sendDataToPopup"
         >
-        <div v-if="type === 'test'">
-          <checkup-result></checkup-result>
+        <div v-if="type === 'checkupUser'">
+          <checkup-user @selectionChanged="selectionChanged" />
         </div>
+        <!-- 기존에 만들어진 컴포넌트가 아닌 직접 바인딩 해야 할 경우 아래의 popupBody 슬롯에 추가 -->
         <slot name="popupBody"></slot>
         <span slot="footer" class="dialog-footer">
-          <el-button @click="popupClose">닫기</el-button>
           <el-button type="primary" @click="popupConfirm">승인</el-button>
+          <el-button @click="popupClose">닫기</el-button>
         </span>
       </el-dialog>
-      this is test : {{isOpen}}
     </template>
   </div>
 </template>
 
 <script>
-import checkupResult from '@/pages/hea/checkup/checkupResult';
-import { fcall } from 'q';
+// TODO : 팝업 본문에 표현되어야 할 페이지를 아래와 같이 선언 후 components에 등록
+import checkupUser from '@/pages/hea/checkup/checkupUser';
+
 export default {
   /** attributes: name, components, props, data **/
   name: 'y-popup',  // 반드시 입력하세요(안 하면 warning 발생). 네이밍 룰은 현재 vue component의 파일명의 단어를 "-"로 구분(예:exam-data)하여 입력하시면 됩니다. 입력후 이 주석은 지워주세요.
   components: {
-    checkupResult
+    // 팝업 본문에 추가해야 할 컴포넌트 선언
+    checkupUser
   },
   props: {
     ui: {
@@ -109,7 +110,6 @@ export default {
   mounted () {
   },
   beforeUpdate () {
-    console.log(':::::::::::::: beforeUpdate :');
     this.$nextTick(() => {
       this.isOpen = this.isPopupOpen;
     });
@@ -132,19 +132,32 @@ export default {
     * ex) getExamDatas () {}
     */
 
-   sendDataToPopup (_datas) {
-     this.popupData = _datas;
-   },
     /** /Call API service **/
+
+     /** Component Events, Callbacks (버튼 제외) **/
+     /**
+      * 팝업에서 선택된 값이 변경되어 부모 창에 데이터를 보내기 위해
+      * popupData에 정보를 담는다.
+      */
+     selectionChanged (_popupData) {
+      this.popupData = _popupData;
+    },
+      /** /Component Events, Callbacks (버튼 제외) **/
     
     /** Button 관련 event **/
+    /**
+     * 팝업 창을 닫을 경우 처리
+     */
     popupClose () {
       this.isOpen = false;
       window.getApp.$emit('POPUP_CLOSED');
     },
+    /**
+     * 팝업 창에서 부모 페이지로 정보 전달
+     */
     popupConfirm () {
-      this.isOpen = false;
-      window.getApp.$emit('POPUP_CLOSED', this.popupData);
+      window.getApp.$emit('POPUP_SEND_DATA', this.popupData);
+      this.popupClose();
     }
     /** **/
    

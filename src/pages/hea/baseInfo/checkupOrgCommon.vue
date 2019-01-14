@@ -10,181 +10,177 @@
     <!-- 검색 결과 테이블 -->
     <b-row >
       <b-col sm="12">
-        <!-- <b-card header-class="default-card">
-          <div slot="header">
-            <div class="float-left">
-              <y-label label="건강검진종류 - 공통 건강검진항목" />
-            </div>
-            <div class="float-right">
-              <y-btn 
-                :action-url="deleteUrl"
-                :param="checkupOrgCommon"
-                :is-submit="isSubmit3"
-                type="delete"
-                size="small"
-                color="danger"
-                icon="el-icon-delete"
-                action-type="DELETE"
-                beforeSubmit = "beforeDelete"
-                @beforeDelete="beforeDelete"
-                @btnClicked="btnDeleteClickedCallback" 
-                @btnClickedErrorCallback="btnClickedErrorCallback"
-              />
-            </div>
-          </div> -->
-          <b-col sm="10" class="px-0">
-            <y-data-table 
-              :isShowBtn="true"
-              :headers="gridHeaderOptions"
-              :items="gridData"
-              :excel-down="true"
-              :print="true"
-              :rows="3"
-              label="건강검진종류 - 공통 건강검진항목 목록"
-              ref="dataTable"
-              editable="editable"
-              >
-            </y-data-table>
-          </b-col>
+        <b-col sm="11" class="px-0">
+          <div slot="buttonGroup" class="float-right">
+            <y-btn 
+              :action-url="deleteUrl"
+              :param="deleteValue"
+              :is-submit="isSubmit3"
+              type="delete"
+              size="small"
+              color="danger"
+              title="삭제"
+              action-type="DELETE"
+              beforeSubmit = "beforeDelete"
+              @beforeDelete="beforeDelete"
+              @btnClicked="btnDeleteClickedCallback" 
+              @btnClickedErrorCallback="btnClickedErrorCallback"
+            />
+          </div>
+          <y-data-table 
+            :headers="gridHeaderOptions"
+            :items="gridData"
+            :excel-down="true"
+            :print="true"
+            :rows="3"
+            v-model="selectedValue"
+            label="건강검진종류 - 공통 건강검진항목 목록"
+            ref="dataTable"
+            editable="editable"
+            >
+            <el-table-column
+                type="selection"
+                slot="selection"
+                align="center"
+                width="55">
+              </el-table-column> 
+          </y-data-table>
+        </b-col>
 
-          <!-- 등록 -->
-          <b-row class="mt-3">
-            <b-col sm="12">
+        <!-- 등록 -->
+        <b-row class="mt-3">
+          <b-col sm="12">
+            <b-row>
+              <b-col sm="12">
+                <y-label label="건강검진종류 - 공통 건강검진항목 상세" icon="user-edit" color-class="cutstom-title-color" />
+              </b-col>
+            </b-row>
+            <b-card>
               <b-row>
-                <b-col sm="12">
-                  <y-label label="건강검진종류 - 공통 건강검진항목 상세" icon="user-edit" color-class="cutstom-title-color" />
+                <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
+                  <y-select
+                    :width="6"
+                    :editable="editable"
+                    :comboItems="comboCheckupOrganItems"
+                    :required="true"
+                    itemText="heaCheckupOrgNm"
+                    itemValue="heaCheckupOrgNo"
+                    ui="bootstrap"
+                    type="edit"
+                    name="heaCheckupOrgNo"
+                    label="건강검진기관"
+                    v-model="checkupOrgCommon.heaCheckupOrgNo"
+                    v-validate="'required'"
+                    :state="validateState('heaCheckupOrgNo')"
+                  >
+                  </y-select>
+                </b-col>
+                <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
+                  <y-select
+                    :width="6"
+                    :editable="editable"
+                    :comboItems="yearItems"
+                    :required="true"
+                    itemText="codeNm"
+                    itemValue="code"
+                    ui="bootstrap"
+                    type="search"
+                    name="year"
+                    label="건강검진년도"
+                    v-model="checkupOrgCommon.year"
+                    />
+                </b-col>
+                <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
+                  <y-select
+                    :width="6"
+                    :editable="editable"
+                    :comboItems="comboCheckupTypeItems"
+                    :required="true"
+                    itemText="codeNm"
+                    itemValue="code"
+                    ui="bootstrap"
+                    type="edit"
+                    name="heaCheckupTypeCd"
+                    label="종합건강검진유형"
+                    v-model="checkupOrgCommon.heaCheckupTypeCd"
+                  >
+                  </y-select>
+                </b-col>
+                <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
+                  <y-select
+                    :width="6"
+                    :editable="editable"
+                    :comboItems="comboTestClassTypeItems"
+                    itemText="codeNm"
+                    itemValue="code"
+                    ui="bootstrap"
+                    type="edit"
+                    label="건강검진검사"
+                    name="heaTestClassCd"
+                    v-model="heaTestClassCd"
+                  />
                 </b-col>
               </b-row>
-              <b-card>
-                <b-row>
-                  <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
-                    <y-select
-                      :width="6"
-                      :editable="editable"
-                      :comboItems="comboCheckupOrganItems"
-                      :required="true"
-                      itemText="heaCheckupOrgNm"
-                      itemValue="heaCheckupOrgNo"
-                      ui="bootstrap"
-                      type="edit"
-                      name="heaCheckupOrgNo"
-                      label="건강검진기관"
-                      v-model="checkupOrgCommon.heaCheckupOrgNo"
-                      v-validate="'required'"
-                      :state="validateState('heaCheckupOrgNo')"
-                    >
-                    </y-select>
-                  </b-col>
-                  <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
-                    <y-select
-                      :width="6"
-                      :editable="editable"
-                      :comboItems="yearItems"
-                      :required="true"
-                      itemText="codeNm"
-                      itemValue="code"
-                      ui="bootstrap"
-                      type="search"
-                      name="year"
-                      label="건강검진년도"
-                      v-model="checkupOrgCommon.year"
-                      />
-                  </b-col>
-                  <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
-                    <y-select
-                      :width="6"
-                      :editable="editable"
-                      :comboItems="comboCheckupTypeItems"
-                      :required="true"
-                      itemText="codeNm"
-                      itemValue="code"
-                      ui="bootstrap"
-                      type="edit"
-                      name="heaCheckupTypeCd"
-                      label="종합건강검진유형"
-                      v-model="checkupOrgCommon.heaCheckupTypeCd"
-                    >
-                    </y-select>
-                  </b-col>
-                  <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
-                    <y-select
-                      :width="6"
-                      :editable="editable"
-                      :comboItems="comboTestClassTypeItems"
-                      itemText="codeNm"
-                      itemValue="code"
-                      ui="bootstrap"
-                      type="edit"
-                      label="건강검진검사"
-                      name="heaTestClassCd"
-                      v-model="heaTestClassCd"
+              <b-row>
+                <b-col sm="12" md="12" lg="12" xl="12" class="col-xxl-6">
+                  <y-shuttlebox
+                    :width="9"
+                    :editable="editable"
+                    :items="comboTestItems"
+                    :needDefaultView="true"
+                    itemText="heaTestItemNm"
+                    itemValue="heaTestItemCd"
+                    ui="bootstrap"
+                    label="선택된 건강검진항목"
+                    name="heaTestItemCd"
+                    v-model="heaTestItemCd"
+                  >
+                  </y-shuttlebox>
+                </b-col>
+              </b-row>
+              <div class="float-right mt-3">
+                  <y-btn
+                    v-if="editable"
+                    type="clear"
+                    title="초기화"
+                    size="small"
+                    color="info"
+                    @btnClicked="btnClearClickedCallback" 
                     />
-                  </b-col>
-                </b-row>
-                <b-row>
-                  <b-col sm="12" md="12" lg="12" xl="12" class="col-xxl-6">
-                    <y-shuttlebox
-                      :width="9"
-                      :editable="editable"
-                      :items="comboTestItems"
-                      :needDefaultView="true"
-                      itemText="heaTestItemNm"
-                      itemValue="heaTestItemCd"
-                      ui="bootstrap"
-                      label="선택된 건강검진항목"
-                      name="heaTestItemCd"
-                      v-model="heaTestItemCd"
-                    >
-                    </y-shuttlebox>
-                  </b-col>
-                </b-row>
-                <div class="float-right mt-3">
-                    <y-btn
-                      v-if="editable"
-                      type="clear"
-                      title="초기화"
-                      size="small"
-                      color="info"
-                      icon="el-icon-edit"
-                      @btnClicked="btnClearClickedCallback" 
-                      />
-                    <y-btn
-                      v-if="editable"
-                      :action-url="insertUrl"
-                      :param="checkupOrgCommon"
-                      :is-submit="isSubmit"
-                      type="save"
-                      title="신규등록"
-                      size="small"
-                      color="warning"
-                      icon="el-icon-edit"
-                      action-type="POST"
-                      beforeSubmit = "beforeInsert"
-                      @beforeInsert="beforeInsert"
-                      @btnClicked="btnInsertClickedCallback" 
-                      @btnClickedErrorCallback="btnClickedErrorCallback"
+                  <y-btn
+                    v-if="editable"
+                    :action-url="insertUrl"
+                    :param="checkupOrgCommon"
+                    :is-submit="isSubmit"
+                    type="save"
+                    title="신규등록"
+                    size="small"
+                    color="warning"
+                    action-type="POST"
+                    beforeSubmit = "beforeInsert"
+                    @beforeInsert="beforeInsert"
+                    @btnClicked="btnInsertClickedCallback" 
+                    @btnClickedErrorCallback="btnClickedErrorCallback"
+                  />
+                  <y-btn
+                    v-if="editable"
+                    :action-url="saveUrl"
+                    :param="checkupOrgCommon"
+                    :is-submit="isSubmit2"
+                    type="save"
+                    title="수정"
+                    size="small"
+                    color="warning"
+                    action-type="PUT"
+                    beforeSubmit = "beforeSubmit"
+                    @beforeSubmit="beforeSubmit"
+                    @btnClicked="btnSaveClickedCallback" 
+                    @btnClickedErrorCallback="btnClickedErrorCallback"
                     />
-                    <y-btn
-                      v-if="editable"
-                      :action-url="saveUrl"
-                      :param="checkupOrgCommon"
-                      :is-submit="isSubmit2"
-                      type="save"
-                      title="수정"
-                      size="small"
-                      color="warning"
-                      icon="el-icon-edit-outline"
-                      action-type="PUT"
-                      beforeSubmit = "beforeSubmit"
-                      @beforeSubmit="beforeSubmit"
-                      @btnClicked="btnSaveClickedCallback" 
-                      @btnClickedErrorCallback="btnClickedErrorCallback"
-                      />
-                  </div>
-              </b-card>
-            </b-col>
-          </b-row>
-        <!-- </b-card> -->
+                </div>
+            </b-card>
+          </b-col>
+        </b-row>
       </b-col>
     </b-row>
     
@@ -231,6 +227,8 @@ export default {
     saveUrl: '',
     insertUrl: '',
     deleteUrl: '',
+    selectedValue: [],
+    deleteValue: null,
   }),
   watch: {
     'heaTestClassCd': {
@@ -284,7 +282,7 @@ export default {
     },
 
     getComboItems (codeGroupCd) {
-      this.$http.url = this.$format(selectConfig.comCodeMaster.get.url, codeGroupCd);
+      this.$http.url = this.$format(selectConfig.codeMaster.getSelect.url, codeGroupCd);
       this.$http.type = 'GET';
       this.$http.request((_result) => {
         if (codeGroupCd === 'HEA_TEST_CLASS') {
@@ -308,8 +306,11 @@ export default {
     },
 
     getComboTestItems (heaTestClassCd) {
-      this.$http.url = this.$format(selectConfig.testItem.get.url, heaTestClassCd);
+      this.$http.url = this.$format(selectConfig.testItem.list.url, heaTestClassCd);
       this.$http.type = 'GET';
+      this.$http.param = {
+        'heaTestClassCd': heaTestClassCd
+      };
       this.$http.request((_result) => {
         this.comboTestItems = _result.data;
       }, (_error) => {
@@ -330,6 +331,9 @@ export default {
       this.checkValidation();
     },
     beforeDelete () {
+      this.deleteValue = {
+        'data': Object.values(this.$_.clone(this.selectedValue))
+      };
       this.isSubmit3 = true;
     },
     /**

@@ -168,14 +168,17 @@ export default {
      *  - 저장 버튼 클릭시 저장전 유효성 검사
      */
     btnClicked () {
+      let self = this;
       this.loading = !this.loading;
       // 부모vue에서 주어진 속성값이 잘못 되었으면 리턴 처리함
       if (this.hasButtonError) {
+        self.closeLoading();
         window.getApp.$emit('APP_VALID_ERROR', this.$t('error.validError'));
         return false;
       }
       // 저장일 경우 유효성 검사
       if (this.beforeSubmit) {
+        self.closeLoading();
         this.$emit(this.beforeSubmit);
         return;
       }

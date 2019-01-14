@@ -96,7 +96,7 @@ export default {
     },
     // TODO : 부모의 v-model의 값을 받아오는 속성
     value: {
-      type: Array,
+      type: [Array, Number],
       default: null
     },
     // 중복 방지를 위해 선택된 값을 숨겨야 할 경우
@@ -127,7 +127,7 @@ export default {
     // 부모로 부터 radio 항목들을 받아올 경우
     comboItems: {
       type: Array,
-      default: []
+      default: () => []
     },
     // veeValidate 유효성 검사
     state: {

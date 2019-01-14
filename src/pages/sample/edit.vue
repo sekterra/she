@@ -44,7 +44,11 @@
               <h6><small class="font-italic">4열 사용예</small></h6>
             </b-col>
           </b-row> -->
-
+          <b-row>
+            <b-col sm="12" md="12" lg="12" xl="12" class="col-xxl-12">
+              <y-label label="검진기관" />
+            </b-col>
+          </b-row>
           <b-row>
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <y-text
@@ -305,12 +309,33 @@
 
     <b-row>
       <b-col sm="12">
+        <y-btn
+          :is-submit="isSubmit"
+          type="test"
+          title="팝업 테스트"
+          size="small"
+          color="primary"
+          @btnClicked="btnTestClickedCallback"
+        />
+      </b-col>
+    </b-row>
+
+    <b-row>
+      <b-col sm="12">
         <b-card class="mt-3">
           <div slot="header">
             <strong>v-model </strong> <small>정보</small>
           </div>
-        <div>{{demo}}</div>
-        <div>{{searchParam}}</div>
+        <div class="mb-3">demo 모델 : {{demo}}</div>
+        <div class="mb-3">검색조건 : {{searchParam}}</div>
+        <div class="mb-3">팝업 : 
+          <span v-if="popupData && popupData.length">
+            <span v-for="(item, index) in popupData" :key="index">
+              {{index}} : {{item}}
+            </span>
+          </span>
+
+        </div>
         </b-card>
       </b-col>
     </b-row>
@@ -445,18 +470,6 @@
         <!-- 본문 영역 종료 -->
       </b-col>
     </b-row>
-    <b-row>
-      <b-col sm="12">
-        <y-btn
-          :is-submit="isSubmit"
-          type="test"
-          title="팝업 테스트"
-          size="small"
-          color="primary"
-          @btnClicked="btnTestClickedCallback"
-        />
-      </b-col>
-    </b-row>
     <b-row class="mt-2">
       <b-col sm="12">
         <b-card no-body>
@@ -533,6 +546,7 @@ export default {
       switch: 'Y',
       shuttlebox: [],
     },
+    popupData: {},
     baseWidth: 8,
     widthTwoCols: 10,
     editable: true,
@@ -575,7 +589,8 @@ export default {
     this.getDeptItems();
     this.init();
 
-    window.getApp.$on('POPUP_CLOSED', this.popupClosed);
+    // TODO : 팝업에서 보내는 정보 수신
+    window.getApp.$on('POPUP_SEND_DATA', this.popupSelectChanged);
   },
   mounted () {
     setTimeout(() => {
@@ -583,7 +598,7 @@ export default {
     }, 3000);
   },
   beforeDestroy () {
-    // window.getApp.$off('POPUP_CLOSED', this.popupClosed);
+    window.getApp.$off('POPUP_SEND_DATA', this.popupSelectChanged);
   },
   destroyed () {
   },
@@ -608,30 +623,31 @@ export default {
         }
       ];
 
-      this.gridHeaderOptions = [
-        { text: '텍스트', name: 'text', width: '20%', align: 'center', type: 'text' },
-        { text: '숫자', name: 'number', width: '20%', type: 'number' },
-        { text: 'select', name: 'select', width: '10%', type: 'select' },
-        { text: 'datepicker', name: 'datepicker', width: '10%' },
-        { text: '기간', name: 'period', width: '10%' },
-        { text: '라디오', name: 'radio', width: '10%' },
-        { text: '버튼', name: 'button', width: '10%' },
-      ];
-
       // TODO : backend에서 데이터를 조회해 올것
       setTimeout(() => {
         this.demo.shuttlebox = [1, 3];
       }, 1000);
 
       // TODO : backend에서 데이터를 조회해 올것
-      setTimeout(() => {
-        this.shuttleboxItems = [
-          { text: 'Orange', value: '1' },
-          { text: 'Apple', value: '2' },
-          { text: 'Pineapple', value: '3' },
-          { text: 'Grape', value: '4' },
-        ];
-      }, 3000);
+      this.shuttleboxItems = [
+        { text: 'Orange', value: '1' },
+        { text: 'Apple', value: '2' },
+        { text: 'Pineapple', value: '3' },
+        { text: 'Grape', value: '4' },
+      ];
+
+      this.gridHeaderOptions = [
+        { text: '링크', name: 'link', width: '20%', align: 'center', url: '/hea/checkup/checkupPlan', target: 'self' },
+        { text: '텍스트', name: 'text', width: '20%', align: 'center', type: 'text' },
+        { text: '숫자', name: 'number', width: '20%', type: 'number' },
+        { text: 'select', name: 'select', width: '10%', type: 'select', items: this.shuttleboxItems, itemText: 'text', itemValue: 'value' },
+        { text: 'datepicker', name: 'datepicker', width: '10%', align: 'center', type: 'datepicker' },
+        { text: '기간', name: 'period', width: '10%', type: 'datepicker', range: true },
+        { text: '라디오', name: 'radio', width: '10%', type: 'radio', items: this.shuttleboxItems, itemText: 'text', itemValue: 'value' },
+        { text: '체크박스', name: 'checkbox', width: '10%', type: 'checkbox', items: this.shuttleboxItems, itemText: 'text', itemValue: 'value' },
+        { text: '버튼', name: 'button', width: '10%', type: 'select', items: this.shuttleboxItems, itemText: 'text', itemValue: 'value' },
+      ];
+
 
       this.getGridData();
       
@@ -714,12 +730,23 @@ export default {
     iconCallback () {
     },
     getGridData () {
+      // { text: '텍스트', name: 'text', width: '20%', align: 'center', type: 'text' },
+      //   { text: '숫자', name: 'number', width: '20%', type: 'number' },
+      //   { text: 'select', name: 'select', width: '10%', type: 'select' },
+      //   { text: 'datepicker', name: 'datepicker', width: '10%' },
+      //   { text: '기간', name: 'period', width: '10%' },
+      //   { text: '라디오', name: 'radio', width: '10%' },
+      //   { text: '버튼', name: 'button', width: '10%' },
       this.gridData = [
-        { 'heaDiagnoseNm': '질환명', 'heaDiseaseClassNm': '질환종류명', 'heaDiseaseNm': '질환종류명', 'heaHazardNm': '유해인자' }
+        { 'link': '링크', 'text': '텍스트', 'number': '123', 'select': '', 'datepicker': '2019-01-01', 'period': '', 'radio': 1, 'checkbox': 1 }
       ];
     },
-    popupClosed (_result) {
-      console.log('::::::::: pop closed ::::::::::');
+    /**
+     * 팝업 창에서 선택된 정보가 바뀔 경우 후속 처리
+     */
+    popupSelectChanged (_result) {
+      this.popupData = _result;
+      console.log('::::::::: edit popupData ::::::::::' + JSON.stringify(this.popupData));
     },
     /** /Events, Callbacks (버튼 제외) **/
 
@@ -748,7 +775,8 @@ export default {
         id: 'popup',
         label: '팝업테스트',
         editable: false,
-        type: 'test'
+        type: 'checkupUser',
+        path: '/hea/checkup/checkupPlan'
       });
     },
     /** end button 관련 이벤트 **/

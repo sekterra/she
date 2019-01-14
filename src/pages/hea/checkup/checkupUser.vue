@@ -167,6 +167,7 @@
             :excel-down="true"
             :print="true"
             :rows="7"
+            @selectionChanged="selectionChanged"
             ref="dataTable"
             >
             <el-table-column
@@ -313,6 +314,12 @@ export default {
     /** Component Events, Callbacks (버튼 제외) **/
     searchUserCallback () {
       console.log('::::::: searchUserCallback :::::::');
+    },
+    /**
+     * datatable 선택 정보 변경 감지 및 부모창(팝업 등)에 emit
+     */
+    selectionChanged (_selectedData) {
+      this.$emit('selectionChanged', _selectedData);
     },
     /** /Component, Callbacks (버튼 제외) **/
     
