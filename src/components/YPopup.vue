@@ -20,7 +20,10 @@
         @close="popupClose"
         >
         <div v-if="type === 'checkupUser'">
-          <checkup-user @selectionChanged="selectionChanged" />
+          <checkup-user 
+            :checkupPlanNo="childProps.checkupPlanNo"
+            @selectionChanged="selectionChanged" 
+          />
         </div>
         <!-- 기존에 만들어진 컴포넌트가 아닌 직접 바인딩 해야 할 경우 아래의 popupBody 슬롯에 추가 -->
         <slot name="popupBody"></slot>
@@ -76,6 +79,10 @@ export default {
     size: {
       type: String,
       default: 'lg'
+    },
+    // 팝업 본문 vue에 파라미터 전달할 속성
+    childProps: {
+      type: Object
     }
   },
   // TODO: 화살표 함수(=>)는 data에 사용하지 말 것

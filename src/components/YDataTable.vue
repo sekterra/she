@@ -261,16 +261,25 @@ examples:
                 ui="bootstrap"
                 v-model="scope.row[header.name]"
               />
-              <y-select
+              <!-- <y-select
                 v-else-if="header.type && header.type.toLowerCase() === 'select'"
                 :editable="editable"
-                :comboItems="header.items ? header.items : []"
+                :comboItems="header.items"
                 :itemText="header.itemText ? header.itemText : ''"
                 :itemValue="header.itemValue ? header.itemValue : ''"
                 ui="bootstrap"
                 v-model="scope.row[header.name]"
+              /> -->
+              <b-form-select 
+                v-else-if="header.type && header.type.toLowerCase() === 'select'"
+                v-model="scope.row[header.name]"
+                :options="header.items"
+                :item-text="header.itemText ? header.itemText : ''"
+                :item-value="header.itemValue ? header.itemValue : ''"
               />
-              <span v-else-if="header.type && header.type.toLowerCase() === 'select'">{{header.items}}</span>
+              <!-- <div v-else-if="header.type && header.type.toLowerCase() === 'select'">
+                {{JSON.stringify(header.items)}}
+              </div> -->
               <y-radio
                 v-else-if="header.type && header.type.toLowerCase() === 'radio'"
                 :editable="editable"
@@ -536,8 +545,24 @@ export default {
      */
     linkClicked (_header, _row) {
       // 링크 타겟의 기본은 팝업
-      // var target = _header.target ? _header.target : 'popup';
-      window.alert('해당 기능은 준비중입니다.');
+      var target = _header.target ? _header.target : 'popup';
+      // 여기는 버튼 클릭 팝업과 동일하게 
+      console.log('_header:' + JSON.stringify(_header));
+      if (target === 'popup') {
+        window.getApp.$emit('POPUP_OPEN', {
+          isPopupOpen: true,
+          id: 'popup',
+          label: '팝업테스트',
+          editable: false,
+          type: _header.url,
+          childProps: {
+            // 여기에 pk 정보를 _row에서 읽어와서 넣어주면 됨
+            checkupPlanNo: 10
+          }
+        });
+      } else {
+        // 페이지 이동은 준비중
+      }
     }
   }
 };

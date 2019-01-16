@@ -14,6 +14,7 @@
       :type="popup.type"
       :is-popup-open="popup.isPopupOpen"
       :path="popup.path"
+      :childProps="popup.childProps"
     />
     </div>
 </template>
@@ -65,7 +66,6 @@ export default {
     },
     popupClosed (_result) {
       this.popup.isPopupOpen = false;
-      console.log('::::::::: popupClosed');
     }
   }
 }

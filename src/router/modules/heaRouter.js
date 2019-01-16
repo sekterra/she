@@ -54,8 +54,12 @@ const heaRouter = {
       // TODO : 3 Level
       children: [
         {
-          path: 'checkupPlan',
+          path: 'checkupPlan/:checkupPlanNo',
           component: () => import('@/pages/hea/checkup/checkupPlan'),
+          props: (route) => ({ 
+            checkupPlanNo: route.query.checkupPlanNo,
+            ...route.params
+          }),
           name: 'checkupPlan',
           meta: { title: 'checkupPlan' }
         },

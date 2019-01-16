@@ -87,6 +87,7 @@ examples:
             :range="range"
             :type="type"
             :format="format"
+            value-type="format"
             input-class="inputClass"
             @input="input"
             >
@@ -100,6 +101,8 @@ examples:
 <script>
 let localeMapper = require('@/locale/localeMapper.json');
 import vue2Datepicker from 'vue2-datepicker';
+import { isValidDate, isValidRange, isDateObejct, isPlainObject, formatDate, parseDate, throttle } from 'vue2-datepicker/src/utils/index'
+import { transformDate, transformDateRange } from 'vue2-datepicker/src/utils/transform'
 
 // require("moment/min/locales.min");
 export default {
@@ -146,7 +149,7 @@ export default {
     },
     // TODO : 부모의 v-model의 값을 받아오는 속성
     value: {
-      type: [String, Date],
+      type: [String, Date, Array],
       default: null
     },
     // 컴포넌트의 너비(1~12)
@@ -176,6 +179,7 @@ export default {
     // 날짜의 기본값
     default: {
       type: String,
+      default: null
     },
     placeholder: {
       type: String,
@@ -206,6 +210,7 @@ export default {
       vValue: null, // TODO : datepicker 내부 값, YYYY-MM-DD(ISO 표준) 형태의 값
       localFormattedDate: null, // TODO : 날짜 값을 표시하는 v-text-field에 표시되는 값으로 local date format 형태의 값(언어 설정 변경시 같이 변경됨)
       locale: 'ko-KR', // window.getApp.locale.datepicker
+      period: []
       // krLanguage: {
       //   'days': ['일', '월', '화', '수', '목', '금', '토'],
       //   'months': ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'],
@@ -245,25 +250,40 @@ export default {
           'dateRange': this.placeholder
         }
       }
-    }
+    },
+    transform () {
+      const obj = this.range ? transformDateRange : transformDate
+      const type = this.valueType
+      if (isPlainObject(type)) {
+        return { ...obj.date, ...type }
+      }
+      return obj[type] || obj.date
+    },
   },
   watch: {
     errorMsg () {
     },
-    vValue () {
-      this.setLocalFormattedDate();
-    },
-    // todo : 부모의 v-model 변경을 감시
-    value () {
-      this.vValue = this.value;
-    },
     default () {
       if (!this.default) return;
-      if (this.default === 'today') this.vValue = this.$comm.getToday();
+      if (this.default === 'today') {
+        this.vValue = this.$comm.getToday();
+      }
       else {
         this.vValue = this.$comm.getCalculatedDate(this.$comm.getToday(), this.default, 'yyyy-mm-dd');
       }
-    }
+    },
+    vValue () {
+      if (this.range) this.setLocalFormattedPeriod();
+      else this.setLocalFormattedDate();
+    },
+    // todo : 부모의 v-model 변경을 감시
+    value () {
+      if (this.range){
+        this.vValue = this.transform.value2date(this.value, this.format);
+      } else {
+        this.vValue = this.value;
+      }
+    },
   },
   /* Vue lifecycle: created, mounted, destroyed, etc */
   beforeMount () {
@@ -274,12 +294,13 @@ export default {
     });
   },
   mounted () {
-    if (!this.defaultType) return;
-    if (this.defaultType === 'today') {
+    if (!this.default) return;
+    if (this.default === 'today') {
       if (this.value) this.vValue = this.value;
       else this.vValue = this.$comm.getToday();
-    } else {
-      this.vValue = this.$comm.getPrevDate(this.defaultType);
+    }
+    else {
+      this.vValue = this.$comm.getCalculatedDate(this.$comm.getToday(), this.default, 'yyyy-mm-dd');
     }
   },
   beforeDestroy () {
@@ -306,8 +327,20 @@ export default {
       var dateFormat = 'L';
       if (this.locale.toLowerCase() === 'ko-kr') dateFormat = 'YYYY-MM-DD';
       this.localFormattedDate = this.$comm.moment(this.vValue).format(dateFormat);
-      this.$emit('input', this.vValue);
+      this.$emit('input', this.localFormattedDate);
     },
+    setLocalFormattedPeriod () {
+      var dateFormat = 'L';
+      if (this.locale.toLowerCase() === 'ko-kr') dateFormat = 'YYYY-MM-DD';
+      console.log('this.vValue:' + JSON.stringify(this.vValue));
+      this.period = [
+        this.$comm.moment(this.vValue[0]).format(dateFormat),
+        this.$comm.moment(this.vValue[1]).format(dateFormat),
+      ];
+      // const date = this.transform.value2date(this.vValue, this.format);
+      // console.log('date:' + JSON.stringify(date));
+      this.$emit('input', this.vValue);
+    }
   }
 };
 </script>

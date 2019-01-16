@@ -637,7 +637,8 @@ export default {
       ];
 
       this.gridHeaderOptions = [
-        { text: '링크', name: 'link', width: '20%', align: 'center', url: '/hea/checkup/checkupPlan', target: 'self' },
+        // 팝업으로 띄울 경우 url에 YPopup에 추가된 type명을 입력할 것
+        { text: '링크', name: 'link', width: '20%', align: 'center', url: 'checkupUser', target: 'popup' },
         { text: '텍스트', name: 'text', width: '20%', align: 'center', type: 'text' },
         { text: '숫자', name: 'number', width: '20%', type: 'number' },
         { text: 'select', name: 'select', width: '10%', type: 'select', items: this.shuttleboxItems, itemText: 'text', itemValue: 'value' },
@@ -776,7 +777,9 @@ export default {
         label: '팝업테스트',
         editable: false,
         type: 'checkupUser',
-        path: '/hea/checkup/checkupPlan'
+        childProps: {
+          checkupPlanNo: 10
+        }
       });
     },
     /** end button 관련 이벤트 **/

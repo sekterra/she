@@ -10,6 +10,11 @@
   <b-container fluid>
     <b-row>
       <b-col sm="12">
+        test : {{checkupPlanNo}}:{{params}}
+      </b-col>
+    </b-row>
+    <b-row>
+      <b-col sm="12">
         <b-card no-body class="px-3 py-2 mb-3">
           <b-row class="mt-2">
             <b-col sm="4">
@@ -187,6 +192,12 @@ export default {
   /** attributes: name, components, props, data **/
   name: 'checkup-user',  
   props: {
+    checkupPlanNo: {
+      type: [String, Number]
+    },
+    params: {
+      type: [Object]
+    }
   },
   // TODO: 화살표 함수(=>)는 data에 사용하지 말 것
   //    data: () => { return { a: this.myProp }}) 화살표 함수가 부모 컨텍스트를 바인딩하기 때문에 this는 예상과 달리 Vue 인스턴스가 아니기 때문에 this.myProp는 undefined로 나옵니다.

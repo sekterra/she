@@ -189,7 +189,7 @@ export default {
     // ITEM이 존재하지 않아도 화면에 표시해야 할 경우 true
     needDefaultView: {
       type: Boolean,
-      default: false
+      default: true
     },
     icon: {
       type: String,
@@ -242,6 +242,7 @@ export default {
     },
     // 부모로 부터 값을 비동기로 가져올 경우 처리
     comboItems () {
+      console.log('::::::::: comboItems');
       this.makeSelectOptions();
     },
     // TODO : 부모로 부터 값을 받아오는 경우, 상황에 따라 value 속성 값이 먼저 들어오고 comboItems의 값이 늦게 들어올 수 있으므로,
@@ -256,6 +257,7 @@ export default {
   created () {
   },
   beforeMount () {
+    console.log('select comboItems:' + JSON.stringify(this.comboItems));
     // itemSearchKey정보를 통해 backend에서 직접 조회할 경우
     if (this.itemSearchKey) this.getSelectItems();
   },
@@ -264,6 +266,8 @@ export default {
   beforeDestroy () {
   },
   destroyed () {
+  },
+  beforeUpdate () {
   },
   updated () {
   },
@@ -349,6 +353,7 @@ export default {
      */
     makeSelectOptions () {
       var options = [];
+      console.log('comboItems:' + JSON.stringify(this.comboItems))
       if (!this.comboItems && !this.comboItems.length) return options;
 
       this.$_.forEach(this.comboItems, (_item) => {
