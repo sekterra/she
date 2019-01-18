@@ -66,8 +66,8 @@ examples:
             :item-value="itemValue"
             :placeholder="placeholder"
             :state="state"
+            :size="size"
             :disabled="disabled"
-            class="mb-3"
             @input="input"
           />
         </b-col>
@@ -242,7 +242,6 @@ export default {
     },
     // 부모로 부터 값을 비동기로 가져올 경우 처리
     comboItems () {
-      console.log('::::::::: comboItems');
       this.makeSelectOptions();
     },
     // TODO : 부모로 부터 값을 받아오는 경우, 상황에 따라 value 속성 값이 먼저 들어오고 comboItems의 값이 늦게 들어올 수 있으므로,
@@ -257,9 +256,12 @@ export default {
   created () {
   },
   beforeMount () {
-    console.log('select comboItems:' + JSON.stringify(this.comboItems));
     // itemSearchKey정보를 통해 backend에서 직접 조회할 경우
     if (this.itemSearchKey) this.getSelectItems();
+    else if (this.comboItems && this.comboItems.length > 0) {
+      console.log(':::::::::: combo item before Mount');
+      this.makeSelectOptions();
+    }
   },
   mounted () {
   },
@@ -353,7 +355,6 @@ export default {
      */
     makeSelectOptions () {
       var options = [];
-      console.log('comboItems:' + JSON.stringify(this.comboItems))
       if (!this.comboItems && !this.comboItems.length) return options;
 
       this.$_.forEach(this.comboItems, (_item) => {

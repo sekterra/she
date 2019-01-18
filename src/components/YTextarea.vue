@@ -68,11 +68,12 @@ examples:
               :label="label"
               :name="name"
               :placeholder="placeholder"
+              :disabled="disabled"
               :state="state"
               :rows="rows"
               @input="input"
             />
-            <b-input-group-append v-if="clearable">
+            <b-input-group-append v-if="clearable && !disabled">
               <f-icon 
                 icon="times" 
                 :size="iconSize" 
@@ -225,6 +226,10 @@ export default {
     clearable: {
       type: Boolean,
       default: true
+    },
+    disabled: {
+      type: Boolean,
+      default: false
     }
   },
   data () {

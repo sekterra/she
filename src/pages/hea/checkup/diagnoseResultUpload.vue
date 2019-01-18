@@ -9,56 +9,75 @@
 <template>
   <b-container fluid>
     <b-row>
-      <b-col sm="12">
-        <b-col sm="10" class="px-0">
-          <y-data-table 
-            ref="dataTable"
-            label="업로드 및 저장결과"
-            :headers="gridUploadHeaderOptions"
-            :items="gridUploadData" 
-            :excel-down="true"
-            :print="true"
-            :rows="4" />
-          </b-col>
-      </b-col>
-    </b-row>
-
-    <b-row class="mt-3">
-      <b-col sm="12">
-        <b-col sm="10" class="px-0">
-          <y-data-table 
-            ref="dataTable"
-            label="오류정보(실패한 사유에 대한 정보)"
-            :headers="gridErrorHeaderOptions"
-            :items="gridErrorData" 
-            :excel-down="true"
-            :print="true"
-            :rows="4"/>
-          </b-col>
-      </b-col>
-    </b-row>
-
-    <b-row class="mt-3">
       <b-col sm="12"> 
         <b-row>
           <b-col sm="12">
             <y-label label="종합소견" icon="user-edit" color-class="cutstom-title-color" />
+            <div slot="buttonGroup" class="float-right mb-1">
+              <y-btn
+                type="search"
+                title="업로드양식 다운로드"
+                size="small"
+                color="primary"
+                icon="el-icon-edit"
+                action-type="POST"
+                @btnClicked="btnDownloadFormClickedCallback" 
+                @btnClickedErrorCallback="btnClickedErrorCallback"
+              />
+              <y-btn
+                v-if="editable"
+                :action-url="uploadUrl"
+                :param="uploadFile"
+                :is-submit="isUploadSubmit"
+                type="save"
+                title="업로드및저장"
+                size="small"
+                color="primary"
+                icon="el-icon-edit"
+                action-type="POST"
+                beforeSubmit = "beforeUploadSubmit"
+                @beforeUploadSubmit="beforeUploadSubmit"
+                @btnClicked="btnUploadClickedCallback" 
+                @btnClickedErrorCallback="btnClickedErrorCallback"
+              />
+              <y-btn
+                type="clear"
+                title="닫기"
+                size="small"
+                color="info"
+                @btnClicked="closePopup" 
+              />
+            </div>
           </b-col>
         </b-row>
         <b-card>
           <b-row>
+            <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">              
+              <y-select
+                :width="8"
+                :editable="editable"
+                :comboItems="checkupYearItems"
+                itemText="codeNm"
+                itemValue="code"
+                ui="bootstrap"
+                type="search"
+                name="checkupYear"
+                label="건강검진년도"
+                v-model="uploadFile.checkupYear"
+                />
+            </b-col>
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <y-select
                 :width="8"
                 :editable="editable"
                 :comboItems="heaCheckupPlanNoItems"
-                itemText="codeNm"
-                itemValue="code"
+                itemText="heaCheckupPlanNm"
+                itemValue="heaCheckupPlanNo"
                 ui="bootstrap"
                 type="search"
-                name="diseaseCd"
-                label="건강검진결과"
-                v-model="uploadFile.heaCheckupPlanNo"
+                name="heaCheckupPlanNo"
+                label="건강검진계획"
+                v-model="uploadFile.heaCheckupPlanNo"                
                 />
             </b-col>
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
@@ -75,37 +94,40 @@
               </b-row>
             </b-col>
           </b-row>
-          <div class="float-right mt-3">
-            <y-btn
-              type="search"
-              title="업로드양식 다운로드"
-              size="small"
-              color="primary"
-              icon="el-icon-edit"
-              action-type="POST"
-              @btnClicked="btnDownloadFormClickedCallback" 
-              @btnClickedErrorCallback="btnClickedErrorCallback"
-            />
-            <y-btn
-              v-if="editable"
-              :action-url="uploadUrl"
-              :param="uploadFile"
-              :is-submit="isUploadSubmit"
-              type="save"
-              title="업로드및저장"
-              size="small"
-              color="primary"
-              icon="el-icon-edit"
-              action-type="POST"
-              beforeSubmit = "beforeUploadSubmit"
-              @beforeUploadSubmit="beforeUploadSubmit"
-              @btnClicked="btnUploadClickedCallback" 
-              @btnClickedErrorCallback="btnClickedErrorCallback"
-            />
-          </div>
         </b-card>
       </b-col>
     </b-row>
+
+    <b-row class="mt-3">
+      <b-col sm="12">
+        <b-col sm="12" class="px-0">
+          <y-data-table 
+            ref="dataTable"
+            label="업로드 및 저장결과"
+            :headers="gridUploadHeaderOptions"
+            :items="gridUploadData" 
+            :excel-down="true"
+            :print="true"
+            :rows="4" />
+          </b-col>
+      </b-col>
+    </b-row>
+
+    <b-row class="mt-3">
+      <b-col sm="12">
+        <b-col sm="12" class="px-0">
+          <y-data-table 
+            ref="dataTable"
+            label="오류정보(실패한 사유에 대한 정보)"
+            :headers="gridErrorHeaderOptions"
+            :items="gridErrorData" 
+            :excel-down="true"
+            :print="true"
+            :rows="4"/>
+          </b-col>
+      </b-col>
+    </b-row>
+      
   </b-container>
 </template>
 
@@ -125,6 +147,7 @@ export default {
       // Naming Rule : JAVA model class와 연동되는 vue model은 model class명을 Camel case로 변환해서 선언하시고 기본값은 {}로 초기화 시켜주세요.
       // 예) ExamData -> examData: {},
       uploadFile: {
+        checkupYear: '',
         heaCheckupPlanNo: 0,
         file: null,
       },
@@ -150,9 +173,15 @@ export default {
       gridErrorHeaderOptions: [],    
 
       heaCheckupPlanNoItems: [],
+      checkupYearItems: [],
 
       uploadUrl: ''
     };
+  },
+  watch: {
+    'uploadFile.checkupYear': function (newValue, oldValue) {
+      this.getHeaCheckupPlanNoItems();
+    },
   },
   /** Vue lifecycle: created, mounted, destroyed, etc **/
   beforeCreate () {
@@ -177,25 +206,32 @@ export default {
       // TODO : 여기에 초기 설정용 함수를 호출하거나 로직을 입력하세요.
       // 선택항목 설정
       setTimeout(() => {
+        var nowDate = new Date();
+        var from = nowDate.getFullYear() - 9;
+        for (; from <= nowDate.getFullYear() + 1; from++) {
+          this.checkupYearItems.push({ 'code': from, 'codeNm': from + '년' });
+        }
+        this.uploadFile.checkupYear = nowDate.getFullYear().toString();
+
         this.getHeaCheckupPlanNoItems();
       }, 200);
 
       // 그리드 헤더 설정
       this.gridUploadHeaderOptions = [
         { text: '구분', name: 'classNm', width: '25%', align: 'center' },
-        { text: '전체 Row 수', name: 'totalCount', width: '25%', align: 'rigth' },
-        { text: '성공 Row 수', name: 'successCount', width: '25%', align: 'rigth' },
-        { text: '실패 Row 수', name: 'failCount', width: '25%', align: 'rigth' }
+        { text: '전체 Row 수', name: 'totalCount', width: '25%', align: 'center' },
+        { text: '성공 Row 수', name: 'successCount', width: '25%', align: 'center' },
+        { text: '실패 Row 수', name: 'failCount', width: '25%', align: 'center' }
       ];
 
       this.gridErrorHeaderOptions = [
-        { text: '구분', name: 'classNm', width: '20%', align: 'center' },
-        { text: '실패 Row 번호', name: 'failRow', width: '20%', align: 'rigth' },
-        { text: '실패 사유', name: 'failMessage', width: '20%' },
-        { text: '비고', name: 'remark', width: '40%' }
+        { text: '구분', name: 'classNm', width: '15%', align: 'center' },
+        { text: '실패 Row 번호', name: 'failRow', width: '15%', align: 'center' },
+        { text: '실패 사유', name: 'failMessage', width: '35%' },
+        { text: '비고', name: 'remark', width: '35%' }
       ];
       
-      this.uploadUrl = '';
+      this.uploadUrl = transactionConfig.checkupResult.excel.url;
     },
     /** /초기화 관련 함수 **/
     
@@ -207,27 +243,40 @@ export default {
     */
     getHeaCheckupPlanNoItems () {
       // 검진계획 선택항목 조회
-      this.heaCheckupPlanNoItems.push({ 'code': '0', 'codeNm': '선택하세요' });
+      this.$http.url = selectConfig.checkupPlan.list.url;
+      this.$http.type = 'get';
+      this.$http.param = {
+        'checkupYear': this.uploadFile.checkupYear
+      };
+      this.$http.request((_result) => {
+        _result.data.splice(0, 0, { 'heaCheckupPlanNo': '0', 'heaCheckupPlanNm': '선택하세요' });
+        this.heaCheckupPlanNoItems = _result.data;
+        this.uploadFile.heaCheckupPlanNo = 0;
+      }, (_error) => {
+      });
     },
     changeFile () {
       this.uploadFile.file = this.$refs.file.files[0];
+    },
+    closePopup () {
+      this.$emit('closePopup', {});
     },
     
     /** /Call API service **/
     
     /** validation checking(필요없으면 지워주세요) **/
     beforeUploadSubmit () {
-      this.isUploadSubmit = !(this.uploadFile.file == null);
-      if (!this.isUploadSubmit) {
-        window.alert('선택된 파일이 없습니다.');
+      if (this.uploadFile.heaCheckupPlanNo > 0) {
+        this.isUploadSubmit = !(this.uploadFile.file == null);
+        this.$http.isFileRequestPost = true;
+        if (!this.isUploadSubmit) {
+          window.alert('선택된 파일이 없습니다.');
+        }
+      }
+      else {
+        alert('선택된 건강검진계획이 없습니다.');
       }
     }, 
-    validateState (_ref) {
-      if (this.veeBag[_ref] && (this.veeBag[_ref].dirty || this.veeBag[_ref].validated)) {
-        return !this.errors.has(_ref);
-      }
-      return null;
-    },
     /** /validation checking **/
     
     /** Component Events, Callbacks (버튼 제외) **/
@@ -239,13 +288,13 @@ export default {
     * 저장 버튼 처리용 샘플함수
     */
     btnDownloadFormClickedCallback (_result) {
-      window.alert('업로드 양식 다운로드!!');
+      // window.open('업로드양식 다운로드!!');
+      window.alert('업로드양식 다운로드!!');
     },
     btnUploadClickedCallback (_result) {
       this.isUploadSubmit = false;
       this.gridUploadData = _result.data['uploadResult'];
       this.gridErrorData = _result.data['errorInfo'];
-      window.alert('업로드 완료 후 실행!!');
     },
     /**
     * 버튼 에러 처리용 공통함수

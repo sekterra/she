@@ -1,5 +1,5 @@
 <!--
-  목적 : 건강관리실 - 건강관리실 일반업무
+  목적 : 일반업무 목록
   작성자 : kckim
   Detail :
   *
@@ -8,141 +8,101 @@
   -->
 <template>
   <b-container fluid>
+    <!-- 검색 -->
     <b-row>
       <b-col sm="12">
-        <b-row>
-          <b-col sm="12">
-            <y-label label="건강관리실 일반업무 등록" icon="user-edit" color-class="cutstom-title-color" />
-          </b-col>
-        </b-row>
-        <b-card>
-          <b-row>
-            <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
-              <y-datepicker 
-                :width="baseWidth"
-                :editable="editable"
-                label="방문일"
-                name="date"
-                v-model="infirmaryUsage.visitYmd"
-                default-type="today"
-                v-validate="'required'"
-                :error-msg="errors.first('date')"
-              >
-              </y-datepicker>
-            </b-col>
-            <b-col sm="4" md="4" lg="4" xl="4" class="col-xxl-2">
-              <y-text
-                :width="baseWidth"
-                :editable="editable"
-                ui="bootstrap"
-                label="방문자*"
-                name="userNm"
-                v-model="infirmaryUsage.userNm"
-              >
-              </y-text>
-            </b-col>
-            <b-col sm="2" md="2" lg="2" xl="2" class="col-xxl-1">
+        <b-card header-class="default-card" body-class="default-body-card" class="py-0">
+          <div slot="header">
+            <div class="float-left">
+              <y-label label="검색" />
+            </div>
+            <div class="float-right">
               <y-btn
-                v-if="editable"
-                :action-url="userSearchUrl"
+                :action-url="searchUrl"
+                :param="searchParam"
                 type="search"
-                title="조회"
+                title="검색"
+                size="mini"
+                color="success"
+                action-type="get"
+                @btnClicked="btnSearchCallback" 
+                @btnClickedErrorCallback="btnClickedErrorCallback"
               />
-            </b-col>
+            </div>
+          </div>
+          <b-row>
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <y-select
                 :width="baseWidth"
                 :editable="editable"
-                :comboItems="heaTreatCdItems"
-                itemText="codeNm"
-                itemValue="code"
+                :comboItems="comboDeptItems"
+                itemText="deptNm"
+                itemValue="deptCd"
                 ui="bootstrap"
                 type="edit"
-                label="업무유형"
-                name="heaTreatCd"
-                v-model="infirmaryUsage.heaTreatCd"
+                label="부서"
+                name="deptCd"
+                v-model="searchParam.deptCd"
               >
               </y-select>
             </b-col>
-            <b-col sm="12" md="12" lg="12" xl="12" class="col-xxl-6">
-              <y-textarea
-                :width="10"
+            <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
+              <y-text
+                :width="baseWidth"
                 :editable="editable"
-                :maxlength="600"
                 ui="bootstrap"
-                label="주호소 및 증상"
-                name="sympton"
-                v-model="infirmaryUsage.sympton"
+                type="edit"
+                label="사용자명"
+                name="userNm"
+                v-model="searchParam.userNm"
               >
-              </y-textarea>
-            </b-col>
-            <b-col sm="12" md="12" lg="12" xl="12" class="col-xxl-6">
-              <y-textarea
-                :width="10"
-                :editable="editable"
-                :maxlength="600"
-                ui="bootstrap"
-                label="간호 및 상담내용"
-                name="counsel"
-                v-model="infirmaryUsage.counsel"
-              >
-              </y-textarea>
-            </b-col>
-            <b-col sm="12" md="12" lg="12" xl="12" class="col-xxl-6">
-              <y-textarea
-                :width="10"
-                :editable="editable"
-                :maxlength="150"
-                ui="bootstrap"
-                label="특이사항"
-                name="remark"
-                v-model="infirmaryUsage.remark"
-              >
-              </y-textarea>
+              </y-text>
             </b-col>
           </b-row>
-          <b-col sm="8" class="px-0">
-            <y-data-table 
-              title="약품 처방"
-              label="약품 처방"
-              ref="dataTable"
-              grid-type="edit"
-              :headers="drugGridHeaderOptions"
-              :items="drugGridData"
-              :rows="5"
-              :editable="editable"
-              :excel-down="true"
-              :print="true">
-            </y-data-table>
-          </b-col>
-          <div class="float-right mt-3">
+        </b-card>
+      </b-col>
+    </b-row>
+    <!-- 검색 결과 테이블 -->
+    <b-row class="mt-3">
+      <b-col sm="12">
+        <b-col sm="12" class="px-0">
+          <div class="float-right">
             <y-btn
               v-if="editable"
-              type="clear"
-              title="초기화"
-              size="small"
-              color="info"
-              @btnClicked="btnClearClickedCallback" 
-            />
-            <y-btn
-              v-if="editable"
-              :action-url="insertUrl"
-              :param="infirmaryUsage"
-              :is-submit="isSubmit"
               type="save"
               title="신규등록"
               size="small"
               color="warning"
-              action-type="POST"
-              beforeSubmit = "beforeInsert"
-              @beforeInsert="beforeInsert"
-              @btnClicked="btnInsertClickedCallback" 
-              @btnClickedErrorCallback="btnClickedErrorCallback"
+              @btnClicked="btnPopupClickedCallback" 
             />
           </div>
-        </b-card>
+          <b-row class="mb-3"></b-row>
+          <y-data-table
+            label="일반업무 목록"
+            title="일반업무 목록"
+            ref="dataTable"
+            :headers="gridHeaderOptions"
+            :items="gridData"
+            :editable="editable"
+            :excel-down="true"
+            :print="true"
+            @tableLinkClicked="tableLinkClicked"
+          >
+          </y-data-table>
+        </b-col>
       </b-col>
     </b-row>
+    <el-dialog
+      :title="popupOptions.title"
+      :visible.sync="popupOptions.visible"
+      :fullscreen="false"
+      :width="popupOptions.width"        
+      :close-on-click-modal="false"
+      :close-on-press-escape="false"
+      :show-close="false"
+      :top="popupOptions.top" >
+      <component :is="popupOptions.target" :popupParam="popupOptions.param" @closePopup="closePopup" />
+    </el-dialog>
   </b-container>
 </template>
 
@@ -156,32 +116,24 @@ export default {
   },
   data () {
     return {
-      infirmaryUsage: {
-        heaInfirmaryUsageNo: '',
-        userId: '',
-        userNm: '',
+      searchParam: {
         deptCd: '',
-        visitYmd: '',
-        heaTreatCd: '',
-        syspton: '',
-        counsel: '',
-        remark: '',
-        createUserId: '',
-        creatDt: '',
-        updateUserId: '',
-        updateDt: '',
-        heaPrescribe: [],
+        userNm: '',
       },
-      isSubmit: false, 
+      popupOptions: {
+        target: null,
+        title: '',
+        visible: false,
+        width: '90%',
+        top: '10px',
+        param: {}
+      },
       baseWidth: 8,
       editable: true,
-      heaTreatCdItems: [],
-      drugItems: [],
-      drugNo: '',
-      drugGridData: [],
-      drugGridHeaderOptions: [],
-      insertUrl: '',
-      userSearchUrl: '',
+      comboDeptItems: [],
+      searchUrl: '',
+      gridData: [],
+      gridHeaderOptions: [],
     };
   },
   /** Vue lifecycle: created, mounted, destroyed, etc **/
@@ -192,8 +144,8 @@ export default {
   beforeMount () {
     Object.assign(this.$data, this.$options.data());
     this.init();
-    this.getHeaTreatCdItems();
-    this.getDrugList();
+    this.getDeptItems();
+    this.getDataList();
   },
   mounted () {
   },
@@ -202,65 +154,73 @@ export default {
   },
   /** methods **/
   methods: {
-    getHeaTreatCdItems () {
-      this.$http.url = this.$format(selectConfig.comCodeMaster.get.url, 'HEA_TREAT');
-      this.$http.type = 'GET';
-      this.$http.request((_result) => {
-        this.heaTreatCdItems = _result.data;
-      }, (_error) => {
-        console.log(_error);
-      });
-    },
     /** 초기화 관련 함수 **/
     init () {
-      this.drugGridHeaderOptions = [
-        { text: '약품명', name: 'heaDrugNm', width: '15%', align: 'left' },
-        { text: '사용량', name: 'amount', width: '10%', align: 'center', type: 'text' },
-        { text: '단위', name: 'unit', width: '8%', align: 'center' },
-        { text: '현 재고량', name: 'amountCurr', width: '8%', align: 'center' },
+      this.gridHeaderOptions = [
+        { text: '사번', name: 'userId', width: '10px', align: 'center' },
+        { text: '사용자명', name: 'userNm', width: '15px', align: 'center' },
+        { text: '부서', name: 'deptNm', width: '15px', align: 'center' },
+        { text: '방문일', name: 'visitYmd', width: '20px', align: 'center', url: 'true' },
+        { text: '진료내역', name: 'heaTreatNm', width: '20px', align: 'left' },
+        { text: '주호소 및 증상', name: 'symptom', width: '20px', align: 'left' },
+        { text: '간호 및 상담내용', name: 'consult', width: '20px', align: 'left' },
+        { text: '특이사항', name: 'remark', width: '20px', align: 'left' },
       ];
     },
-    getDrugList () {
-      this.$http.url = selectConfig.drugManage.list.url;
+    getDeptItems () {
+      this.$http.url = selectConfig.dept.list.url;
       this.$http.type = 'GET';
       this.$http.request((_result) => {
-        this.drugGridData = _result.data;
+        _result.data.splice(0, 0, { 'deptCd': '', 'deptNm': '전체' });
+        this.comboDeptItems = _result.data;
       }, (_error) => {
         console.log(_error);
       });
     },
-    beforeInsert () {
-      this.checkValidation();
-      this.insertUrl = transactionConfig.generalBusiness.insert.url;
-    },
-    /** validation checking **/
-    checkValidation () {
-      this.$validator.validateAll().then((_result) => {
-        this.isSubmit = _result;
-        if (!this.isSubmit) window.getApp.emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
-      }).catch(() => {
-        this.isSubmit = false;
+    /** /초기화 관련 함수 **/
+    
+    getDataList () {
+      this.$http.url = selectConfig.infirmaryUsageHistory.list.url;
+      this.$http.type = 'GET';
+      this.$http.param = this.searchParam;
+      this.$http.request((_result) => {
+        //  console.log(JSON.parse(JSON.stringify(_result.data)));
+        this.gridData = _result.data;
+      }, (_error) => {
+        console.log(_error);
       });
-    },
-    validateState (_ref) {
-      if (this.veeBag[_ref] && (this.veeBag[_ref].dirty || this.veeBag[_ref].validated)) {
-        return !this.errors.has(_ref);
-      }
-      return null;
     },
 
     /** Button Event **/
-    btnInsertClickedCallback (_result) {
-      this.isSubmit = false;
-    },
     btnClickedErrorCallback (_result) {
-      this.isSubmit = false;
       window.getApp.emit('APP_REQUEST_ERROR', _result);
     },
-    btnClearClickedCallback () {
-      Object.assign(this.$data.infirmaryUsage, this.$options.data().infirmaryUsage);
-      this.$validator.reset();
-      window.getApp.$emit('APP_REQUEST_SUCCESS', '초기화 버튼이 클릭 되었습니다.');
+    btnSearchCallback () {
+      this.getDataList();
+      window.getApp.$emit('APP_REQUEST_SUCCESS', '검색 버튼이 클릭 되었습니다.');
+    },
+    tableLinkClicked (header, data) {
+      if (data === null) return;
+
+      this.popupOptions.target = () => import(`${'./createGeneralBusiness.vue'}`);
+      this.popupOptions.title = '일반업무 상세';
+      this.popupOptions.param = {
+        'heaInfirmaryUsageNo': data.heaInfirmaryUsageNo
+      };
+      this.popupOptions.visible = true;
+    },
+    btnPopupClickedCallback () {
+      this.popupOptions.target = () => import(`${'./createGeneralBusiness.vue'}`);
+      this.popupOptions.title = '일반업무 등록';
+      this.popupOptions.param = {
+        'heaInfirmaryUsageNo': 0
+      };
+      this.popupOptions.visible = true;
+    },
+    closePopup (data) {
+      this.popupOptions.target = null;
+      this.popupOptions.visible = false;
+      this.getDataList();
     },
     /** /Button Event **/
   }

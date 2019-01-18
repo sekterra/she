@@ -10,44 +10,39 @@
   <b-container fluid>
     <b-row>
       <b-col sm="12">
-        test : {{checkupPlanNo}}:{{params}}
-      </b-col>
-    </b-row>
-    <b-row>
-      <b-col sm="12">
-        <b-card no-body class="px-3 py-2 mb-3">
+        <b-card no-body class="px-3 py-2">
           <b-row class="mt-2">
             <b-col sm="4">
-              <y-label label="검진종류" />
-              : {{checkItem.checkType}}
+              <y-label label="검진종류: " /><y-label :label="checkupPlan.heaCheckupClassNm" />
             </b-col>
             <b-col sm="4">
-              <y-label label="검진계획" />
-              : {{checkItem.checkPlan}}
+              <y-label label="검진계획: " /><y-label :label="checkupPlan.heaCheckupPlanNm" />
             </b-col>
             <b-col sm="4">
-              <y-label label="검진일자" />
-              : {{checkItem.checkDate}}
+              <y-label label="검진일자: " /><y-label :label="checkupPlan.heaCheckupPlanPeriod" />
             </b-col>
           </b-row>
         </b-card>
       </b-col>
+    </b-row> 
+    
+    <b-row class="mt-3">
       <b-col sm="12">
-        <b-card header-class="default-card" body-class="default-body-card">
+        <b-card header-class="default-card" body-class="default-body-card" class="py-0">
           <div slot="header">
             <div class="float-left">
               <y-label label="검색" />
             </div>
             <div class="float-right">
               <y-btn
-                  v-if="editable"
-                  :action-url="saveUrl"
-                  :param="checkupUser"
+                  v-if="editable&&checkupPlan.heaCheckupPlanNo>0"
+                  :action-url="searchUrl"
+                  :param="searchParam"
                   type="search"
                   title="검색"
                   size="mini"
                   color="success"
-                  action-type="GET"
+                  action-type="get"
                   @btnClicked="btnSearchClickedCallback" 
                   @btnClickedErrorCallback="btnClickedErrorCallback"
                 />
@@ -56,87 +51,79 @@
           <b-row>
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <y-select
-                :width="baseWidth"
+                :width="8"
                 :editable="editable"
-                :comboItems="processItems"
-                itemText="processName"
-                itemValue="processPk"
+                :comboItems="processNoItems"
+                itemText="processNm"
+                itemValue="processNo"
                 ui="bootstrap"
                 type="search"
                 label="공정"
-                name="processValue"
-                v-model="checkupUser.processValue"
-              >
-              </y-select>
+                name="processNo"
+                v-model="searchParam.processNo"
+              />
             </b-col>
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <y-select
-                :width="baseWidth"
+                :width="8"
                 :editable="editable"
-                :comboItems="deptItems"
-                itemText="deptName"
-                itemValue="deptPk"
+                :comboItems="deptCdItems"
+                itemText="deptNm"
+                itemValue="deptCd"
                 ui="bootstrap"
                 type="search"
                 label="부서"
-                name="deptValue"
-                v-model="checkupUser.deptValue"
-              >
-              </y-select>
+                name="deptCd"
+                v-model="searchParam.deptCd"
+              />
             </b-col>
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <y-text
-                :width="baseWidth"
+                :width="8"
                 :editable="editable"
                 ui="bootstrap"
                 label="사번"
-                name="userNo"
-                v-model="checkupUser.userNo"
-              >
-              </y-text>
+                name="userId"
+                v-model="searchParam.userId"
+              />
             </b-col>
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <y-text
-                :width="baseWidth"
+                :width="8"
                 :editable="editable"
                 ui="bootstrap"
                 label="사원명"
                 name="userNm"
-                :appendIcon="icons"
-                v-model="checkupUser.userNm"
-                @iconCallback="searchUserCallback"
-              >
-              </y-text>
+                v-model="searchParam.userNm"
+              />
             </b-col>
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <y-select
-                :width="baseWidth"
+                :width="8"
                 :editable="editable"
                 :comboItems="ageItems"
-                itemText="ageName"
-                itemValue="agePk"
+                itemText="codeNm"
+                itemValue="code"
                 ui="bootstrap"
                 type="search"
                 label="나이"
-                name="ageValue"
-                v-model="checkupUser.ageValue"
-              >
-              </y-select>
+                name="age"
+                v-model="searchParam.age"
+              />
             </b-col>
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <y-switch
-                  :width="baseWidth"
+                  :width="8"
                   :editable="editable"
                   true-value="Y"
                   false-value="N"
                   ui="bootstrap"
                   label="작년 수검자 제외"
-                  name="lastYearExcept"
+                  name="prevYearCheckupUserYn"
                   selectText="제외"
                   unselectText="미제외"
-                  v-model="checkupUser.lastYearExcept"
-                >
-              </y-switch>
+                  v-model="searchParam.prevYearCheckupUserYn"
+                />
             </b-col>
           </b-row>
         </b-card>
@@ -146,34 +133,33 @@
     <!-- 검색조건 대상자 grid-->
     <b-row class="mt-3">
       <b-col sm="12">
-          <div class="float-right">
+        <b-col sm="12" class="px-0">
+          <div slot="buttonGroup" class="float-right mb-1">
             <y-btn
-                v-if="editable"
-                :action-url="saveUrl"
-                :param="checkupUser"
-                :is-submit="isSubmit"
+                v-if="editable&&checkupPlan.heaCheckupPlanNo>0"
+                :action-url="insertUrl"
+                :param="gridSelectedRows"
+                :is-submit="isInsertSubmit"
                 type="save"
                 title="검진대상자로 추가"
-                size="mini"
+                size="small"
                 color="primary"
-                action-type="POST"
-                beforeSubmit = "beforeSubmit"
-                @beforeSubmit="beforeSubmit"
-                @btnClicked="btnSaveClickedCallback" 
+                action-type="post"
+                beforeSubmit = "beforeInsertSubmit"
+                @beforeInsertSubmit="beforeInsertSubmit"
+                @btnClicked="btnInsertClickedCallback" 
                 @btnClickedErrorCallback="btnClickedErrorCallback"
               />
           </div>
-        <b-col sm="12" class="px-0">
           <y-data-table 
             label="검색조건 대상자 목록"
-            :headers="checkupUserGridHeaderOptions"
-            :items="checkupUserGridData"
+            :headers="gridHeaderOptions"
+            :items="gridData"
             :editable="editable"
             :excel-down="true"
             :print="true"
-            :rows="7"
-            @selectionChanged="selectionChanged"
-            ref="dataTable"
+            :rows="5"
+            v-model="gridSelectedRows"
             >
             <el-table-column
               type="selection"
@@ -188,49 +174,56 @@
 </template>
 
 <script>
+import selectConfig from '@/js/selectConfig';
+import transactionConfig from '@/js/transactionConfig';
 export default {
   /** attributes: name, components, props, data **/
   name: 'checkup-user',  
   props: {
-    checkupPlanNo: {
-      type: [String, Number]
-    },
-    params: {
-      type: [Object]
-    }
+    selectedCheckupPlanNo: 0
   },
   // TODO: 화살표 함수(=>)는 data에 사용하지 말 것
   //    data: () => { return { a: this.myProp }}) 화살표 함수가 부모 컨텍스트를 바인딩하기 때문에 this는 예상과 달리 Vue 인스턴스가 아니기 때문에 this.myProp는 undefined로 나옵니다.
   //    참고url: https://kr.vuejs.org/v2/api/index.html#data
   data () {
     return {
-      checkupUser: {
-        processValue: null,
-        deptValue: null,
-        ageValue: null,
+      checkupPlan: {
+        heaCheckupPlanNo: 0,
+        heaCheckupPlanNm: '',
+        heaCheckupClassNm: '',
+        heaCheckupPlanPeriod: ''
+      },
+      searchParam: {
+        heaCheckupPlanNo: 0,
+        processNo: 0,
+        deptCd: '',
+        userId: '',
         userNm: '',
-        userNo: '',
-        lastYearExcept: 'Y',
+        prevYearCheckupUserYn: 'N',
+        age: 0
       },
-      checkItem: {
-        checkType: '종합건강검진',
-        checkPlan: '2018년 종합건강검진',
-        checkDate: '2018-03-01 ~ 2018-04-30'
-      },
-      icons: [
-        { 'icon': 'search', callbackName: 'searchUserCallback' },
-        // { 'icon': 'times', callbackName: 'searchUserCallback' }
-      ],
-      baseWidth: 8,
       editable: true,
-      saveUrl: '',
-      isSubmit: false,  // 버튼을 submit 할 것인지 판단하는 변수로써 버튼의 개수만큼 필요합니다.
-      processItems: [],
-      deptItems: [],
+      detailUrl: '',
+      insertUrl: '',
+      searchUrl: '',
+      
+      isInsertSubmit: false,
+      processNoItems: [],
+      deptCdItems: [],
       ageItems: [],
-      checkupUserGridData: [],
-      checkupUserGridHeaderOptions: [],
+            
+      gridHeaderOptions: [],
+      gridData: [],
+      gridSelectedRows: []
     };
+  },
+  watch: {
+    selectedCheckupPlanNo: function (newValue, oldValue) {
+      this.checkupPlan.heaCheckupPlanNo = this.selectedCheckupPlanNo;
+      this.searchParam.heaCheckupPlanNo = this.selectedCheckupPlanNo;
+      this.getDetail();
+      this.getList();
+    }
   },
   /** Vue lifecycle: created, mounted, destroyed, etc **/
   beforeCreate () {
@@ -252,48 +245,86 @@ export default {
   methods: {
     /** 초기화 관련 함수 **/
     init () {
-      this.getItems();
+      setTimeout(() => {
+        this.getProcessNoItems();
+        this.getDeptCdItems();
+        this.getAgeItems();
+      }, 200);
 
       // 건강검진 전체 대상자 그리드 헤더 설정
-      this.checkupUserGridHeaderOptions = [
-        { text: '건강검진 타입', name: 'heaCheckupType', width: '30%', align: 'center' },
-        { text: '공정', name: 'processNm', width: '30%', align: 'center' },
-        { text: '부서', name: 'deptNm', width: '30%', align: 'center' },
-        { text: '사번', name: 'userNo', width: '30%', align: 'center' },
-        { text: '성명', name: 'userNm', width: '30%', align: 'center' },
-        { text: '입사일', name: 'createDt', width: '30%', align: 'center' },
-        { text: '최근 수검일', name: 'checkedYmd', width: '30%', align: 'center' }
+      this.gridHeaderOptions = [
+        { text: '건강검진 타입', name: 'heaCheckupTypeNm', width: '200px', align: 'center' },
+        { text: '공정', name: 'processNm', width: '160px', align: 'center' },
+        { text: '부서', name: 'deptNm', width: '160px', align: 'center' },
+        { text: '사번', name: 'userId', width: '120px', align: 'center' },
+        { text: '성명', name: 'userNm', width: '120px', align: 'center' },
+        { text: '입사일', name: 'entryYmd', width: '120px', align: 'center' },
+        { text: '휴대전환', name: 'phoneNo', width: '120px', align: 'center' },
+        { text: '사내전화', name: 'officeTel', width: '120px', align: 'center' }
       ];
+
+      this.detailUrl = selectConfig.checkupPlan.get.url;
+      this.searchUrl = selectConfig.checkupUserNoTarget.list.url;
+      this.insertUrl = transactionConfig.checkupUser.insert.url;
+
+      this.checkupPlan.heaCheckupPlanNo = this.selectedCheckupPlanNo;
+      this.searchParam.heaCheckupPlanNo = this.selectedCheckupPlanNo;
+      if (this.checkupPlan.heaCheckupPlanNo > 0) {
+        this.getDetail();
+        this.getList();
+      }
     },
     /** /초기화 관련 함수 **/
     
-    /** Call API service
-    /**
-     * 아이템 정보를 가져옴
-     */
-    getItems () {
-      // 이 부분을 api service 호출 하는 것으로 바꿀 것
-      setTimeout(() => {
-        this.processItems = [
-          { processPk: '1', processName: '일반공정' },
-          { processPk: '2', processName: '특수공정' },
-        ];
-        this.deptItems = [
-          { deptPk: '1', deptName: '경영팀' },
-          { deptPk: '2', deptName: 'SDG팀' },
-          { deptPk: '3', deptName: '영업팀' },
-        ];
-        this.ageItems = [
-          { agePk: '1', ageName: '10대' },
-          { agePk: '2', ageName: '20대' },
-          { agePk: '3', ageName: '30대' },
-        ];
+    /** Call API service **/
+    getDetail () {
+      this.$http.url = this.$format(this.detailUrl, this.checkupPlan.heaCheckupPlanNo);
+      this.$http.type = 'get'; 
+      this.$http.request((_result) => {
+        this.checkupPlan = _result.data;
+      }, (_error) => {         
+      });
+    },
+    getList () {
+      this.$http.url = this.searchUrl;
+      this.$http.type = 'get'; 
+      this.$http.param = this.searchParam;
+      this.$http.request((_result) => {
+        this.gridData = _result.data;
+      }, (_error) => {         
+      });
+    },
 
-        this.checkupUserGridData = [
-          { heaCheckupType: 'A', processNm: '', deptNm: '시스템연구소', userNo: '100000', userNm: '홍길동', createDt: '2018-02-01', checkedYmd: '2018-05-01' },
-          { heaCheckupType: 'B', processNm: '', deptNm: '시스템연구소', userNo: '100001', userNm: '김범수', createDt: '2018-02-01', checkedYmd: '2018-08-31' },
-        ];
-      }, 1000);
+    getProcessNoItems () {
+      this.$http.url = selectConfig.process.list.url;
+      this.$http.type = 'get';
+      this.$http.param = {
+        'useYn': 'Y'
+      };
+      this.$http.request((_result) => {
+        _result.data.splice(0, 0, { 'processNo': 0, 'processNm': '전체' });
+        this.processNoItems = _result.data;
+        this.searchParam.processNo = 0;
+      }, (_error) => {
+      });
+    },
+    getDeptCdItems () {
+      this.$http.url = selectConfig.dept.list.url;
+      this.$http.type = 'get';
+      this.$http.request((_result) => {
+        _result.data.splice(0, 0, { 'deptCd': '', 'deptNm': '전체' });
+        this.deptCdItems = _result.data;
+        this.searchParam.deptCd = '';
+      }, (_error) => {
+      });
+    },
+    getAgeItems () {
+      this.ageItems.push({ 'code': 0, 'codeNm': '전체' });
+      this.ageItems.push({ 'code': 2, 'codeNm': '20대' });
+      this.ageItems.push({ 'code': 3, 'codeNm': '30대' });
+      this.ageItems.push({ 'code': 4, 'codeNm': '40대' });
+      this.ageItems.push({ 'code': 5, 'codeNm': '50대이상' });
+      this.searchParam.age = 0;
     },
     /** /Call API service **/
     
@@ -301,73 +332,33 @@ export default {
     /** 
      * 저장 하기전 UI단 유효성 검사 
      **/
-    beforeSubmit () {
-      this.checkValidation();
-    },
-    checkValidation () {
-      this.validator.validateAll().then((_result) => {
-        this.isSubmit = _result;
-        // TODO : 전역 성공 메시지 처리
-        // 이벤트는 ./event.js 파일에 선언되어 있음
-        if (!this.isSubmit) window.getApp.emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
-      }).catch(() => {
-        this.isSubmit = false;
-      });
-    },
-    validateState (_ref) {
-      if (this.veeBag[_ref] && (this.veeBag[_ref].dirty || this.veeBag[_ref].validated)) {
-        return !this.errors.has(_ref);
+    beforeInsertSubmit () {
+      if (this.gridSelectedRows.length > 0) {
+        this.isInsertSubmit = confirm('건강검진 대상자를 추가 하시겠습니까?');
       }
-      return null;
     },
     /** /validation checking **/
     
-    /** Component Events, Callbacks (버튼 제외) **/
-    searchUserCallback () {
-      console.log('::::::: searchUserCallback :::::::');
-    },
-    /**
-     * datatable 선택 정보 변경 감지 및 부모창(팝업 등)에 emit
-     */
-    selectionChanged (_selectedData) {
-      this.$emit('selectionChanged', _selectedData);
-    },
+    /** Component Events, Callbacks (버튼 제외) **/    
     /** /Component, Callbacks (버튼 제외) **/
     
     /** Button Event **/
-    /**
-    * 조회 버튼 처리용 샘플함수
-    */
-    btnSearchEmpClickedCallback (_result) {
-      this.isSubmit = false;
-    },
-    /**
-    * 검색 버튼 처리용 샘플함수
-    */
     btnSearchClickedCallback (_result) {
-      this.isSubmit = false;
-      window.getApp.$emit('APP_REQUEST_SUCCESS', '검색 버튼이 클릭되었습니다.');
+      this.gridData = _result.data;
     },
-    /**
-    * 저장 버튼 처리용 샘플함수
-    */
-    btnSaveClickedCallback (_result) {
-      this.isSubmit = false;  // 반드시 isSubmit을 false로 초기화 하세요. 그렇지 않으면 버튼을 다시 클릭해도 동작하지 않습니다.
-      // TODO : 여기에 추가 로직 삽입(로직 삽입시 지워주세요)
-      window.getApp.emit('APP_REQUEST_SUCCESS', "정상적으로 저장 되었습니다.");
+    btnInsertClickedCallback (_result) {
+      this.isInsertSubmit = false;
+      this.getList();
+      this.$emit('changeCheckupUsers');
+      alert('선택된 사용자를 대상자로 추가하였습니다.'); 
     },
-    /**
-    * 버튼 에러 처리용 공통함수
-    */
     btnClickedErrorCallback (_result) {
-      this.isSubmit = false;  // 반드시 isSubmit을 false로 초기화 하세요. 그렇지 않으면 버튼을 다시 클릭해도 동작하지 않습니다.
-      // TODO : 여기에 추가 로직 삽입(로직 삽입시 지워주세요)
-      window.getApp.emit('APP_REQUEST_ERROR', _result);
+      this.isInsertSubmit = false;       
+      alert('작업진행 중 오류가 발생했습니다. 재시도 후 지속적으로 오류 발생시 관리자에게 문의하세요.');
     },
     /** /Button Event **/
     
-    /** 기타 function **/
-    
+    /** 기타 function **/        
     /** /기타 function **/
   }
 };

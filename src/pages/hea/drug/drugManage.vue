@@ -21,7 +21,9 @@
             :editable="editable"
             :rows="5"
             :excel-down="true"
-            :print="true">
+            :print="true"
+            @selectedRow="selectedRow"
+          >
           </y-data-table>
         </b-col>
 
@@ -128,7 +130,7 @@
                     v-if="editable"
                     :action-url="insertUrl"
                     :param="heaDrug"
-                    :is-submit="isSubmit"
+                    :is-submit="isInsertSubmit"
                     type="save"
                     title="신규등록"
                     size="small"
@@ -140,18 +142,18 @@
                     @btnClickedErrorCallback="btnClickedErrorCallback"
                   />
                   <y-btn
-                    v-if="editable"
-                    :action-url="saveUrl"
+                    v-if="editable&&updateMode"
+                    :action-url="editUrl"
                     :param="heaDrug"
-                    :is-submit="isSubmit2"
+                    :is-submit="isEditSubmit"
                     type="save"
                     title="수정"
                     size="small"
                     color="warning"
                     action-type="PUT"
-                    beforeSubmit = "beforeSubmit"
-                    @beforeSubmit="beforeSubmit"
-                    @btnClicked="btnSaveClickedCallback" 
+                    beforeSubmit = "beforeEdit"
+                    @beforeEdit="beforeEdit"
+                    @btnClicked="btnEditClickedCallback" 
                     @btnClickedErrorCallback="btnClickedErrorCallback"
                   />
                 </div>
@@ -174,13 +176,13 @@ export default {
   data () {
     return {
       heaDrug: {
-        heaDrugNo: '',
+        heaDrugNo: 0,
         heaDrugNm: '',
         unit: '',
         amountLimit: '',
         amountCurr: '',
         sortOrder: '',
-        useYn: null,
+        useYn: 'Y',
         createUserId: '',
         creatDt: '',
         updateUserId: '',
@@ -189,10 +191,11 @@ export default {
       baseWidth: 8,
       widthTwoCols: 10,
       editable: true,
+      updateMode: false,
       useYnItems: [],
-      isSubmit: false,
-      isSubmit2: false,
-      saveUrl: '',
+      isInsertSubmit: false,
+      isEditSubmit: false,
+      editUrl: '',
       insertUrl: '',
       drugGridData: [],
       drugGridHeaderOptions: [],
@@ -223,7 +226,7 @@ export default {
         { text: '단위', name: 'unit', width: '10%', align: 'center' },
         { text: '적정 재고량', name: 'amountLimit', width: '10%', align: 'center' },
         { text: '현재 재고량', name: 'amountCurr', width: '10%', align: 'center' },
-        { text: '사용여부', name: 'useYn', width: '10%', align: 'center' },
+        { text: '사용여부', name: 'useYnNm', width: '10%', align: 'center' },
         { text: '출력순서', name: 'sortOrder', width: '10%', align: 'center' },
       ];
     },
@@ -246,21 +249,39 @@ export default {
         console.log(_error);
       });
     },
-    beforeInsert () {
-      this.checkValidation();
-      this.insertUrl = transactionConfig.drugManage.insert.url;
+    getDrugManage (data) {
+      Object.assign(this.heaDrug, data);
+      this.updateMode = true;
     },
-    beforeSubmit () {
-      this.isSubmit2 = true;
-      this.saveUrl = transactionConfig.drugManage.edit.url;
+    beforeInsert () {
+      if (window.confirm("등록하시겠습니까?"))
+      {
+        this.checkValidationInsert();
+        this.insertUrl = transactionConfig.drugManage.insert.url;
+      }
+    },
+    beforeEdit () {
+      if (window.confirm("수정하시겠습니까?"))
+      {
+        this.checkValidationEdit();
+        this.editUrl = transactionConfig.drugManage.edit.url;
+      }
     },
     /** validation checking **/
-    checkValidation () {
+    checkValidationInsert () {
       this.$validator.validateAll().then((_result) => {
-        this.isSubmit = _result;
-        if (!this.isSubmit) window.getApp.emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
+        this.isInsertSubmit = _result;
+        if (!this.isInsertSubmit) window.getApp.emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
       }).catch(() => {
-        this.isSubmit = false;
+        this.isInsertSubmit = false;
+      });
+    },
+    checkValidationEdit () {
+      this.$validator.validateAll().then((_result) => {
+        this.isEditSubmit = _result;
+        if (!this.isEditSubmit) window.getApp.emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
+      }).catch(() => {
+        this.isEditSubmit = false;
       });
     },
     validateState (_ref) {
@@ -273,23 +294,31 @@ export default {
     
     /** Button Event **/
     btnInsertClickedCallback (_result) {
+      this.heaDrug.heaDrugNo = _result.data;
       this.getDrugManages();
-      this.isSubmit = false;
+      this.isInsertSubmit = false;
+      this.updateMode = true;
+      alert('등록되었습니다.');
     },
-    btnSaveClickedCallback (_result) {
+    btnEditClickedCallback (_result) {
       this.getDrugManages();
-      this.isSubmit2 = false;
-      // this.$emit('APP_REQUEST_SUCCESS', '수정 버튼이 클릭 되었습니다.');
+      this.isEditSubmit = false;
+      alert('수정되었습니다.');
     },
     btnClickedErrorCallback (_result) {
-      this.isSubmit = false;
-      this.isSubmit2 = false;
-      window.getApp.emit('APP_REQUEST_ERROR', _result);
+      this.isInsertSubmit = false;
+      this.isEditSubmit = false;
+      window.alert("ERROR.. 담당자에게 연락바랍니다.");
+      this.$emit('APP_REQUEST_ERROR', _result);
     },
     btnClearClickedCallback () {
       Object.assign(this.$data.heaDrug, this.$options.data().heaDrug);
       this.$validator.reset();
+      this.updateMode = false;
       window.getApp.$emit('APP_REQUEST_SUCCESS', '초기화 버튼이 클릭 되었습니다.');
+    },
+    selectedRow (row) {
+      this.getDrugManage(row);
     },
     /** /Button Event **/
     

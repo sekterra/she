@@ -43,7 +43,7 @@ examples:
           v-model="selected"
           ref="datatable"
           :headers="headers"
-          :items="items"
+          :items="datatableItems"
           :search="search"
           :pagination.sync="pagination"
           :loading="loading"
@@ -207,7 +207,7 @@ examples:
       </slot>
       <el-table
         ref="datatable"
-        :data="items"
+        :data="datatableItems"
         :stripe="rowStripe"
         :border="true"
         header-cell-class-name="default-th"
@@ -215,7 +215,10 @@ examples:
         style="width: 100%;"
         :height="height"
         :rows="rows"
-        @selection-change="selectionChanged">
+        @selection-change="selectionChanged"
+        @current-change="currentChanged"
+        @row-click="selectedRow"
+        >
         <!-- check box 등 컨트롤이 추가되는 영역 -->
         <slot name="selection"></slot>
         <el-table-column
@@ -228,6 +231,7 @@ examples:
           :sortable="!header.hasOwnProperty('sortable') || header.sortable "
           :fixed="header.fixed"
           :header-align	="header.hasOwnProperty('headerAlign') ? header.headerAlign : headerAlign"
+          class-name="default-td"
         >
           <template 
             slot-scope="scope"
@@ -237,72 +241,82 @@ examples:
                 type="text" 
                 size="small"
                 @click.stop="linkClicked(header, scope.row)"
-              >
-              {{scope.row[header.name]}}
+                >
+                {{scope.row[header.name]}}
               </el-button>
+              <div
+                class="cell"
+                v-else-if="header.type && header.type.toLowerCase() === 'link'"
+                type="text" 
+                size="small"
+                @click.stop="linkClicked(header, scope.row)"
+                >
+                <a href="#" style="text-decoration:none;">{{scope.row[header.name]}}</a>               
+              </div>
               <y-text
                 v-else-if="header.type && header.type.toLowerCase() === 'text'"
                 :editable="editable"
+                rowClass=""
                 ui="bootstrap"
                 v-model="scope.row[header.name]"
-              />
+                />
               <y-number
                 v-else-if="header.type && header.type.toLowerCase() === 'number'"
                 :editable="editable"
+                rowClass=""
                 ui="bootstrap"
                 v-model="scope.row[header.name]"
-              />
+                />
               <y-datepicker
                 v-else-if="header.type && header.type.toLowerCase() === 'datepicker'"
                 :editable="editable"
                 :range="header.range ? header.range : false"
                 :default="header.default ? header.default : 'today'"
                 label=""
+                rowClass=""
                 ui="bootstrap"
+                :datepickerWidth="header.width - 10"
                 v-model="scope.row[header.name]"
-              />
-              <!-- <y-select
+                />
+              <y-select
                 v-else-if="header.type && header.type.toLowerCase() === 'select'"
                 :editable="editable"
-                :comboItems="header.items"
+                :comboItems="header.items ? header.items : []"
                 :itemText="header.itemText ? header.itemText : ''"
                 :itemValue="header.itemValue ? header.itemValue : ''"
+                :hasBottomMargin="false"
+                rowClass=""
+                size="sm"
                 ui="bootstrap"
                 v-model="scope.row[header.name]"
-              /> -->
-              <b-form-select 
-                v-else-if="header.type && header.type.toLowerCase() === 'select'"
-                v-model="scope.row[header.name]"
-                :options="header.items"
-                :item-text="header.itemText ? header.itemText : ''"
-                :item-value="header.itemValue ? header.itemValue : ''"
-              />
-              <!-- <div v-else-if="header.type && header.type.toLowerCase() === 'select'">
-                {{JSON.stringify(header.items)}}
-              </div> -->
+                />
               <y-radio
                 v-else-if="header.type && header.type.toLowerCase() === 'radio'"
                 :editable="editable"
-                :items="header.items ? header.items : []"
+                :comboItems="header.items ? header.items : []"
                 :itemText="header.itemText ? header.itemText : ''"
                 :itemValue="header.itemValue ? header.itemValue : ''"
+                :hasBottomMargin="false"
+                rowClass=""
                 ui="bootstrap"
                 v-model="scope.row[header.name]"
-              />
+                />
               <y-checkbox
                 v-else-if="header.type && header.type.toLowerCase() === 'checkbox'"
                 :editable="editable"
-                :items="header.items ? header.items : []"
+                :comboItems="header.items ? header.items : []"
                 :itemText="header.itemText ? header.itemText : ''"
                 :itemValue="header.itemValue ? header.itemValue : ''"
+                :hasBottomMargin="false"
+                rowClass=""
                 ui="bootstrap"
                 v-model="scope.row[header.name]"
-              />
+                />
               <div v-else class="cell">
                 {{scope.row[header.name]}}
               </div>
-          </template>
-            <el-table-column
+            </template>
+          <el-table-column
               v-for="_header in header.child"
               :key="_header.name"
               :prop="_header.name"
@@ -312,7 +326,78 @@ examples:
               :sortable="!_header.hasOwnProperty('sortable') || _header.sortable"
               show-overflow-tooltip
               :header-align	="header.hasOwnProperty('headerAlign') ? header.headerAlign : headerAlign"
-            >
+              >
+              <template  slot-scope="scope">
+                <el-button 
+                  v-if="_header.url"
+                  type="text" 
+                  size="small"
+                  @click.stop="linkClicked(_header, scope.row)"
+                  >
+                  {{scope.row[_header.name]}}
+                </el-button>
+                <div
+                  class="cell"
+                  v-else-if="_header.type && _header.type.toLowerCase() === 'link'"
+                  type="text" 
+                  size="small"
+                  @click.stop="linkClicked(_header, scope.row)"
+                  >
+                  <a href="#" style="text-decoration:none;">{{scope.row[_header.name]}}</a>               
+                </div>
+                <y-text
+                  v-else-if="_header.type && _header.type.toLowerCase() === 'text'"
+                  :editable="editable"
+                  ui="bootstrap"
+                  v-model="scope.row[_header.name]"
+                  />
+                <y-number
+                  v-else-if="_header.type && _header.type.toLowerCase() === 'number'"
+                  :editable="editable"
+                  ui="bootstrap"
+                  v-model="scope.row[_header.name]"
+                  />
+                <y-datepicker
+                  v-else-if="_header.type && _header.type.toLowerCase() === 'datepicker'"
+                  :editable="editable"
+                  :range="_header.range ? _header.range : false"
+                  :default="_header.default ? _header.default : 'today'"
+                  label=""
+                  ui="bootstrap"
+                  v-model="scope.row[_header.name]"
+                  />
+                <y-select
+                  v-else-if="_header.type && _header.type.toLowerCase() === 'select'"
+                  :editable="editable"
+                  :comboItems="_header.items ? _header.items : []"
+                  :itemText="_header.itemText ? _header.itemText : ''"
+                  :itemValue="_header.itemValue ? _header.itemValue : ''"
+                  ui="bootstrap"
+                  v-model="scope.row[_header.name]"
+                  />
+                <span v-else-if="_header.type && _header.type.toLowerCase() === 'select'">{{_header.items}}</span>
+                <y-radio
+                  v-else-if="_header.type && _header.type.toLowerCase() === 'radio'"
+                  :editable="editable"
+                  :items="_header.items ? _header.items : []"
+                  :itemText="_header.itemText ? _header.itemText : ''"
+                  :itemValue="_header.itemValue ? _header.itemValue : ''"
+                  ui="bootstrap"
+                  v-model="scope.row[_header.name]"
+                  />
+                <y-checkbox
+                  v-else-if="_header.type && _header.type.toLowerCase() === 'checkbox'"
+                  :editable="editable"
+                  :items="_header.items ? _header.items : []"
+                  :itemText="_header.itemText ? _header.itemText : ''"
+                  :itemValue="_header.itemValue ? _header.itemValue : ''"
+                  ui="bootstrap"
+                  v-model="scope.row[_header.name]"
+                  />
+                <div v-else class="cell">
+                  {{scope.row[_header.name]}}
+                </div>
+              </template>
               <el-table-column
                 v-for="__header in _header.child"
                 :key="__header.name"
@@ -324,19 +409,31 @@ examples:
                 show-overflow-tooltip
                 :header-align	="header.hasOwnProperty('headerAlign') ? header.headerAlign : headerAlign"
               >
-              </el-table-column>   
+            </el-table-column>   
           </el-table-column>  
         </el-table-column>
       </el-table>
+      <y-pagination
+        v-if="usePaging"
+        :page-size="rows"
+        :page.sync="listQuery.page" 
+        :limit.sync="listQuery.limit" 
+        @pagination="getList"
+        layout="total, sizes, prev, pager, next, jumper"
+        :total="total">
+      </y-pagination>
     </template>
-    <div>datatable: {{itemsString}}</div>
+    <!-- <div>datatable: {{itemsString}}</div> -->
   </div>
 </template>
 
 <script>
+import YPagination from '@/components/YPagination'; // Secondary package based on el-pagination
+
 export default {
   /* attributes: name, components, props, data, computed */
   name: 'y-data-table',
+  components: { YPagination },
   props: {
     title: {
       type: String,
@@ -415,10 +512,21 @@ export default {
       type: Boolean,
       default: true
     },
+    // 표시 되는 행 개수
     rows: {
       type: Number,
       default: 10
-    }
+    },
+    // 페이징 표시 여부
+    usePaging: {
+      type: Boolean,
+      default: false
+    },
+    // TODO : 페이징 사이즈를 설정할 필요가 있을지 몰라서 일단 주석처리
+    // pageSizes: {
+    //   type: Array,
+    //   default: () => [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+    // }
   },
   data () {
     return {
@@ -427,12 +535,24 @@ export default {
       loading: true,
       pagination: {
         // rowsPerPage: this.rowsPerPage
-        sortBy: 'name'
+        sortBy: 'name',
+        page: 1
+      },
+      listQuery: {
+        page: 1,
+        limit: 10,
+        importance: undefined,
+        title: undefined,
+        type: undefined,
+        sort: '+id'
       },
       check: true,
       radioGroup: 1,
       itemData: [],
       multipleSelection: [],
+      singleSelection: null,
+      page: 1,
+      datatableItems: null
     };
   },
   computed: {
@@ -455,6 +575,10 @@ export default {
     },
     itemsString () {
       return JSON.stringify(this.items);
+    },
+    // 전체 데이터 수
+    total () {
+      return this.items ? this.items.length : 0;
     }
   },
   watch: {
@@ -462,9 +586,11 @@ export default {
       // TODO : totalItems가 업데이트 되지 않는데 bug인지 이유는 잘 모르겠음
       // [bug fix] : 페이지가 처음 로딩시 그리드 데이터가 바인딩되었는데도, pagination이 표현 안되는 현상 발생했으나
       //                  우연히 totalItems를 강제로 할당해주니 표시가 됨(이유는 모름)
-      this.pagination.totalItems = this.items.length;
-      this.itemData = [this.items.length];
-      this.hideLoading();
+      // TODO : vuetify 소스
+      // this.pagination.totalItems = this.items.length;
+      // this.itemData = [this.items.length];
+      // this.hideLoading();
+      this.getList();
     }
   },
   /* Vue lifecycle: created, mounted, destroyed, etc */
@@ -475,6 +601,8 @@ export default {
     window.getApp.$on('POPUP_CLOSED', () => {
       this.$refs.datatable.clearSelection();
     });
+
+    this.getList();
   },
   mounted () {
     console.log(':::::::::::::::: mounted ');
@@ -532,10 +660,17 @@ export default {
     clearSelected () {
       this.selected = [];
     },
+    selectedRow () {
+      this.$emit('selectedRow', this.singleSelection); 
+    },
     selectionChanged (val) {
       this.multipleSelection = val;
       this.$emit('input', this.multipleSelection);
       this.$emit('selectionChanged', this.multipleSelection);
+    },
+    currentChanged (val) {      
+      this.singleSelection = val;
+      this.$emit('currentChanged', this.singleSelection); 
     },
     getDatatableItems () {
       return this.items;
@@ -544,26 +679,45 @@ export default {
      * 링크 정보를 클릭했을 때
      */
     linkClicked (_header, _row) {
+      this.$emit('tableLinkClicked', _header, _row);
       // 링크 타겟의 기본은 팝업
-      var target = _header.target ? _header.target : 'popup';
+      // var target = _header.target ? _header.target : 'popup';
       // 여기는 버튼 클릭 팝업과 동일하게 
-      console.log('_header:' + JSON.stringify(_header));
-      if (target === 'popup') {
-        window.getApp.$emit('POPUP_OPEN', {
-          isPopupOpen: true,
-          id: 'popup',
-          label: '팝업테스트',
-          editable: false,
-          type: _header.url,
-          childProps: {
-            // 여기에 pk 정보를 _row에서 읽어와서 넣어주면 됨
-            checkupPlanNo: 10
-          }
-        });
-      } else {
-        // 페이지 이동은 준비중
+      // window.getApp.$emit('POPUP_OPEN', {
+      //   isPopupOpen: true,
+      //   id: 'popup',
+      //   label: '팝업테스트',
+      //   editable: false,
+      //   type: 'checkupUser',
+      //   childProps: {
+      //     // 여기에 pk 정보를 _row에서 읽어와서 넣어주면 됨
+      //     checkupPlanNo: 10
+      //   }
+      // });
+
+      // TODO : 페이지 이동은 준비중
+    },
+    /**
+     * 페이징 크기 변경
+     */
+    handleSizeChange (val) {
+      console.log(`${val} items per page`);
+    },
+    /**
+     * 현재 페이지 변경
+     */
+    handleCurrentChange (val) {
+      console.log(`current page: ${val}`);
+    },
+    getList () {
+      if (this.usePaging) {
+        var page = this.listQuery.page || 1;
+        var perPage = this.listQuery.limit;
+        var offset = (page - 1) * perPage;
+        this.datatableItems = this.$_.drop(this.items, offset).slice(0, perPage);
       }
-    }
+      else this.datatableItems = this.items;
+    },
   }
 };
 </script>
@@ -576,6 +730,9 @@ export default {
   font-size:12.8px;color:#212529;background-color: #eef1f6 !important; height:40px !important;
 }
 .default-td {
-  font-size:12px;color:#212529; height:35px !important;
+  font-size:12px;color:#212529;
+}
+.default-td .cell {
+  max-height:40px !important;overflow-y: auto; overflow-x: hidden;
 }
 </style>

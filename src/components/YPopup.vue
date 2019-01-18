@@ -15,7 +15,7 @@
       <el-dialog
         :title="label"
         :visible.sync="isOpen"
-        :fullscreen="true"
+        :fullscreen="fullscreen"
         center
         @close="popupClose"
         >
@@ -25,11 +25,18 @@
             @selectionChanged="selectionChanged" 
           />
         </div>
+        <div v-if="type === 'checkupResultConsent'">
+          <checkup-result-consent 
+            :heaCheckupPlanNo="childProps.heaCheckupPlanNo"
+            :heaCheckedOrgNo="childProps.heaCheckedOrgNo"
+            @selectionChanged="selectionChanged" 
+          />
+        </div>
         <!-- 기존에 만들어진 컴포넌트가 아닌 직접 바인딩 해야 할 경우 아래의 popupBody 슬롯에 추가 -->
         <slot name="popupBody"></slot>
         <span slot="footer" class="dialog-footer">
-          <el-button type="primary" @click="popupConfirm">승인</el-button>
-          <el-button @click="popupClose">닫기</el-button>
+          <el-button type="primary" @click="popupConfirm">{{confirmButtonText}}</el-button>
+          <el-button @click="popupClose">{{closeButtonText}}</el-button>
         </span>
       </el-dialog>
     </template>
@@ -39,13 +46,15 @@
 <script>
 // TODO : 팝업 본문에 표현되어야 할 페이지를 아래와 같이 선언 후 components에 등록
 import checkupUser from '@/pages/hea/checkup/checkupUser';
+import checkupResultConsent from '@/pages/hea/user/checkupResultConsent';
 
 export default {
   /** attributes: name, components, props, data **/
   name: 'y-popup',  // 반드시 입력하세요(안 하면 warning 발생). 네이밍 룰은 현재 vue component의 파일명의 단어를 "-"로 구분(예:exam-data)하여 입력하시면 됩니다. 입력후 이 주석은 지워주세요.
   components: {
     // 팝업 본문에 추가해야 할 컴포넌트 선언
-    checkupUser
+    checkupUser,
+    checkupResultConsent
   },
   props: {
     ui: {
@@ -83,6 +92,19 @@ export default {
     // 팝업 본문 vue에 파라미터 전달할 속성
     childProps: {
       type: Object
+    },
+    // 팝업 사이즈
+    fullscreen: {
+      type: Boolean,
+      default: true
+    },
+    confirmButtonText: {
+      type: String,
+      default: "승인"
+    },
+    closeButtonText: {
+      type: String,
+      default: "닫기"
     }
   },
   // TODO: 화살표 함수(=>)는 data에 사용하지 말 것

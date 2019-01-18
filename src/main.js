@@ -6,6 +6,7 @@ import 'normalize.css/normalize.css' // A modern alternative to CSS resets
 
 import Element from 'element-ui'
 import 'element-ui/lib/theme-chalk/index.css'
+import locale from 'element-ui/lib/locale/lang/ko';
 
 import '@/styles/index.scss' // global css
 
@@ -81,9 +82,11 @@ import YPopup from '@/components/YPopup';
 
 import * as filters from './filters' // global filters
 
+// TODO : ElementUI 한국어 설정
 Vue.use(Element, {
   size: Cookies.get('size') || 'medium', // set element-ui default size
-  i18n: (key, value) => i18n.t(key, value)
+  i18n: (key, value) => i18n.t(key, value),
+  locale
 })
 
 // register global utility filters.

@@ -128,6 +128,7 @@ export default {
       mailContent: '',
       talkContent: '',
       heaDiseaseNm: '',
+      caller: '',
     },
     searchParam: {
       heaDiseaseClassCd: '',
@@ -154,7 +155,6 @@ export default {
   beforeMount () {
     Object.assign(this.$data, this.$options.data());
     this.init();
-    this.getComboItems('HEA_DISEASE_CLASS'); // 질환종류
     this.getList();
   },
   mounted () {
@@ -189,17 +189,6 @@ export default {
     ReceivesData (data) {
       Object.assign(this.disease, data);
       this.disease.useYn = data.useYn === '사용' ? 'Y' : 'N';
-    },
-    // combo box list
-    getComboItems (codeGroupCd) {
-      this.$http.url = this.$format(selectConfig.comCodeMaster.get.url, codeGroupCd);
-      this.$http.type = 'GET';
-      this.$http.request((_result) => {
-        this.comboDisaseTypeItems = _result.data;
-        this.comboDisaseTypeSelectItems = _result.data;
-      }, (_error) => {
-        console.log(_error);
-      });
     },
     /** 수정 하기전 UI단 유효성 검사 **/
     beforeSubmit () {

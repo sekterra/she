@@ -10,24 +10,23 @@
   <b-container fluid>
     <b-row>
       <b-col sm="12">
-        <div class="float-right">
-          <y-btn
-            v-if="editable"
-            :action-url="deleteUrl"
-            :param="checkupPlan"
-            :is-submit="isDelete"
-            type="delete"
-            size="small"
-            color="danger"
-            icon="el-icon-delete"
-            action-type="POST"
-            beforeSubmit = "getConfirm"
-            @getConfirm="getConfirm"
-            @btnClicked="btnDeleteClickedCallback" 
-            @btnClickedErrorCallback="btnClickedErrorCallback"
-          />
-        </div>
         <b-col sm="12" class="px-0">
+        <div slot="buttonGroup" class="float-right mb-1">
+          <y-btn 
+              :action-url="deleteUrl"
+              :param="deleteValue"
+              :is-submit="isDelete"
+              type="delete"
+              title="삭제"
+              size="mini"
+              color="danger"
+              action-type="DELETE"
+              beforeSubmit = "beforeDelete"
+              @beforeDelete="beforeDelete"
+              @btnClicked="btnDeleteClickedCallback" 
+              @btnClickedErrorCallback="btnClickedErrorCallback"
+            />
+        </div>
           <y-data-table 
             label="건강검진 계획 목록"
             :headers="checkupPlanGridHeaderOptions"
@@ -36,7 +35,9 @@
             :excel-down="true"
             :print="true"
             :rows="4"
+            v-model="selectedValue"
             ref="dataTable"
+            @selectedRow="selectedRow"
             >
             <el-table-column
               type="selection"
@@ -59,24 +60,25 @@
                 <y-select
                   :width="baseWidth"
                   :editable="editable"
-                  :comboItems="heaCheckupTypes"
-                  itemText="heaCheckupTypeName"
-                  itemValue="heaCheckupTypePk"
+                  :comboItems="heaCheckupClassItems"
+                  :required="true"
+                  itemText="codeNm"
+                  itemValue="code"
                   ui="bootstrap"
-                  type="edit"
                   label="건강검진 종류"
-                  name="heaCheckupType"
-                  v-model="checkupPlan.heaCheckupType"
+                  name="heaCheckupClassCd"
+                  v-model="checkupPlan.heaCheckupClassCd"
                   v-validate="'required'"
-                  :state="validateState('heaCheckupType')"
+                  :state="validateState('heaCheckupClassCd')"
                 >
                 </y-select>
               </b-col>
               <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
                 <y-text
                   :width="7"
-                  :editable="7"
-                  :maxlength="100"
+                  :editable="editable"
+                  :maxlength="30"
+                  :required="true"
                   ui="bootstrap"
                   label="건강검진 계획명"
                   name="heaCheckupPlanNm"
@@ -91,9 +93,12 @@
                   :width="baseWidth"
                   :editable="editable"
                   :range="true"
+                  :required="true"
                   label="건강검진 기간"
-                  name="remark"
+                  name="period"
                   v-model="checkupPlan.period"
+                  v-validate="'required'"
+                  :state="validateState('period')"
                 >
                 </y-datepicker>
               </b-col>
@@ -112,12 +117,13 @@
                   :width="10"
                   :editable="editable"
                   :items="heaCheckupOrgItems"
-                  itemText="text"
-                  itemValue="value"
+                  :needDefaultView="true"
+                  itemText="heaCheckupOrgNm"
+                  itemValue="heaCheckupOrgNo"
                   ui="bootstrap"
                   label="건강검진 기관 선택"
-                  name="heaCheckupOrg"
-                  v-model="checkupPlan.heaDiagnoseCds"
+                  name="heaCheckupOrgNo"
+                  v-model="checkupPlan.selectedHeaCheckupOrgNos"
                   >
                 </y-shuttlebox>
               </b-col>
@@ -133,32 +139,32 @@
               />
               <y-btn
                 v-if="editable"
-                :action-url="saveNewUrl"
-                :param="hazard"
-                :is-submit="isSubmit"
+                :action-url="insertUrl"
+                :param="checkupPlan"
+                :is-submit="isInsert"
                 type="save"
                 title="신규등록"
                 size="small"
                 color="warning"
                 action-type="POST"
-                beforeSubmit = "beforeSubmit"
-                @beforeSubmit="beforeSubmit"
-                @btnClicked="btnSaveClickedCallback" 
+                beforeSubmit = "beforeInsert"
+                @beforeInsert="beforeInsert"
+                @btnClicked="btnInsertClickedCallback" 
                 @btnClickedErrorCallback="btnClickedErrorCallback"
               />
               <y-btn
-                v-if="editable"
-                :action-url="saveUrl"
+                v-if="editable&&updateMode"
+                :action-url="editUrl"
                 :param="checkupPlan"
-                :is-submit="isSave"
+                :is-submit="isEmit"
                 type="save"
                 title="수정"
                 size="small"
                 color="warning"
-                action-type="POST"
-                beforeSubmit = "beforeSubmit"
-                @beforeSubmit="beforeSubmit"
-                @btnClicked="btnSaveClickedCallback" 
+                action-type="PUT"
+                beforeSubmit = "beforeEmit"
+                @beforeEmit="beforeEmit"
+                @btnClicked="btnEmitClickedCallback" 
                 @btnClickedErrorCallback="btnClickedErrorCallback"
               />
               </div>
@@ -171,35 +177,38 @@
 </template>
 
 <script>
+import selectConfig from '@/js/selectConfig';
+import transactionConfig from '@/js/transactionConfig';
 export default {
   /** attributes: name, components, props, data **/
   name: 'checkup-plan',  
-  // TODO: 화살표 함수(=>)는 data에 사용하지 말 것
-  //    data: () => { return { a: this.myProp }}) 화살표 함수가 부모 컨텍스트를 바인딩하기 때문에 this는 예상과 달리 Vue 인스턴스가 아니기 때문에 this.myProp는 undefined로 나옵니다.
-  //    참고url: https://kr.vuejs.org/v2/api/index.html#data
   data () {
     return {
-      // Naming Rule : JAVA model class와 연동되는 vue model은 model class명을 Camel case로 변환해서 선언하시고 기본값은 {}로 초기화 시켜주세요.
-      // 예) ExamData -> examData: {},
       checkupPlan: {
-        heaCheckupType: null,
+        heaCheckupClassCd: null,
         heaCheckupPlanNm: '',
         duration: null,
         period: null,
         finishYmd: '',
-        heaCheckupOrg: []
+        selectedHeaCheckupOrgNos: [],
+        startYmd: '',
+        endYmd: '',
       },
       baseWidth: 8,
       editable: true,
-      heaCheckupTypes: [],
+      updateMode: false,
+      heaCheckupClassItems: [],
       checkupPlanGridData: [],
       checkupPlanGridHeaderOptions: [],
       heaCheckupOrgItems: [],
-      saveUrl: '',
+      insertUrl: '',
+      editUrl: '',
       deleteUrl: '',
-      isSubmit: false,  // 버튼을 submit 할 것인지 판단하는 변수로써 버튼의 개수만큼 필요합니다.
-      isSave: false,  
+      isInsert: false,  // 버튼을 submit 할 것인지 판단하는 변수로써 버튼의 개수만큼 필요합니다.
+      isEmit: false,  
       isDelete: false,  
+      selectedValue: [],
+      deleteValue: null,
       searchParam: {
         heaDiagnoseCds: [],
       }
@@ -211,11 +220,11 @@ export default {
   created () {
   },
   beforeMount () {
-    // TODO : data를 초기화 시켜줌(검색 조건 유지가 필요할 때는 삭제할 것)
-    // 이유 : vue.js는 SPA기반으로 동작하기 때문에 페이지를 이동하더라도 기존 입력된 정보가 그대로 남아 있는 문제가 있음
     Object.assign(this.$data, this.$options.data());
     this.init();
-    this.getItems();
+    // this.getComboItems();  // 건강검진 종류
+    // this.getHeaCheckupOrgItems(); // 건강검진 기관
+    // this.getDataList();
   },
   mounted () {
   },
@@ -226,65 +235,134 @@ export default {
   methods: {
     /** 초기화 관련 함수 **/
     init () {
-      // 건강검진 계획 그리드 헤더 설정
-      this.checkupPlanGridHeaderOptions = [
-        { text: '건강검진 종류', name: 'heaCheckupType', width: '30%', align: 'center' },
-        { text: '건강검진 계획', name: 'heaCheckupPlan', width: '30%', align: 'center' },
-        { text: '건강검진 일정', name: 'heaCheckupYmd', width: '30%', align: 'center' },
-      ];
+      // URL 셋팅
+      this.searchUrl = selectConfig.checkupPlan.list.url;
+      this.insertUrl = transactionConfig.checkupPlan.insert.url;
+      this.editUrl = transactionConfig.checkupPlan.edit.url;
+      this.deleteUrl = transactionConfig.checkupPlan.delete.url;
 
       // TODO : backend에서 데이터를 조회해 올것
       setTimeout(() => {
-        this.heaCheckupOrgItems = [
-          { text: '새서울병원', value: '1' },
-          { text: '서울대병원', value: '2' },
-          { text: '세브란스병원', value: '3' },
-          { text: '아산병원', value: '4' },
-          { text: '중앙대병원', value: '5' },
-          { text: '중앙의료재단', value: '6' },
-        ];
-      }, 3000);
+        this.getComboItems();  // 건강검진 종류
+        this.getHeaCheckupOrgItems(); // 건강검진 기관
+        this.getDataList();
+      }, 100);
+
+      // 건강검진 계획 그리드 헤더 설정
+      this.checkupPlanGridHeaderOptions = [
+        { text: '건강검진종류', name: 'heaCheckupClassNm', width: '20%', align: 'center' },
+        { text: '건강검진계획', name: 'heaCheckupPlanNm', width: '50%' },
+        { text: '건강검진일정', name: 'heaCheckupPlanPeriod', width: '30%', align: 'center' },
+      ];
     },
+
+      
     /** /초기화 관련 함수 **/
     
-    /** Call API service
-    * Naming Rule: get, post, put 등의 RESTFul verb를 접두사로 사용하고 그 뒤에 관련 모델명을 Camel case로 추가하세요.
-    * Naming Rule: get의 경우 복수의 데이터조회(리스트 데이터 등)시에는 복수를 나타내는 접미사 "s"를 붙여주세요.
-    * ex) getExamData () {}
-    * ex) getExamDatas () {}
-    */
-    getItems () {
-      // 이 부분을 api service 호출 하는 것으로 바꿀 것
-      setTimeout(() => {
-        this.heaCheckupTypes = [
-          { heaCheckupTypePk: '1', heaCheckupTypeName: '종합건강검진' },
-          { heaCheckupTypePk: '2', heaCheckupTypeName: '일반건강검진' },
-          { heaCheckupTypePk: '3', heaCheckupTypeName: '특수건강검진' }
-        ];
-        this.checkupPlanGridData = [
-          { heaCheckupType: '종합건강검진', heaCheckupPlan: '2018년 종합건강검진', heaCheckupYmd: '2018-03-01~2018-04-30' },
-          { heaCheckupType: '일반건강검진', heaCheckupPlan: '2018년 일반건강검진', heaCheckupYmd: '2018-04-01~2018-06-23' },
-          { heaCheckupType: '특수건강검진', heaCheckupPlan: '2018년 특수건강검진', heaCheckupYmd: '2018-04-01~2018-06-30' }
-        ];
-      }, 3000);
+    /** Call API service **/
+    // 건강검진 종류
+    getComboItems () {
+      this.$http.url = this.$format(selectConfig.codeMaster.getSelect.url, 'HEA_CHECKUP_CLASS');
+      this.$http.type = 'get';
+      this.$http.request((_result) => {
+        this.heaCheckupClassItems = this.$_.clone(_result.data);
+        this.heaCheckupClassItems.splice(0, 0, { 'code': '', 'codeNm': '선택하세요' });
+        this.checkupPlan.heaCheckupClassCd = '';
+      }, (_error) => {
+      });
+    },
+    getHeaCheckupOrgItems () {
+      console.log(this.heaCheckupOrgNo);
+      this.$http.url = selectConfig.checkupOrg.list.url;
+      this.$http.type = 'GET';
+      this.$http.request((_result) => {
+        this.heaCheckupOrgItems = _result.data;
+      }, (_error) => {
+        console.log(_error);
+      });
+    },
+    getDataList () {
+      this.$http.url = this.searchUrl;
+      this.$http.type = 'GET';
+      this.$http.request((_result) => {
+        this.checkupPlanGridData = _result.data;
+      }, (_error) => {
+        console.log(_error);
+      });
+    },
+    selectedRow (data) {
+      if (data === null) return;
+
+      this.$http.url = this.$format(selectConfig.checkupPlan.get.url, data.heaCheckupPlanNo);
+      this.$http.type = 'GET';
+      this.$http.request((_result) => {
+        this.updateMode = true;
+        this.checkupPlan = this.$_.clone(_result.data);
+        this.checkupPlan.period = [this.checkupPlan.startYmd, this.checkupPlan.endYmd];
+        
+        // 등록된 계획별 검진기관 리스트 
+        this.$http.url = selectConfig.checkupPlanOrg.list.url;
+        this.$http.type = 'GET';
+        this.$http.param = {
+          'heaCheckupPlanNo': this.checkupPlan.heaCheckupPlanNo
+        };
+        this.$http.request((_result) => {
+          this.checkupPlan.selectedHeaCheckupOrgNos = this.$_.map(_result.data, 'heaCheckupPlanNo');
+        }, (_error) => {
+          console.log(_error);
+        });
+      }, (_error) => {
+        console.log(_error);
+      });
     },
     /** /Call API service **/
     
     /** validation checking **/
-    /** 
-     * 저장 하기전 UI단 유효성 검사 
-     **/
-    beforeSubmit () {
-      this.checkValidation();
+    beforeInsert () {
+      if (window.confirm("저장하시겠습니까?"))
+      {
+        this.checkupPlan.startYmd = this.$comm.moment(this.checkupPlan.period[0]).format('YYYY-MM-DD');
+        this.checkupPlan.endYmd = this.$comm.moment(this.checkupPlan.period[1]).format('YYYY-MM-DD');
+        this.checkValidationInsert();
+      }
     },
-    checkValidation () {
-      this.validator.validateAll().then((_result) => {
-        this.isSubmit = _result;
-        // TODO : 전역 성공 메시지 처리
-        // 이벤트는 ./event.js 파일에 선언되어 있음
-        if (!this.isSubmit) window.getApp.emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
+    beforeEmit () {
+      if (window.confirm("수정하시겠습니까?"))
+      {
+        this.checkupPlan.startYmd = this.$comm.moment(this.checkupPlan.period[0]).format('YYYY-MM-DD');
+        this.checkupPlan.endYmd = this.$comm.moment(this.checkupPlan.period[1]).format('YYYY-MM-DD');
+        this.checkValidationEmit();
+      }
+    },
+    beforeDelete () {
+      if (this.selectedValue.length === 0) 
+      {
+        window.alert("항목을 선택해주세요.");
+        return;
+      }
+
+      if (window.confirm("삭제하시겠습니까?"))
+      {
+        this.deleteValue = {
+          'data': Object.values(this.$_.clone(this.selectedValue))
+        };
+        this.isDelete = true;
+      }
+    },
+    checkValidationInsert () {
+      this.$validator.validateAll().then((_result) => {
+        this.isInsert = _result;
+        if (!this.isInsert) window.getApp.emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
       }).catch(() => {
-        this.isSubmit = false;
+        this.isInsert = false;
+      });
+    },
+    checkValidationEmit () {
+      this.$validator.validateAll().then((_result) => {
+        this.isEmit = _result;
+        if (!this.isEmit) window.getApp.emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
+      }).catch(() => {
+        this.isEmit = false;
       });
     },
     validateState (_ref) {
@@ -298,40 +376,42 @@ export default {
     /** Component Events, Callbacks (버튼 제외) **/
     
     /** /Component, Callbacks (버튼 제외) **/
-    /**
-     * 사용자의 입력을 받는다.
-     */
-    getConfirm () {
-    },
+
     /** Button Event **/
-    /**
-    * 저장 버튼 처리용 샘플함수
-    */
-    btnSaveClickedCallback (_result) {
-      this.isSubmit = false;  // 반드시 isSubmit을 false로 초기화 하세요. 그렇지 않으면 버튼을 다시 클릭해도 동작하지 않습니다.
-      // TODO : 여기에 추가 로직 삽입(로직 삽입시 지워주세요)
-      window.getApp.emit('APP_REQUEST_SUCCESS', "정상적으로 저장 되었습니다.");
+    // 신규등록
+    btnInsertClickedCallback (_result) {
+      this.getDataList();
+      this.updateMode = true;
+      this.isInsert = false;
+      window.alert("저장되었습니다.");
+      // window.getApp.$emit('APP_REQUEST_SUCCESS', "정상적으로 저장 되었습니다.");
     },
-    /**
-    * 버튼 에러 처리용 공통함수
-    */
+    btnEmitClickedCallback (_result) {
+      this.getDataList();
+      this.updateMode = true;
+      this.isEmit = false;
+      window.alert("수정되었습니다.");
+      // window.getApp.$emit('APP_REQUEST_SUCCESS', "정상적으로 저장 되었습니다.");
+    },
+    // 버튼 에러 처리
     btnClickedErrorCallback (_result) {
-      this.isSubmit = false;  // 반드시 isSubmit을 false로 초기화 하세요. 그렇지 않으면 버튼을 다시 클릭해도 동작하지 않습니다.
+      this.isInsert = false;  // 반드시 isInsert을 false로 초기화 하세요. 그렇지 않으면 버튼을 다시 클릭해도 동작하지 않습니다.
       // TODO : 여기에 추가 로직 삽입(로직 삽입시 지워주세요)
-      window.getApp.emit('APP_REQUEST_ERROR', _result);
+      window.getApp.$emit('APP_REQUEST_ERROR', _result);
     },
-    /**
-    * 버튼 초기화 처리용 공통함수
-    */
+    // 초기화
     btnClearClickedCallback () {
+      this.updateMode = false;
+      Object.assign(this.$data.checkupPlan, this.$options.data().checkupPlan);
       this.$validator.reset();
       window.getApp.$emit('APP_REQUEST_SUCCESS', '초기화 버튼이 클릭 되었습니다.');
     },
-    /**
-    * 버튼 삭제 처리용 공통함수
-    */
+    // 삭제
     btnDeleteClickedCallback (_result) {
-      window.getApp.$emit('APP_REQUEST_SUCCESS', '삭제 버튼이 클릭 되었습니다.');
+      this.getDataList();
+      this.isDelete = false;
+      window.alert("삭제되었습니다.");
+      // window.getApp.$emit('APP_REQUEST_SUCCESS', '삭제 버튼이 클릭 되었습니다.');
     },
     /** end button 관련 이벤트 **/
 

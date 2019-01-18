@@ -98,6 +98,8 @@
                       <b-form-checkbox-group 
                         stacked
                         :size="size"
+                        :item-text="itemText"
+                        :item-value="itemValue"
                         v-model="selectedValues"
                         :options="selectedOptions"
                         />
@@ -157,7 +159,7 @@ export default {
     // TODO : 부모의 v-model의 값을 받아오는 속성
     value: {
       type: Array,
-      default: () => []
+      default: null
     },
     size: {
       type: String,
@@ -168,10 +170,16 @@ export default {
       type: Number,
       default: 12
     },
-    // 부모로 부터 받아온 항목값
+    // 부모로 부터 받아온 좌측 항목값
     items: {
       type: Array,
-      default: () => []
+      default: null
+    },
+    // 부모로 부터 직접 받아온 우측 항목값(기존에 선택한 항목)
+    // TODO : 부모 items에는 없으나, 선택된 항목으로 직접 표시해야 할 경우 활용
+    selectedItems: {
+      type: Array,
+      default: null
     },
     // shuttle box 높이
     height: {
@@ -214,36 +222,43 @@ export default {
   data () {
     return {
       vValue: [], // 좌측의 기준 항목에서 체크된 item
-      filteredOptions: [],  // 좌측의 기준 항목에서 text filtering 된 값, text filtering 정보가 없으면 items와 동일
+      filteredOptionsOrg: [], // 좌측의 기준 항목 원본(부모 items의 원본)
+      filteredOptions: [],  // 좌측의 기준 항목에서 text filtering 된 배열로써 화면에 표시되는 항목
       selectedValues: [], // 우측의 체크박스로 선택된 항목이며, 삭제 전용이기 때문에 부모에게 전달하는 정보와 상관 없음
-      selectedOptions: [],  // 우측에 표시되는 선택된 항목이며, 이 값의 value값이 부모에게 전달됨
+      selectedOptions: [],  // 우측에 표시되는 선택된 항목이며, 이 항목의 value값의 배열이 부모에게 전달됨
       filterText: '',
-      checkboxItems: []
     };
   },
   watch: {
     // TODO : 부모의 v-model 변경을 감시(예를 들면, db로부터 데이터를 조회 한 후 값을 바인딩 할 경우)
     value () {
-      // this.init();
+      // TODO : 선택된 항목이 있으면 skip
+      // 예) 좌측Options인 filteredOptions에 없는 항목이 있지만, 선택 항목으로 나와야 할 경우
+      if (this.selectedItems && this.selectedItems.length > 0) return;
+
+      this.init();
     },
     items () {
       // 새로 바인딩 되면서 기존에 this.vValue에 들어간 값을 초기화
       this.vValue = [];
-      this.makeSelectOptions();
-      this.filteredOptions = this.$_.clone(this.checkboxItems);
+      this.filteredOptionsOrg = this.makeSelectOptions(this.items);
+      this.filteredOptions = this.$_.clone(this.filteredOptionsOrg);
       // this.init();
+    },
+    selectedItems () {
+      this.selectedOptions = this.makeSelectOptions(this.selectedItems);
     },
     /**
      * Text Search
      */
     filterText () {
       if (!this.filterText) return this.init();
-      this.filteredOptions = this.$_.filter(this.checkboxItems, (_item) => {
+      this.filteredOptions = this.$_.filter(this.filteredOptionsOrg, (_item) => {
         return _item.text.toLowerCase().indexOf(this.filterText.toLowerCase()) >= 0;
       });
     },
     /**
-     * 선택된 값이 바뀔때 마다 부모에게 값을 전달
+     * 선택된 값이 바뀔때 마다 부모의 v-model에 값을 전달
      */
     selectedOptions () {
       if (!this.selectedOptions || !this.selectedOptions.length) return;
@@ -294,9 +309,12 @@ export default {
   methods: {
     /** 초기화 관련 함수 **/
     init () {
-      // TODO : 여기에 초기 설정용 함수를 호출하거나 로직을 입력하세요.
-      this.filteredOptions = this.$_.clone(this.checkboxItems);
-      this.selectedOptions = this.getArrayfromValueArray(this.checkboxItems, this.value, 'value');     
+      // 1. itemText와 itemValue의 값을 가지고, shuttlebox에 맞는 형식으로 변환(원본)
+      this.filteredOptionsOrg = this.makeSelectOptions(this.items);
+      // 2. 검색에 활용하기 위해 1.의 원본을 복제
+      this.filteredOptions = this.$_.clone(this.filteredOptionsOrg);
+      // 3. 기존에 선택한 항목이 있을 경우 filtering해서 보여줌
+      this.selectedOptions = this.getFilteredArrayfromValueArray(this.filteredOptionsOrg, this.value, 'value');     
     },
     /** /초기화 관련 함수 **/
     
@@ -314,10 +332,12 @@ export default {
      */
     moveRight () {
       if (!this.vValue || this.vValue.length <=0) return;
-      // 1. this.option 항목중 선택된 항목만 가져옴
-      var filtered = this.getArrayfromValueArray(this.checkboxItems, this.vValue, 'value');
-      // 2. 선택된 항목중에서 기존에 선택된 항목을 제외한 항목을 가져와서 기존 항목과 합침
-      this.selectedOptions = this.$_.concat(this.selectedOptions, this.$_.difference(filtered, this.selectedOptions));
+      // 1. 왼쪽 항목중 선택된 항목만 가져옴
+      var filtered = this.getFilteredArrayfromValueArray(this.filteredOptionsOrg, this.vValue, 'value');
+      // 2. 추가된 아이템 중 기존 항목이 있는지 체크
+      var hasItems = this.$comm.hasArray(this.selectedOptions, filtered);     
+      // 3. 선택된 항목중에서 기존에 선택된 항목을 제외한 항목을 가져와서 기존 항목과 합침
+      if (!hasItems) this.selectedOptions = this.$_.concat(this.selectedOptions, filtered);
     },
     /**
      * < 버튼 클릭시, 선택된 항목에서 제거
@@ -341,7 +361,7 @@ export default {
      * _key = 'value
      * return 값 : [{text: a, value: 1}]
      */
-    getArrayfromValueArray(_target, _value, _key) {
+    getFilteredArrayfromValueArray(_target, _value, _key) {
       if (!_target || !_value || _target.length < 0 || !_key) return [];
       var filtered =  this.$_(_target).keyBy(_key).at(_value).value();
       if (this.$_.includes(filtered, undefined)) {
@@ -351,7 +371,7 @@ export default {
     },
     /**
      * 목적 : _target 배열을 기준으로 value값을 가지는 배열의 _key값이 포함 되지 않는 항목들만 filtering 해주는 함수
-     *            getArrayfromValueArray와 반대역할
+     *            getFilteredArrayfromValueArray와 반대역할
      * ex) 
      * _target = [{text: a, value: 1}, {text: a, value: 2}]
      * _value = [{value, 1}]
@@ -364,18 +384,31 @@ export default {
         return value === _value;
       })
     },
-    makeSelectOptions () {
+    makeSelectOptions (_items) {
       var options = [];
-      if (!this.items && !this.items.length) return options;
+      if (!_items && !_items.length) return options;
 
-      this.$_.forEach(this.items, (_item) => {
+      this.$_.forEach(_items, (_item) => {
         options.push({
           text: _item[this.itemText],
           value: _item[this.itemValue]
         });
       });
 
-      this.checkboxItems = options;
+      return options;
+      // this.filteredOptionsOrg = options;
+      // 기존 소스
+      // var options = [];
+      // if (!this.items && !this.items.length) return options;
+
+      // this.$_.forEach(this.items, (_item) => {
+      //   options.push({
+      //     text: _item[this.itemText],
+      //     value: _item[this.itemValue]
+      //   });
+      // });
+
+      // this.filteredOptionsOrg = options;
     }
     /** /기타 function **/
   }

@@ -79,7 +79,7 @@
             :close-on-select="false"
             :multiple="true"
             class="mb-3"
-            @input="onChange"
+            @input="input"
           >
           </multiselect>
         </b-col>
@@ -248,7 +248,11 @@ export default {
   //* methods */
   methods: {
     // TODO : 부모에게 변경여부 전달
-    onChange () {
+    input () {
+      // console.log(JSON.stringify(this.vValue));
+      // var selectedValues = this.$_.map(this.vValue, 'code');
+      // console.log(JSON.stringify(selectedValues));
+      // this.$emit('input', selectedValues);
       this.$emit('input', this.vValue);
     },
     remove (item) {

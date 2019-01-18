@@ -4,6 +4,7 @@
 let backendConfig = {
   protocol: 'http',
   url: 'localhost',
+  // url: '10.10.11.128',
   // url: '10.10.11.104',
   port: '8080'
 };

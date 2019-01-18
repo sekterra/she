@@ -16,22 +16,21 @@
           </b-col>
         </b-row>
         <b-card>
-          <b-row>
-            <b-col sm="12" md="12" lg="12" xl="12" class="col-xxl-6">
+          <b-row align="middle">
+            <b-col sm="12" md="12" lg="12" xl="12" class="col-xxl-12">
               <y-textarea
                 :width="12"
+                :disabled="true"
+                :rows="5"
                 ui="bootstrap"
                 name="consent"
-                :rows="5"
                 v-model="param.consent"
               >
               </y-textarea>
             </b-col>
-          </b-row>
-          <b-row>
-            <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
+            <b-col sm="12" md="12" lg="12" xl="12" class="col-xxl-12">
             <y-radio
-              :width="baseWidth"
+              :width="12"
               :editable="editable"
               :comboItems="agreeYnItems"
               itemText="codeNm"
@@ -47,26 +46,24 @@
           <div class="float-right mt-3">
             <y-btn
               v-if="editable"
-              :action-url="insertUrl"
               :param="param"
-              :is-submit="isSubmit"
+              :is-submit="false"
               type="save"
               title="예약등록"
               color="primary"
               size="small"
               action-type="POST"
-              beforeSubmit = "beforeInsert"
-              @beforeInsert="beforeInsert"
+              beforeSubmit = "beforeAgree"
+              @beforeAgree="beforeAgree"
               @btnClicked="btnInsertClickedCallback" 
               @btnClickedErrorCallback="btnClickedErrorCallback"
             />
             <y-btn
-              v-if="editable"
-              type="search"
+              type="clear"
               title="목록"
-              color="primary"
               size="small"
-              @btnClicked="$emit('close')"
+              color="info"
+              @btnClicked="closePopup" 
             />
           </div>
         </b-card>
@@ -79,6 +76,13 @@
 export default {
   name: 'checkup-result-consent',
   props: {
+    popupParam: {
+      type: Object,
+      default: {
+        heaCheckupPlanNo: 0,
+        heaCheckedOrgNo: 0
+      },
+    },
   },
   data () {
     return {
@@ -86,11 +90,10 @@ export default {
         consent: '',
         agreeYn: null,
       },
-      isSubmit: false,
       baseWidth: 8,
+      isAction: false,
       editable: true,
       agreeYnItems: [],
-      insertUrl: '',
     };
   },
   /** Vue lifecycle: created, mounted, destroyed, etc **/
@@ -120,19 +123,23 @@ export default {
           { code: 'Y', codeNm: '동의합니다' },
           { code: 'N', codeNm: '동의하지 않습니다' },
         ];
-      }, 3000);
+      }, 100);
     },
-    beforeInsert () {
+    closePopup () {
+      this.$emit('closePopup', {});
+    },
+    beforeAgree () {
       this.checkValidation();
     },
     checkValidation () {
-      this.$validator.validateAll().then((_result) => {
-        this.isSubmit = _result;
+      this.$validator.validateAll().then((_result) => {        
+        if (_result === true) this.$emit('closePopup', { 'heaCheckupPlanNo': this.popupParam.heaCheckupPlanNo, 'heaCheckedOrgNo': this.popupParam.heaCheckedOrgNo });
+
         // TODO : 전역 성공 메시지 처리
         // 이벤트는 ./event.js 파일에 선언되어 있음
-        if (!this.isSubmit) window.getApp.emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
+        if (!this.isAction) window.getApp.emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
       }).catch(() => {
-        this.isSubmit = false;
+        this.isAction = false;
       });
     },
     validateState (_ref) {
@@ -142,10 +149,10 @@ export default {
       return null;
     },
     btnInsertClickedCallback (_result) {
+      console.log(1);
+      this.closePopup();
       this.$validator.reset();
-      this.isSubmit = false;
-      window.getApp.emit('APP_REQUEST_SUCCESS', "정상적으로 등록 되었습니다.");
-      this.$emit('close')
+      this.isAction = false;
     },
     btnClickedErrorCallback (_result) {
       window.getApp.emit('APP_REQUEST_ERROR', _result);

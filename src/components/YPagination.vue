@@ -18,7 +18,7 @@
 import { scrollTo } from '@/utils/scrollTo'
 
 export default {
-  name: 'Pagination',
+  name: 'y-pagination',
   props: {
     total: {
       required: true,
@@ -35,7 +35,7 @@ export default {
     pageSizes: {
       type: Array,
       default() {
-        return [10, 20, 30, 50]
+        return [10, 20, 30, 50, 100]
       }
     },
     layout: {
@@ -94,6 +94,7 @@ export default {
 .pagination-container {
   background: #fff;
   padding: 0px 16px;
+  text-align: center;
 }
 .pagination-container.hidden {
   display: none;

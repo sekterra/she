@@ -1,6 +1,11 @@
 <!--
-  TODO: vue.js + Bootstrap 샘플 예제
--->
+  목적 : 건강검진결과 검색
+  작성자 : khk
+  Detail : 
+  *
+  examples:
+  *
+  -->
 <template>
   <b-container fluid>
     <b-row>
@@ -18,7 +23,6 @@
                 title="검색"
                 size="mini"
                 color="success"
-                icon="el-icon-search"
                 action-type="GET"
                 @btnClicked="btnSearchClickedCallback" 
                 @btnClickedErrorCallback="btnClickedErrorCallback"
@@ -30,14 +34,14 @@
               <y-select
                 :width="8"
                 :editable="editable"
-                :comboItems="yearItems"
+                :comboItems="checkupYearItems"
                 itemText="codeNm"
                 itemValue="code"
                 ui="bootstrap"
                 type="search"
-                name="year"
+                name="checkupYear"
                 label="건강검진년도"
-                v-model="searchParam.year"
+                v-model="searchParam.checkupYear"
                 />
             </b-col>
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
@@ -45,8 +49,8 @@
                 :width="8"
                 :editable="editable"
                 :comboItems="heaCheckupPlanNoItems"
-                itemText="codeNm"
-                itemValue="code"
+                itemText="heaCheckupPlanNm"
+                itemValue="heaCheckupPlanNo"
                 ui="bootstrap"
                 type="search"
                 name="heaCheckupPlanNo"
@@ -58,6 +62,7 @@
               <y-text
                 :width="8"
                 :editable="editable"
+                :clearable="true"
                 ui="bootstrap"
                 name="userNm"
                 label="성명"
@@ -82,28 +87,28 @@
               <y-select
                 :width="8"
                 :editable="editable"
-                :comboItems="diseaseClassCdItems"
+                :comboItems="heaDiseaseClassCdItems"
                 itemText="codeNm"
                 itemValue="code"
                 ui="bootstrap"
                 type="search"
-                name="diseaseClassCd"
+                name="heaDiseaseClassCd"
                 label="질환종류"
-                v-model="searchParam.diseaseClassCd"
+                v-model="searchParam.heaDiseaseClassCd"
                 />
             </b-col>
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <y-select
                 :width="8"
                 :editable="editable"
-                :comboItems="diseaseCdItems"
-                itemText="codeNm"
-                itemValue="code"
+                :comboItems="heaDiseaseCdItems"
+                itemText="heaDiseaseNm"
+                itemValue="heaDiseaseCd"
                 ui="bootstrap"
                 type="search"
-                name="diseaseCd"
+                name="heaDiseaseCd"
                 label="질환"
-                v-model="searchParam.diseaseCd"
+                v-model="searchParam.heaDiseaseCd"
                 />
             </b-col>
             <b-col sm="12" md="12" lg="12" xl="12" class="col-xxl-6">
@@ -120,17 +125,18 @@
                 />              
             </b-col>
             <b-col sm="12" md="12" lg="12" xl="12" class="col-xxl-7">
-              <y-checkbox
+                <y-multi-select
                 :width="10"
                 :editable="editable"
-                :comboItems="heaCheckedOrgNosItems"
-                itemText="codeNm"
-                itemValue="code"
+                :comboItems="heaCheckedOrgNosItems"                                
+                itemText="heaCheckupOrgNm"
+                itemValue="heaCheckupOrgNo"
                 ui="bootstrap"
-                name="heaCheckedOrgNos"
+                type="search"
                 label="검진병원"
-                v-model="searchParam.heaCheckedOrgNos"
-                />              
+                name="heaCheckedOrgNos"
+                v-model="heaCheckedOrgNos"
+              />
             </b-col>
           </b-row>
         </b-card>
@@ -140,6 +146,16 @@
     <b-row class="mt-3">
       <b-col sm="12" class="px-0">
         <b-col sm="12">
+          <div slot="buttonGroup" class="float-right mb-1">
+            <y-btn 
+              :is-submit="false"
+              type="clear"
+              title="검진결과/판정 Upload"
+              size="mini"
+              color="primary"
+              @btnClicked="btnDiagnoseResultUploadClicked" 
+            />
+          </div>
           <y-data-table 
             label="건강검진 목록"
             ref="dataTable"
@@ -148,11 +164,40 @@
             :items="gridData"
             :excel-down="true"
             :print="true" 
-            @selectedDatatableItems="selectedDatatableItems"
-            />
+            @selectedRow="selectedRow"
+            @tableLinkClicked="tableLinkClicked"
+            >
+            <el-table-column
+              slot="selection"
+              align="center"
+              width="80" 
+              >
+              <template slot-scope="tableData">
+                <y-btn
+                  v-if="editable"
+                  type="search"
+                  title="상세"
+                  size="mini"
+                  color="info"
+                  @btnClicked="getDetail(tableData.row)" 
+                />
+              </template>
+            </el-table-column>
+          </y-data-table>
           </b-col>
       </b-col>      
     </b-row>
+    <el-dialog
+      :title="popupOptions.title"
+      :visible.sync="popupOptions.visible"
+      :fullscreen="false"
+      :close-on-click-modal="true"
+      :close-on-press-escape="true"
+      :show-close="false"
+      :width="popupOptions.width"
+      :top="popupOptions.top">
+      <component :is="popupOptions.target" :popupParam="popupOptions.param" @closePopup="closePopup" />
+    </el-dialog>
   </b-container>
 </template>
 
@@ -167,41 +212,54 @@ export default {
   },
   data () {
     return {
+      popupOptions: {
+        target: null,
+        title: '',
+        visible: false,
+        width: '90%',
+        top: '10px',
+        param: {}
+      },
       searchParam: {
-        year: '',
+        checkupYear: '',
         heaCheckupPlanNo: 0,
         retirementYn: '',
         heaDiagnoseCds: [],
-        diseaseClassCd: '',
-        diseaseCd: '',
+        heaDiseaseClassCd: '',
+        heaDiseaseCd: '',
         heaCheckedOrgNos: [],
         userNm: ''
       },
       editable: true,
       gridData: [],
       gridHeaderOptions: [],
-      yearItems: [],
+      checkupYearItems: [],
       heaCheckupPlanNoItems: [],
       heaDiagnoseCdsItems: [],
       retirementYnItems: [],
-      diseaseClassCdItems: [],
-      diseaseCdItems: [],
+      heaDiseaseClassCdItems: [],
+      heaDiseaseCdItems: [],
       heaCheckedOrgNosItems: [],
+      heaCheckedOrgNos: [],
+
       searchUrl: ''
     };
   },
   computed: {
   },
   watch: {
-    'searchParam.year': function (newValue, oldValue) {
+    'searchParam.checkupYear': function (newValue, oldValue) {
       this.getHeaCheckupPlanNoItems();
     },
-    'searchParam.diseaseClassCd': function (newValue, oldValue) {
-      this.getDiseaseCdItems();
+    'searchParam.heaDiseaseClassCd': function (newValue, oldValue) {
+      this.getHeaDiseaseCdItems();
+    },
+    heaCheckedOrgNos () {
+      this.searchParam.heaCheckedOrgNos = this.$_.map(this.heaCheckedOrgNos, 'code');
     }
   },
   /** created, beforeMount, mounted, beforeDestroy, destroyed **/
-  beforeCreate () {
+  beforeCreate () {      
   },
   created () {
   },
@@ -209,11 +267,16 @@ export default {
     // TODO : data를 초기화 시켜줌
     // 이유 : vue.js는 SPA기반으로 동작하기 때문에 페이지를 이동하더라도 기존 입력된 정보가 그대로 남아 있는 문제가 있음
     Object.assign(this.$data, this.$options.data());
-    this.init();    
+    this.init(); 
+
+    // 팝업 반환정보 수신
+    window.getApp.$on('POPUP_CLOSE_CALLBACK', this.popupCloseCallback);
   },
   mounted () {
   },
   beforeDestroy () {
+    // 팝업 반환정보 수신
+    window.getApp.$on('POPUP_CLOSE_CALLBACK', this.popupCloseCallback);
   },
   destroyed () {
   },
@@ -227,9 +290,9 @@ export default {
         var nowDate = new Date();
         var from = nowDate.getFullYear() - 9;
         for (; from <= nowDate.getFullYear() + 1; from++) {
-          this.yearItems.push({ 'code': from, 'codeNm': from + '년' });
+          this.checkupYearItems.push({ 'code': from, 'codeNm': from + '년' });
         }
-        this.searchParam.year = nowDate.getFullYear().toString();
+        this.searchParam.checkupYear = nowDate.getFullYear().toString();
 
         this.retirementYnItems.push({ 'code': '', 'codeNm': '전체' });
         this.retirementYnItems.push({ 'code': 'Y', 'codeNm': '재직' });
@@ -237,20 +300,19 @@ export default {
 
         this.getHeaCheckupPlanNoItems();
         this.getHeaDiagnoseCdsItems();
-        this.getDiseaseClassCdItems();
-        this.getDiseaseCdItems();
+        this.getHeaDiseaseClassCdItems();
+        this.getHeaDiseaseCdItems();
         this.getHeaCheckedOrgNosItems();
       }, 200);
 
       // 그리드 헤더 설정
       this.gridHeaderOptions = [
-        { text: '선택', name: 'check', width: '80px', type: 'check' },
         { text: '통보여부', name: 'notifyResultYn', width: '120px' },
         { text: '판정', name: 'heaDiagnoseNm', width: '120px', align: 'center' },
         { text: '질환종류', name: 'heaDiseaseClassNm', width: '200px' },
         { text: '질환', name: 'heaDiseaseNm', width: '200px' },
         { text: '부서', name: 'deptNm', width: '160px' },
-        { text: '성명', name: 'userNm', width: '160px', align: 'center' },
+        { text: '성명', name: 'userNm', width: '160px', align: 'center', type: 'link' },
         { text: '성별', name: 'comSexTypeNm', width: '80px', align: 'center' },
         { text: '검진종류', name: 'heaCheckupClassNm', width: '200px', align: 'center' },
         { text: '검진일', name: 'heaCheckedYmd', width: '160px', align: 'center' },
@@ -266,7 +328,7 @@ export default {
     /** Call API service **/
     getList () {
       this.$http.url = this.searchUrl;
-      this.$http.type = 'GET';
+      this.$http.type = 'get';
       this.$http.param = this.searchParam;
       this.$http.request((_result) => {
         this.gridData = _result.data;
@@ -276,53 +338,84 @@ export default {
     }, 
     getHeaCheckupPlanNoItems () {
       // 검진계획 선택항목 조회
-      this.heaCheckupPlanNoItems.push({ 'code': '0', 'codeNm': '전체' });
+      this.$http.url = selectConfig.checkupPlan.list.url;
+      this.$http.type = 'get';
+      this.$http.param = {
+        'checkupYear': this.searchParam.checkupYear
+      };
+      this.$http.request((_result) => {
+        _result.data.splice(0, 0, { 'heaCheckupPlanNo': '0', 'heaCheckupPlanNm': '전체' });
+        this.heaCheckupPlanNoItems = _result.data;
+        this.searchParam.heaCheckupPlanNo = 0;
+      }, (_error) => {
+      });
     },
     getHeaDiagnoseCdsItems () {
       // 판정 항목 조회
       this.$http.url = this.$format(selectConfig.codeMaster.getSelect.url, 'HEA_DIAGNOSE');
-      this.$http.type = 'GET';
+      this.$http.type = 'get';
       this.$http.request((_result) => {
         this.heaDiagnoseCdsItems = _result.data;
       }, (_error) => {
       });
     },
-    getDiseaseClassCdItems () {
+    getHeaDiseaseClassCdItems () {
       // 질환종류 선택항목 조회
       this.$http.url = this.$format(selectConfig.codeMaster.getSelect.url, 'HEA_DISEASE_CLASS');
-      this.$http.type = 'GET';
+      this.$http.type = 'get';
       this.$http.request((_result) => {
-        this.diseaseClassCdItems.push({ 'code': '', 'codeNm': '전체' });        
-        _result.data.forEach(element => {
-          this.diseaseClassCdItems.push(element);
-        });
+        _result.data.splice(0, 0, { 'code': '0', 'codeNm': '전체' });
+        this.heaDiseaseClassCdItems = _result.data;
       }, (_error) => {
       });
     },
-    getDiseaseCdItems () {
+    getHeaDiseaseCdItems () {
       // 질환 선택항목 조회
-      // 질환조회 api 개발 후 적용
-      this.diseaseCdItems.push({ 'code': '', 'codeNm': '전체' });
+      this.$http.url = selectConfig.disease.list.url;
+      this.$http.type = 'get';
+      this.$http.param = {
+        'heaDiseaseClassCd': this.searchParam.heaDiseaseClassCd
+      };
+      this.$http.request((_result) => {
+        _result.data.splice(0, 0, { 'heaDiseaseCd': '', 'heaDiseaseNm': '전체' });
+        this.heaDiseaseCdItems = _result.data;
+        this.searchParam.heaDiseaseCd = '';
+      }, (_error) => {
+      });
     },
     getHeaCheckedOrgNosItems () {
-      // 검진병원 항목 조회
-      // 대상 검진기관 조회 api 개발 후 적용
-      this.heaCheckedOrgNosItems.push({ 'code': '1', 'codeNm': '서울대병원' });
-      this.heaCheckedOrgNosItems.push({ 'code': '2', 'codeNm': '세브란스' });
-      this.heaCheckedOrgNosItems.push({ 'code': '3', 'codeNm': '새서울내과' });
-      this.heaCheckedOrgNosItems.push({ 'code': '4', 'codeNm': '중앙의료재단' });
-      this.heaCheckedOrgNosItems.push({ 'code': '5', 'codeNm': '경희대병원' });
-      this.heaCheckedOrgNosItems.push({ 'code': '6', 'codeNm': '한강병원' });
+      this.$http.url = selectConfig.checkupOrg.list.url;
+      this.$http.type = 'get';
+      this.$http.param = {
+        'useYn': 'Y'
+      };
+      this.$http.request((_result) => {
+        this.heaCheckedOrgNosItems = _result.data;
+        this.searchParam.heaCheckedOrgNos = [];
+      }, (_error) => {
+      });
+    },
+    selectedRow (data) {
+      alert(data.userId);
+    },
+    tableLinkClicked (header, row) {
+      alert(12312);
+    },
+    getDetail (data) {
+      this.popupOptions.param = {
+        'heaCheckupPlanNo': data.heaCheckupPlanNo,
+        'userId': data.userId
+      };
+      this.popupOptions.target = () => import(`${'./checkupResultDetail.vue'}`);
+      this.popupOptions.title = '건강검진결과 상세';
+      this.popupOptions.visible = true;
+    },
+    closePopup (data) {
+      this.popupOptions.target = null;
+      this.popupOptions.visible = false;
     },
     /** /Call API service **/
-    
-    /** Events, Callbacks (버튼 제외) **/
-    /**
-     * eventBus로 선택된 정보를 부모로 넘긴다.
-     */
-    selectedDatatableItems (_item) {
-      this.$emit('sendDataToPopup', _item)
-    },
+
     /** /Events, Callbacks (버튼 제외) **/
 
     /** button 관련 이벤트 **/
@@ -332,6 +425,13 @@ export default {
     btnClickedErrorCallback (_result) {
       window.getApp.$emit('APP_REQUEST_ERROR', _result);
     },    
+    btnDiagnoseResultUploadClicked (_result) {
+      this.popupOptions.target = () => import(`${'./diagnoseResultUpload.vue'}`);
+      this.popupOptions.title = '검진결과/판정 Upload';
+      this.popupOptions.visible = true;
+      this.popupOptions.width = '80%';
+      this.popupOptions.top = '50px';
+    },
     /** end button 관련 이벤트 **/
 
     /** 기타 로직 **/

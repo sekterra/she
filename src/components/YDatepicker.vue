@@ -79,7 +79,8 @@ examples:
         </b-col>
         <b-col 
           v-if="editable"
-          :sm="width">
+          :sm="width"
+          class="fix-height">
           <datetime-picker 
             v-model="vValue"
             :width="datepickerWidth"
@@ -87,7 +88,11 @@ examples:
             :range="range"
             :type="type"
             :format="format"
-            value-type="format"
+            :not-before="start"
+            :not-after="end"
+            :clearable="clearable"
+            :append-to-body="true"
+            :disabled="disabled"
             input-class="inputClass"
             @input="input"
             >
@@ -101,8 +106,8 @@ examples:
 <script>
 let localeMapper = require('@/locale/localeMapper.json');
 import vue2Datepicker from 'vue2-datepicker';
-import { isValidDate, isValidRange, isDateObejct, isPlainObject, formatDate, parseDate, throttle } from 'vue2-datepicker/src/utils/index'
-import { transformDate, transformDateRange } from 'vue2-datepicker/src/utils/transform'
+import { isValidDate, isValidRange, isDateObejct, isPlainObject, formatDate, parseDate, throttle } from '@/js/transformBase'
+import { transformDate, transformDateRange } from '@/js/transform'
 
 // require("moment/min/locales.min");
 export default {
@@ -197,12 +202,31 @@ export default {
     required: {
       type: Boolean,
       default: false
-    }
+    },
     // 날짜 형식 : time이면 HH:mm(:ss)
     // format: {
     //   type: String,
     //   default: ''
     // }
+    
+    // 시작일
+    start: {
+      type: String,
+      default: ''
+    },
+    // 종료일
+    end: {
+      type: String,
+      default: ''
+    },
+    clearable: {
+      type: Boolean,
+      default: false
+    },
+    disabled: {
+      type: Boolean,
+      default: false
+    }
   },
   data () {
     return {
@@ -273,16 +297,15 @@ export default {
       }
     },
     vValue () {
-      if (this.range) this.setLocalFormattedPeriod();
-      else this.setLocalFormattedDate();
     },
     // todo : 부모의 v-model 변경을 감시
     value () {
-      if (this.range){
-        this.vValue = this.transform.value2date(this.value, this.format);
-      } else {
-        this.vValue = this.value;
-      }
+      // if (this.range){
+      //   this.vValue = this.transform.value2date(this.value, this.format);
+      // } else {
+      //   this.vValue = this.value;
+      // }
+      this.vValue = this.value;
     },
   },
   /* Vue lifecycle: created, mounted, destroyed, etc */
@@ -292,6 +315,9 @@ export default {
       this.locale = localeMapper[_localeCode].datepicker;
       this.setLocalFormattedDate();
     });
+
+    // TODO : 팝업창의 z-index가 2001이어서 강제로 z-index를 높게 지정, element-ui의 popover도 z-index가 2021임
+    $('.mx-datepicker-popup').css('z-index', '3000');
   },
   mounted () {
     if (!this.default) return;
@@ -311,7 +337,20 @@ export default {
   methods: {
     input () {
       // this.$refs.datePickerMenu.save(this.vValue);
-      this.$emit('input', this.vValue);
+      var value = null;
+      if (this.range) {
+        console.log(':::::::::::::::: range convert');
+        value = [];
+        this.$_.forEach(this.vValue, (_item) => {
+          // var date = this.transform.value2date(_item);
+          var dateStr = this.$comm.moment(_item).format('YYYY-MM-DD')
+          value.push(dateStr);
+        });
+      } else {
+        value = this.vValue;
+      }
+      console.log(JSON.stringify(value));
+      this.$emit('input', value);
     },
     /**
      * delete icon 클릭시 값 초기화
@@ -369,7 +408,9 @@ export default {
   display: inline-block;
   width: 100%;
   height: 31px;
-  padding: 6px 30px;
+  max-height: 31px;
+  // padding: 6px 30px;
+  padding: 0px 30px;
   padding-left: 10px;
   font-size: 0.875rem;
   line-height: 1.4;
@@ -386,6 +427,9 @@ export default {
   &:focus {
     outline: none;
   }
+}
+.fix-height {
+  height: 31px;
 }
 </style>
 

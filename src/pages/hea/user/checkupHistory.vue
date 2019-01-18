@@ -1,5 +1,5 @@
 <!--
-  목적 : 컴포넌트
+  목적 : 보건 홈 - 건강검진 이력
   Detail :
   *
   examples:
@@ -16,7 +16,7 @@
             </div>
             <div class="float-right">
               <y-btn
-                  :action-url="saveUrl"
+                  :action-url="searchUrl"
                   :param="searchParam"
                   type="search"
                   title="검색"
@@ -36,7 +36,7 @@
                 :range="true"
                 label="기간"
                 name="period"
-                v-model="checkupHistory.period"
+                v-model="searchParam.period"
               >
               </y-datepicker>
             </b-col>
@@ -44,14 +44,13 @@
               <y-select
                 :width="baseWidth"
                 :editable="editable"
-                :comboItems="examItems"
-                itemText="examType"
-                itemValue="examPk"
+                :comboItems="heaCheckupClassItems"
+                itemText="codeNm"
+                itemValue="code"
                 ui="bootstrap"
-                type="search"
-                label="검진종류"
-                name="selectValue"
-                v-model="checkupHistory.selectValue"
+                label="건강검진 종류"
+                name="heaCheckupClassCd"
+                v-model="searchParam.heaCheckupClassCd"
               >
               </y-select>
             </b-col>
@@ -66,8 +65,8 @@
         <b-col sm="12" class="px-0">
           <y-data-table 
             label="건강검진 이력"
-            :headers="healthExamHistGridHeaderOptions"
-            :items="healthExamHistGridData"
+            :headers="checkupHistoryGridHeaderOptions"
+            :items="checkupHistoryGridData"
             :editable="editable"
             :excel-down="true"
             :print="true"
@@ -81,32 +80,31 @@
 </template>
 
 <script>
+import selectConfig from '@/js/selectConfig';
 export default {
-  /* attributes: name, components, props, data */
   name: 'y-healthExamHist',
   props: {
   },
   data: () => ({
-    checkupHistory: {
+    searchParam: {
       period: null,
-      examPk: null,
-      selectValue: null,
+      heaCheckupClassCd: null,
     },
     baseWidth: 8,
     editable: true,
-    healthExamHistGridData: [],
-    healthExamHistGridHeaderOptions: [],
-    examItems: []
+    searchUrl: '',
+    heaCheckupClassItems: [],
+    checkupHistoryGridData: [],
+    checkupHistoryGridHeaderOptions: []
   }),
-  //* Vue lifecycle: created, mounted, destroyed, etc */
   beforeCreate () {
   },
   created () {
   },
   beforeMount () {
-    this.getDeptItems();
     this.init();
-    this.getList();
+    this.getComboItems('HEA_CHECKUP_CLASS');
+    this.getDataList();
   },
   mounted () {
   },
@@ -115,47 +113,49 @@ export default {
   //* methods */
   methods: {
     /** Call API service **/
-    /**
-     * 검진 종류를 가져옴
-     */
-    getDeptItems () {
-      // 이 부분을 api service 호출 하는 것으로 바꿀 것
-      setTimeout(() => {
-        this.examItems = [
-          { examPk: '1', examType: '종합검진' },
-          { examPk: '2', examType: '일반검진' }
-        ];
-      }, 3000);
-    },
-    /** /Call API service **/
     init () {
-      // 건강관리실 방문이력 그리드 헤더 설정
-      this.healthExamHistGridHeaderOptions = [
-        { text: 'NO', name: 'no', width: '15%', align: 'center' },
-        { text: '년도', name: 'year', width: '15%', align: 'center' },
-        { text: '검진종류', name: 'exam_type', width: '20%', align: 'center' },
-        { text: '검진일자', name: 'exam_dt', width: '20%', align: 'center' },
-        { text: '검진기관', name: 'exam_organ', width: '20%', align: 'left' },
-        { text: '판정', name: 'exam_judge', width: '15%', align: 'center' },
-        { text: '사후관리소견', name: 'post_mng_opinion', width: '30%', align: 'left' },
-        { text: '질환명', name: 'disease_nm', width: '30%', align: 'left' },
-        { text: '업무적합성', name: 'work_suit', width: '30%', align: 'left' }
+      // URL Setting
+      // this.searchUrl = selectConfig.infirmary.list.url;
+
+      // 건강검진 이력 그리드 헤더 설정
+      this.checkupHistoryGridHeaderOptions = [
+        { text: 'NO', name: 'rowNum', width: '12%', align: 'center' },
+        { text: '건강검진 일자', name: 'heaCheckedYmd', width: '25%', align: 'center' },
+        { text: '분류', name: 'heaCheckupClassNm', width: '23%', align: 'center' },
+        { text: '건강검진 명칭', name: 'heaCheckupPlanNm', width: '33%', align: 'left' },
+        { text: '건강검진 기관', name: 'heaCheckupOrgNm', width: '25%', align: 'left' },
+        { text: '사후관리 판정', name: 'heaFollowUpCd', width: '25%', align: 'center' },
+        { text: '사후관리 소견', name: 'heaFollowUpRemark', width: '30%', align: 'left' },
+        { text: '업무적합 판정', name: 'heaWorkableCd', width: '30%', align: 'left' }
       ];
     },
-    getList () {
-      // var baseUrl = this.$format(selectConfig.menus.get.url, this.menuId);
-      // var url = this.$backend.getUrl(baseUrl);
-      // var self = this;
-      setTimeout(() => {
-        this.healthExamHistGridData = [
-          { no: '3', year: '2018', exam_type: '종합검진', exam_dt: '2018-04-01', exam_organ: '서울대병원', exam_judge: 'C1', post_mng_opinion: '근무중치료', disease_nm: '고혈압', work_suit: '현재조건작업가능' },
-          { no: '2', year: '2018', exam_type: '종합검진', exam_dt: '2018-04-01', exam_organ: '서울대병원', exam_judge: 'C2', post_mng_opinion: '근무중치료', disease_nm: '당뇨', work_suit: '현재조건작업가능' },
-          { no: '1', year: '2018', exam_type: '종합검진', exam_dt: '2018-04-01', exam_organ: '서울대병원', exam_judge: 'D1', post_mng_opinion: '근무중치료', disease_nm: '고지혈증', work_suit: '현재조건작업가능' }
-        ];
-      }, 2000);
+    // 건강검진 종류
+    getComboItems (codeGroupCd) {
+      this.$http.url = this.$format(selectConfig.codeMaster.getSelect.url, codeGroupCd);
+      this.$http.type = 'GET';
+
+      this.$http.request((_result) => {
+        if (codeGroupCd === 'HEA_CHECKUP_CLASS') 
+        {
+          this.heaCheckupClassItems = _result.data;
+        }
+      }, (_error) => {
+        console.log(_error);
+      });
+    },
+    getDataList () {
+      this.$http.url = selectConfig.checkupHistory.list.url;
+      this.$http.type = 'GET';
+      this.$http.param = this.searchParam;
+      this.$http.request((_result) => {
+        this.checkupHistoryGridData = _result.data;
+      }, (_error) => {
+        console.log(_error);
+      });
     },
     /** button 관련 이벤트 **/
     btnSearchCallback () {
+      this.getDataList();
       window.getApp.$emit('APP_REQUEST_SUCCESS', '검색 버튼이 클릭 되었습니다.');
     },
     btnClickedErrorCallback (_result) {

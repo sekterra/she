@@ -162,6 +162,8 @@
                 default="today"
                 label="날짜"
                 name="remark"
+                :clearable="true"
+                datepickerWidth="100"
                 v-model="demo.date"
               >
               </y-datepicker>
@@ -492,11 +494,15 @@
               />
             </div>
           </div>
+          <div style="width:1024; overflow-x:auto;">
           <y-data-table
             ui="bootstrap"
             :border="false"
             :headers="gridHeaderOptions"
             :items="gridData"
+            :use-paging="true"
+            @selectedRow="selectedRow"
+            @tableLinkClicked="tableLinkClicked"
           >
             <!-- <el-table-column
               type="selection"
@@ -504,6 +510,7 @@
               width="55">
             </el-table-column> -->
           </y-data-table>
+          </div>
         </b-card>
       </b-col>
     </b-row>
@@ -569,7 +576,7 @@ export default {
     searchParam: {
       year: 2018,
       heaCheckupPlanNo: 1,
-      heaDiagnoseCds: [],
+      heaDiagnoseCds: [1],
       retirementYn: 'N',
       heaCheckedOrgNos: [3, 5],
       diseaseClassCd: '',
@@ -579,6 +586,9 @@ export default {
   computed: {
   },
   watch: {
+    'demo.period': function () {
+      console.log(JSON.stringify(this.demo.period));
+    }
   },
   /** created, beforeMount, mounted, beforeDestroy, destroyed **/
   beforeCreate () {
@@ -638,15 +648,15 @@ export default {
 
       this.gridHeaderOptions = [
         // 팝업으로 띄울 경우 url에 YPopup에 추가된 type명을 입력할 것
-        { text: '링크', name: 'link', width: '20%', align: 'center', url: 'checkupUser', target: 'popup' },
-        { text: '텍스트', name: 'text', width: '20%', align: 'center', type: 'text' },
-        { text: '숫자', name: 'number', width: '20%', type: 'number' },
-        { text: 'select', name: 'select', width: '10%', type: 'select', items: this.shuttleboxItems, itemText: 'text', itemValue: 'value' },
-        { text: 'datepicker', name: 'datepicker', width: '10%', align: 'center', type: 'datepicker' },
-        { text: '기간', name: 'period', width: '10%', type: 'datepicker', range: true },
-        { text: '라디오', name: 'radio', width: '10%', type: 'radio', items: this.shuttleboxItems, itemText: 'text', itemValue: 'value' },
-        { text: '체크박스', name: 'checkbox', width: '10%', type: 'checkbox', items: this.shuttleboxItems, itemText: 'text', itemValue: 'value' },
-        { text: '버튼', name: 'button', width: '10%', type: 'select', items: this.shuttleboxItems, itemText: 'text', itemValue: 'value' },
+        { text: '링크', name: 'link', width: '50', align: 'center', url: 'checkupUser', target: 'popup' },
+        { text: '텍스트', name: 'text', width: '100', align: 'center', type: 'text' },
+        { text: '숫자', name: 'number', width: '100', type: 'number' },
+        { text: 'select', name: 'select', width: '100', type: 'select', items: this.shuttleboxItems, itemText: 'text', itemValue: 'value' },
+        { text: 'datepicker', name: 'datepicker', width: '150', align: 'center', type: 'datepicker' },
+        { text: '기간', name: 'period', width: '150', type: 'datepicker', range: true },
+        { text: '라디오', name: 'radio', width: '100', type: 'radio', items: this.shuttleboxItems, itemText: 'text', itemValue: 'value' },
+        { text: '체크박스', name: 'checkbox', width: '100', type: 'checkbox', items: this.shuttleboxItems, itemText: 'text', itemValue: 'value' },
+        { text: '버튼', name: 'button', width: '80', type: 'select', items: this.shuttleboxItems, itemText: 'text', itemValue: 'value' },
       ];
 
 
@@ -781,6 +791,12 @@ export default {
           checkupPlanNo: 10
         }
       });
+    },
+    selectedRow (data) {
+      alert(data.text);
+    },
+    tableLinkClicked (header, row) {
+      alert(header.type + "::" + row.text);
     },
     /** end button 관련 이벤트 **/
 

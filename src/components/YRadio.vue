@@ -202,6 +202,9 @@ export default {
   beforeMount () {
     // itemSearchKey정보를 통해 backend에서 직접 조회할 경우
     if (this.itemSearchKey) this.getSelectItems();
+    else if (this.comboItems && this.comboItems.length > 0) {
+      this.makeSelectOptions();
+    }
   },
   mounted () {
   },

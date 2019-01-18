@@ -18,7 +18,7 @@
                 <y-btn
                   v-if="editable"
                   :action-url="saveUrl"
-                  :param="checkupStatus"
+                  :param="searchParam"
                   :is-submit="isSms"
                   type="save"
                   title="메일/알림톡/SMS발송"
@@ -31,14 +31,14 @@
                   @btnClickedErrorCallback="btnClickedErrorCallback"
                 />
                 <y-btn
-                  :action-url="saveUrl"
+                  :action-url="searchUrl"
                   :param="searchParam"
                   type="search"
                   title="검색"
                   size="mini"
                   color="success"
                   action-type="get"
-                  @btnClicked="btnSearchCallback" 
+                  @btnClicked="btnSearchClickedCallback" 
                   @btnClickedErrorCallback="btnClickedErrorCallback"
                 />
             </div>
@@ -48,14 +48,14 @@
               <y-select
                 :width="baseWidth"
                 :editable="editable"
-                :comboItems="examPlans"
-                itemText="examPlan"
-                itemValue="planPk"
+                :comboItems="comboCheckupPlans"
+                itemText="heaCheckupPlanNm"
+                itemValue="heaCheckupPlanNo"
                 ui="bootstrap"
                 type="search"
-                label="검진계획"
-                name="examPlanSelect"
-                v-model="checkupStatus.examPlanSelect"
+                label="건강검진 계획"
+                name="heaCheckupPlanNo"
+                v-model="searchParam.heaCheckupPlanNo"
               >
               </y-select>
             </b-col>
@@ -66,7 +66,7 @@
                 :range="true"
                 label="예약일"
                 name="remark"
-                v-model="checkupStatus.period"
+                v-model="searchParam.period"
               >
               </y-datepicker>
             </b-col>
@@ -74,33 +74,31 @@
               <y-multi-select
                 :width="9"
                 :editable="editable"
-                :comboItems="heaCheckupOrgs"
-                v-model="checkupStatus.heaCheckupOrg"
+                :comboItems="heaCheckupOrgNosItems"
                 type="edit"
-                itemText="heaCheckupOrgName"
-                itemValue="heaCheckupOrgPk"
+                itemText="heaCheckupOrgNm"
+                itemValue="heaCheckupOrgNo"
                 ui="bootstrap"
                 label="건강검진 기관 선택"
-                name="heaCheckupOrg"
-                v-validate="'required'"
-                :state="validateState('heaCheckupOrg')"
+                name="heaCheckupOrgNos"
+                v-model="heaCheckupOrgNos"
               >
               </y-multi-select> 
             </b-col>
-            <b-col sm="3" md="3" lg="3" xl="3" class="col-xxl-3">
-              <y-switch
+            <b-col sm="4" md="4" lg="4" xl="4" class="col-xxl-3">
+              <y-select
                 :width="baseWidth"
                 :editable="editable"
-                true-value="Y"
-                false-value="N"
+                :comboItems="comboCheckupYnItems"
+                itemText="codeNm"
+                itemValue="code"
                 ui="bootstrap"
+                type="search"
                 label="수검여부"
-                name="checkupStatusSelect"
-                selectText="수검"
-                unselectText="미수검"
-                v-model="checkupStatus.checkupStatusSelect"
+                name="statusYn"
+                v-model="searchParam.statusYn"
               >
-            </y-switch>
+              </y-select>
             </b-col>
           </b-row>
         </b-card>
@@ -121,11 +119,6 @@
             :rows="9"
             ref="dataTable"
             >
-            <el-table-column
-              type="selection"
-              slot="selection"
-              width="55">
-            </el-table-column>
           </y-data-table>
         </b-col>
       </b-col>
@@ -134,19 +127,18 @@
 </template>
 
 <script>
+import selectConfig from '@/js/selectConfig';
 export default {
   /* attributes: name, components, props, data */
   name: 'y-search',
   props: {
   },
   data: () => ({
-    checkupStatus: {
-      planPk: null,
-      searchPk: null,
+    searchParam: {
+      heaCheckupPlanNo: 0,
       period: null,
-      examPlanSelect: null,
-      checkupStatusSelect: 'Y',
-      heaCheckupOrg: [],
+      heaCheckupOrgNos: [],
+      statusYn: '',
     },
     baseWidth: 8,
     editable: true,
@@ -154,18 +146,25 @@ export default {
     searchGridData: [],
     searchGridHeaderOptions: [],
     saveUrl: '',
-    examPlans: [],
-    checkupStatuses: []
+    searchUrl: '',
+    comboCheckupPlans: [],
+    comboCheckupYnItems: [],
+    heaCheckupOrgNosItems: [],
+    heaCheckupOrgNos: [],
   }),
+  watch: {
+    heaCheckupOrgNos () {
+      this.searchParam.heaCheckupOrgNos = this.$_.map(this.heaCheckupOrgNos, 'code');
+    }
+  },
   //* Vue lifecycle: created, mounted, destroyed, etc */
   beforeCreate () {
   },
   created () {
   },
   beforeMount () {
-    this.getItems();
     this.init();
-    this.getList();
+    
   },
   mounted () {
   },
@@ -173,37 +172,21 @@ export default {
   },
   //* methods */
   methods: {
-    /** Call API service **/
-    /**
-     * 검진 종류를 가져옴
-     */
-    getItems () {
-      // 이 부분을 api service 호출 하는 것으로 바꿀 것
-      setTimeout(() => {
-        this.examPlans = [
-          { planPk: '1', examPlan: '종합검진' },
-          { planPk: '2', examPlan: '일반검진' }
-        ];
-        this.orgItems = [
-          { orgPk: '1', orgName: '새서울병원' },
-          { orgPk: '2', orgName: '서울대병원' },
-          { orgPk: '3', orgName: '세브란스병원' },
-          { orgPk: '4', orgName: '중앙의료원' },
-        ];
-        this.checkupStatuses = [
-          { checkupPk: '1', checkupStatus: 'O' },
-          { checkupPk: '2', checkupStatus: 'X' }
-        ];
-        this.heaCheckupOrgs = [
-          { heaCheckupOrgPk: '1', heaCheckupOrgName: '새서울병원' },
-          { heaCheckupOrgPk: '2', heaCheckupOrgName: '서울대병원' },
-          { heaCheckupOrgPk: '3', heaCheckupOrgName: '세브란스병원' },
-          { heaCheckupOrgPk: '4', heaCheckupOrgName: '중앙의료원' },
-        ];
-      }, 3000);
-    },
-    /** /Call API service **/
+    /** 초기화 관련 함수 **/
     init () {
+      // URL Setting
+      this.searchUrl = selectConfig.checkupUser.list.url;
+
+      setTimeout(() => {
+        this.comboCheckupYnItems.push({ 'code': '', 'codeNm': '전체' });
+        this.comboCheckupYnItems.push({ 'code': 'Y', 'codeNm': '수검' });
+        this.comboCheckupYnItems.push({ 'code': 'N', 'codeNm': '미수검' });
+
+        this.getComboCheckupPlans(); // 건강검진 계획
+        this.getheaCheckupOrgNosItems(); // 건강검진 기관
+        this.getDataList();
+      }, 200);
+
       // 콤보박스 초기 정보 세팅
       this.planItems = [
         { key: '', value: '' },
@@ -219,14 +202,54 @@ export default {
 
       // 수검 현황 그리드 헤더 설정
       this.searchGridHeaderOptions = [
-        { text: '예약일자', name: 'rsrv_dt', width: '20%', align: 'center' },
-        { text: '예약 검진기관', name: 'rsrv_hospital', width: '30%', align: 'left' },
-        { text: '검진일자', name: 'exam_dt', width: '20%', align: 'center' },
-        { text: '검진받은 기관', name: 'exam_hospital', width: '30%', align: 'left' },
-        { text: '수검여부', name: 'search', width: '15%', align: 'center' },
-        { text: '원내전화', name: 'tel', width: '15%', align: 'center' },
+        { text: '건강검진 계획', name: 'heaCheckupPlanNm', width: '30%', align: 'center' },
+        { text: '예약일자', name: 'reserveYmd', width: '20%', align: 'center' },
+        { text: '예약 건강검진 기관', name: 'heaCheckupOrgNm', width: '30%', align: 'left' },
+        { text: '건강검진 일자', name: 'heaCheckedYmd', width: '25%', align: 'center' },
+        { text: '건강검진받은 기관', name: 'heaCheckedOrgNm', width: '30%', align: 'left' },
+        { text: '예약자', name: 'userNm', width: '15%', align: 'center' },
+        { text: '수검여부', name: 'statusYn', width: '20%', align: 'center' },
       ];
     },
+    /** 초기화 관련 함수 **/
+
+    /** Call API service **/
+    // 건강검진 계획
+    getComboCheckupPlans () {
+      this.$http.url = selectConfig.checkupPlan.list.url;
+      this.$http.type = 'GET';
+      this.$http.request((_result) => {
+        this.comboCheckupPlans = _result.data;
+        this.comboCheckupPlans.splice(0, 0, { 'heaCheckupPlanNo': '0', 'heaCheckupPlanNm': '전체' })
+      }, (_error) => {
+        console.log(_error);
+      });
+    },
+    getheaCheckupOrgNosItems () {
+      this.$http.url = selectConfig.checkupOrg.list.url;
+      this.$http.type = 'GET';
+      this.$http.request((_result) => {
+        this.heaCheckupOrgNosItems = _result.data;
+      }, (_error) => {
+        console.log(_error);
+      });
+    },
+    getDataList () {
+      this.$http.url = this.searchUrl;
+      this.$http.type = 'GET';
+      this.$http.param = this.searchParam;
+      this.$http.request((_result) => {
+        this.searchGridData = _result.data;
+      }, (_error) => {
+        console.log(_error);
+      });
+    },
+    change () {
+      var selectedValues = this.$_.map(this.vValue, 'code');
+      console.log(JSON.stringify(selectedValues));
+    },
+    /** /Call API service **/
+
     /** 저장 하기전 UI단 유효성 검사 **/
     beforeSubmit () {
       this.checkValidation();
@@ -250,19 +273,9 @@ export default {
       }
       return null;
     },
-    getList () {
-      // var baseUrl = this.$format(selectConfig.menus.get.url, this.menuId);
-      // var url = this.$backend.getUrl(baseUrl);
-      // var self = this;
-      setTimeout(() => {
-        this.searchGridData = [
-          { rsrv_dt: '2018-03-02', rsrv_hospital: '새서울병원', exam_dt: '2018-09-02', exam_hospital: '세브란스 병원', search: 'Y', tel: '02-555-7033' },
-          { rsrv_dt: '2018-03-12', rsrv_hospital: '고려대병원', exam_dt: '2018-06-30', exam_hospital: '고려대병원', search: 'N', tel: '02-574-7033' },
-        ];
-      }, 2000);
-    },
     /** button 관련 이벤트 **/
-    btnSearchCallback () {
+    btnSearchClickedCallback () {
+      this.getDataList();
       window.getApp.$emit('APP_REQUEST_SUCCESS', '검색 버튼이 클릭 되었습니다.');
     },
     btnClearClickedCallback () {
@@ -270,6 +283,7 @@ export default {
       window.getApp.$emit('APP_REQUEST_SUCCESS', '초기화 버튼이 클릭 되었습니다.');
     },
     btnSaveClickedCallback (_result) {
+      this.getDataList();
       window.getApp.$emit('APP_REQUEST_SUCCESS', '저장 버튼이 클릭 되었습니다.');
     },
     btnDeleteClickedCallback (_result) {

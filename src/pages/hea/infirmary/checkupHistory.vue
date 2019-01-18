@@ -36,8 +36,8 @@
                 :width="baseWidth"
                 :editable="editable"
                 :comboItems="comboDeptItems"
-                itemText="codeNm"
-                itemValue="code"
+                itemText="deptNm"
+                itemValue="deptCd"
                 ui="bootstrap"
                 type="edit"
                 label="부서"
@@ -52,7 +52,7 @@
                 :editable="editable"
                 ui="bootstrap"
                 type="edit"
-                label="사용자"
+                label="사용자명"
                 name="userNm"
                 v-model="searchParam.userNm"
               >
@@ -99,7 +99,6 @@ export default {
       },
       baseWidth: 8,
       editable: true,
-      isSubmit: false,
       comboDeptItems: [],
       searchUrl: '',
       gridData: [],
@@ -114,8 +113,8 @@ export default {
   beforeMount () {
     Object.assign(this.$data, this.$options.data());
     this.init();
-    this.getDataList();
     this.getDeptItems();
+    this.getDataList();
   },
   mounted () {
   },
@@ -127,24 +126,24 @@ export default {
     /** 초기화 관련 함수 **/
     init () {
       this.gridHeaderOptions = [
-        { text: '사용자Id', name: 'userId', width: '10%', align: 'center' },
+        { text: '사번', name: 'userId', width: '10%', align: 'center' },
         { text: '사용자명', name: 'userNm', width: '10%', align: 'center' },
         { text: '부서', name: 'deptNm', width: '10%', align: 'center' },
         { text: '검진일자', name: 'heaCheckedYmd', width: '10%', align: 'center' },
         { text: '검진기관', name: 'heaCheckupOrgNm', width: '15%', align: 'left' },
-        { text: '일반판정', name: 'heaWorkableGenCd', width: '9%', align: 'center' },
-        { text: '일반소견', name: 'overallOpinionGen', width: '15%', align: 'left' },
-        { text: '종합판정', name: 'heaWorkableCd', width: '9%', align: 'center' },
-        { text: '종합소견', name: 'overallOpinion', width: '15%', align: 'left' },
+        { text: '판정', name: 'heaWorkableCd', width: '9%', align: 'center' },
+        { text: '소견', name: 'overallOpinion', width: '15%', align: 'left' },
       ];
     },
     getDeptItems () {
-      setTimeout(() => {
-        this.comboDeptItems = [
-          { code: '', codeNm: '전체' },
-          { code: '1', codeNm: '부서' },
-        ];
-      }, 2000);
+      this.$http.url = selectConfig.dept.list.url;
+      this.$http.type = 'GET';
+      this.$http.request((_result) => {
+        _result.data.splice(0, 0, { 'deptCd': '', 'deptNm': '전체' });
+        this.comboDeptItems = _result.data;
+      }, (_error) => {
+        console.log(_error);
+      });
     },
     /** /초기화 관련 함수 **/
 
@@ -162,7 +161,6 @@ export default {
     
     /** Button Event **/
     btnClickedErrorCallback (Result) {
-      this.isSubmit = false;
       window.getApp.emit('APP_REQUEST_ERROR', Result);
     },
     btnSearchCallback () {

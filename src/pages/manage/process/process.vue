@@ -44,6 +44,7 @@
                 name="processNm"                
                 v-model="process.processNm"
                 v-validate="'required'"
+                :state="validateState('processNm')"
                 />
             </b-col>
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
@@ -80,20 +81,18 @@
               size="small"
               title="초기화"
               color="info"
-              icon="el-icon-edit"
               @btnClicked="btnClearClickedCallback" 
               />
             <y-btn
               v-if="editable"
-              :action-url="createUrl"
+              :action-url="insertUrl"
               :param="process"
               :is-submit="isCreateSubmit"
               type="save"
               size="small"
               title="신규등록"
               color="warning"
-              icon="el-icon-edit"
-              action-type="POST"
+              action-type="post"
               beforeSubmit = "beforeCreateSubmit"
               @beforeCreateSubmit="beforeCreateSubmit"
               @btnClicked="btnCreateClickedCallback" 
@@ -101,14 +100,13 @@
               />
               <y-btn
               v-if="editable&&updateMode"
-              :action-url="updateUrl"
+              :action-url="editUrl"
               :param="process"
               :is-submit="isUpdateSubmit"
               type="save"
               size="small"
               title="수정"
               color="warning"
-              icon="el-icon-edit-outline"
               action-type="PUT"
               beforeSubmit = "beforeUpdateSubmit"
               @beforeUpdateSubmit="beforeUpdateSubmit"
@@ -139,7 +137,7 @@ export default {
       // 예) ExamData -> examData: {},
       process: {
         processNo: 0,
-        processNm: '',
+        processNm: null,
         sortOrder: null,
         useYn: 'Y',
         createUserId: '', 
@@ -157,8 +155,8 @@ export default {
       gridData: [],
       gridHeaderOptions: [],
       useYnItems: [],
-      createUrl: '',
-      updateUrl: '',
+      insertUrl: '',
+      editUrl: '',
       searchUrl: '',
       detailUrl: '',
     };
@@ -201,8 +199,8 @@ export default {
         { text: '수정자', name: 'updateUserNm', width: '120px', align: 'center' }
       ];
       
-      this.createUrl = selectConfig.process.create.url;
-      this.updateUrl = selectConfig.process.update.url;
+      this.insertUrl = selectConfig.process.create.url;
+      this.editUrl = selectConfig.process.update.url;
       this.searchUrl = selectConfig.process.list.url;
       this.detailUrl = selectConfig.process.get.url;
 
@@ -218,7 +216,7 @@ export default {
     */
     getList () {
       this.$http.url = this.searchUrl;
-      this.$http.type = 'GET';      
+      this.$http.type = 'get';      
       this.$http.request((_result) => {
         this.gridData = _result.data;
       }, (_error) => {
@@ -227,7 +225,7 @@ export default {
     },
     getDetail (data) {
       this.$http.url = this.$format(this.detailUrl, data.processNo);
-      this.$http.type = 'GET'; 
+      this.$http.type = 'get'; 
       this.$http.request((_result) => {
         this.updateMode = true;
         this.process = _result.data;
@@ -239,25 +237,16 @@ export default {
     /** /Call API service **/    
 
     /** validation checking(필요없으면 지워주세요) **/
-    beforeCreateSubmit () {
-      this.process.processNo = 0;
-      this.isCreateSubmit = this.checkValidation();
+    beforeCreateSubmit () {        
+      this.$validator.validateAll().then((_result) => {
+        this.process.processNo = 0;
+        this.isCreateSubmit = _result;
+      }).catch(() => { window.getApp.$emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.'); });
     },
     beforeUpdateSubmit () {
-      this.isUpdateSubmit = this.checkValidation();
-    },
-    checkValidation () {
-      var success = true;
       this.$validator.validateAll().then((_result) => {
-        // TODO : 전역 성공 메시지 처리
-        success = _result;
-        if (!success) {
-          window.getApp.$emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
-        }
-      }).catch(() => {
-        success = false;
-      });
-      return success;
+        this.isUpdateSubmit = _result;
+      }).catch(() => { window.getApp.$emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.'); });
     },
     validateState (_ref) {
       if (this.veeBag[_ref] && (this.veeBag[_ref].dirty || this.veeBag[_ref].validated)) {

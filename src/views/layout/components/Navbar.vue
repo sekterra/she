@@ -1,7 +1,67 @@
 <template>
   <div class="navbar">
     <hamburger :toggle-click="toggleSideBar" :is-active="sidebar.opened" class="hamburger-container"/>
-    <b-navbar toggleable>
+
+    <el-menu
+      :default-active="activeIndex2"
+      id="top-menu"
+      class="el-menu-demo"
+      mode="horizontal"
+      background-color="#fff"
+      text-color="#545c64"
+      active-text-color="#545c64">
+      <el-submenu index="1" class="top-menu">
+        <template slot="title">
+          <b-row align-v="center" class="text-center" style="height: 100%;">
+            <b-col sm="3"><h5><strong>보건</strong></h5></b-col>
+            <b-col sm="3"><h5><strong>안전</strong></h5></b-col>
+            <b-col sm="3"><h5><strong>환경</strong></h5></b-col>
+            <b-col sm="3"><h5><strong>시스템 관리</strong></h5></b-col>
+          </b-row>
+        </template>
+        <el-menu-item index="1-1" class="sub-menu">
+          <b-row align-h="center" class="text-center">
+            <b-col sm="3" @click.stop="route('/hea/user/userCheckupReserve')">보건홈</b-col>
+            <b-col sm="3">준비중</b-col>
+            <b-col sm="3">준비중</b-col>
+            <b-col sm="3">공정</b-col>
+          </b-row>
+        </el-menu-item>
+        <el-menu-item index="1-1" class="sub-menu">
+          <b-row align-h="center" class="text-center">
+            <b-col sm="3" @click.stop="route('/hea/baseInfo/baseInfoTest')">기준정보</b-col>
+            <b-col sm="3"></b-col>
+            <b-col sm="3"></b-col>
+            <b-col sm="3"></b-col>
+          </b-row>
+        </el-menu-item>
+        <el-menu-item index="1-1" class="sub-menu">
+          <b-row align-h="center" class="text-center">
+            <b-col sm="3" @click.stop="route('/hea/checkup/checkupPlan')">건강검진</b-col>
+            <b-col sm="3"></b-col>
+            <b-col sm="3"></b-col>
+            <b-col sm="3"></b-col>
+          </b-row>
+        </el-menu-item>
+        <el-menu-item index="1-1" class="sub-menu">
+          <b-row align-h="center" class="text-center">
+            <b-col sm="3" @click.stop="route('/hea/infirmary/generalBusiness')">건강관리실</b-col>
+            <b-col sm="3"></b-col>
+            <b-col sm="3"></b-col>
+            <b-col sm="3"></b-col>
+          </b-row>
+        </el-menu-item>
+        <el-menu-item index="1-1" class="sub-menu">
+          <b-row align-h="center" class="text-center">
+            <b-col sm="3" @click.stop="route('/hea/workingEnvManage/hazard')">유해인자</b-col>
+            <b-col sm="3"></b-col>
+            <b-col sm="3"></b-col>
+            <b-col sm="3"></b-col>
+          </b-row>
+        </el-menu-item>
+      </el-submenu>
+    </el-menu>
+    <!-- <b-navbar toggleable>
       <b-navbar-toggle target="nav_dropdown_collapse"></b-navbar-toggle>
       <b-collapse is-nav id="nav_dropdown_collapse">
         <b-navbar-nav>
@@ -23,7 +83,7 @@
           </b-nav-item-dropdown>
         </b-navbar-nav>
       </b-collapse>
-  </b-navbar>
+    </b-navbar> -->
 
     <!-- <breadcrumb class="breadcrumb-container"/> -->
 
@@ -98,7 +158,14 @@ export default {
     ])
   },
   mounted () {
-
+    this.$nextTick(() => {
+      $('.el-menu-demo .el-icon-arrow-down').hide();
+    });
+  },
+  data () {
+    return {
+      activeIndex2: '1'
+    };
   },
   methods: {
     toggleSideBar() {
@@ -118,14 +185,16 @@ export default {
 
 <style rel="stylesheet/scss" lang="scss" scoped>
 .navbar {
-  height: 40px;
-  line-height: 40px;
+  // height: 40px;
+  // line-height: 40px;
+  height: 65px;
+  line-height: 65px;
   border-radius: 0px !important;
   .hamburger-container {
     line-height: 58px;
     height: 50px;
     float: left;
-    padding: 0 10px;
+    padding: 0px 10px;
   }
   .breadcrumb-container{
     float: left;
@@ -175,5 +244,19 @@ export default {
       }
     }
   }
+}
+</style>
+
+<style scoped>
+.el-menu--horizontal {
+  border-right: none;
+  border-bottom: solid 1px #ffffff;
+}
+
+.top-menu {
+  width: 50vw;
+}
+.sub-menu {
+  width: 50vw;
 }
 </style>

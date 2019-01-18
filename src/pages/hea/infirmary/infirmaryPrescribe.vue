@@ -36,7 +36,7 @@
                 :range="true"
                 label="처방기간"
                 name="duration"
-                v-model="duration"
+                v-model="searchParam.duration"
               >
               </y-datepicker>
             </b-col>
@@ -45,8 +45,8 @@
                 :width="baseWidth"
                 :editable="editable"
                 :comboItems="drugItems"
-                itemText="codeNm"
-                itemValue="code"
+                itemText="heaDrugNm"
+                itemValue="heaDrugNo"
                 ui="bootstrap"
                 type="search"
                 label="약품"
@@ -90,12 +90,9 @@ export default {
   data () {
     return {
       searchParam: {
-        heaDrugNo: '',
-        startDt: '',
-        endDt: '',
+        heaDrugNo: 0,
+        duration: null,
       },
-      duration: '',
-      isSubmit: false,
       editable: true,
       searchUrl: '',
       baseWidth: 8,
@@ -136,18 +133,20 @@ export default {
     /** /초기화 관련 함수 **/
     
     getDrugItems () {
-      setTimeout(() => {
-        this.drugItems = [
-          { code: '', codeNm: '전체' },
-          { code: '1', codeNm: '게보린' },
-        ];
-      }, 3000);
+      this.$http.url = selectConfig.drugManage.list.url;
+      this.$http.type = 'get';
+      this.$http.request((_result) => {
+        _result.data.splice(0, 0, { 'heaDrugNo': '0', 'heaDrugNm': '전체' });
+        this.drugItems = _result.data;
+      }, (_error) => {
+        console.log(_error);
+      });
     },
 
     // 약품처방 data
     getInfirmaryPrescribes () {
       this.$http.url = selectConfig.infirmaryPrescribe.list.url;
-      this.$http.type = 'GET';
+      this.$http.type = 'get';
       this.$http.param = this.searchParam;
       this.$http.request((_result) => {
         this.drugGridData = _result.data;
@@ -158,7 +157,6 @@ export default {
 
     /** Button Event **/
     btnClickedErrorCallback (_result) {
-      this.isSubmit = false;
       window.getApp.emit('APP_REQUEST_ERROR', _result);
     },
     btnSearchCallback () {
@@ -166,7 +164,6 @@ export default {
       window.getApp.$emit('APP_REQUEST_SUCCESS', '검색 버튼이 클릭 되었습니다.');
     },
     /** /Button Event **/
-    
   }
 };
 </script>

@@ -26,7 +26,8 @@ var http = {
   requestFile: null,
   defaultErrorHandler: null,
   getErrorMessage: null,
-  isLogin: null
+  isLogin: null,
+  isFileRequestPost: false,
 };
 
 var orgHttp = {
@@ -43,6 +44,8 @@ var orgHttp = {
   ajaxPid: null
 };
 
+
+
 // 기본 axios
 http.request = function (_callbackSuccess, _callbackFail) {
   // 현재 프로토콜, 호스트를 조합하여 url 설정 (내/외부 접속)
@@ -55,11 +58,14 @@ http.request = function (_callbackSuccess, _callbackFail) {
   // console.log("url : " + url);
   // console.log("type : " + method);
   // console.log("param : ");
-  console.log(JSON.stringify(http.url));
+  // console.log(JSON.stringify(http.url));
+  // console.log(JSON.stringify(http.param));
   
   
   var param = {};
   var query = '';
+  var paramKey = '';
+  // var form_data = new FormData();
   if (method === 'get') {
     query = queryString.stringify(http.param);
     param = {
@@ -68,15 +74,22 @@ http.request = function (_callbackSuccess, _callbackFail) {
         return query;
       }
     };
-    console.log(JSON.stringify(http.param));
   }
   else {
-    param = http.param;
-  }
+    if (http.isFileRequestPost)
+    {
+      param = new FormData();
 
-  if (typeof http.param === Array) 
-  {
-    console.log("array 맞다");
+      for (paramKey in http.param) {
+        if (http.param.hasOwnProperty(paramKey)) {
+          param.append(paramKey, http.param[paramKey]);
+        }
+      }
+    }
+    else
+    {
+      param = http.param;
+    }
   }
 
   axios[method](url, param).then((_result) => {

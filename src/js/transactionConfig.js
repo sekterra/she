@@ -66,10 +66,10 @@ let transactionConfig = {
   },
   drugManage: {
     insert: {
-      url: '/api/hea/drug/drugManage',
+      url: '/api/hea/drug/drugmanage',
     },
     edit: {
-      url: '/api/hea/drug/drugManage',
+      url: '/api/hea/drug/drugmanage',
     },
   },
   checkupOrgTestItem: {
@@ -90,6 +90,129 @@ let transactionConfig = {
     edit: {
       url: '/api/hea/baseinfo/disease'
     },
+  },
+  hazard: {
+    insert: {
+      url: '/api/hea/workingenvmanage/hazard',
+    },
+    edit: {
+      url: '/api/hea/workingenvmanage/hazard',
+    },
+  },
+  consult: {
+    insert: {
+      url: '/api/hea/infirmary/consult'
+    },
+    edit: {
+      url: '/api/hea/infirmary/consult'
+    },
+    delete: {
+      url: '/api/hea/infirmary/consult'
+    },
+  },
+  checkupResultDiag: {
+    insert: {
+      url: '/api/hea/checkup/checkupresultdiag'
+    },
+    delete: {
+      url: '/api/hea/checkup/checkupresultdiag/{0}/{1}/{2}'
+    },
+  },
+  testItemResult: {
+    insert: {
+      url: '/api/hea/checkup/testitemresult'
+    },
+    delete: {
+      url: '/api/hea/checkup/testitemresult/{0}/{1}/{2}'
+    }
+  },
+  process: {
+    insert: {
+      url: '/api/manage/process/process'
+    },
+    edit: {
+      url: '/api/manage/process/process'
+    }
+  },
+  checkupResult: {
+    edit: {
+      url: '/api/hea/checkup/checkupresult'
+    },
+    excel: {
+      url: '/api/hea/checkup/uploadexcelcheckupresult'
+    }
+  },
+  checkupReserve: {
+    insert: {
+      url: '/api/hea/checkup/checkupreserve'
+    },
+    multiInsert: {
+      url: '/api/hea/checkup/checkupreserves'
+    },
+    edit: {
+      url: '/api/hea/checkup/checkupreserve'
+    },
+    multiEdit: {
+      url: '/api/hea/checkup/checkupreserves'      
+    }
+  },
+  suspectUser: {
+    insert: {
+      url: '/api/hea/infirmary/createsuspectuser'
+    },
+    delete: {
+      url: '/api/hea/infirmary/deletesuspectuser'
+    }
+  },
+  checkupPlanOrg: {
+    edit: {
+      url: '/api/hea/checkup/checkupplanorgs'
+    },
+  },
+  checkupPlan: {
+    insert: {
+      url: '/api/hea/checkup/checkupplan',
+    },
+    edit: {
+      url: '/api/hea/checkup/checkupplan',
+    },
+    delete: {
+      url: '/api/hea/checkup/checkupplan'
+    }
+  },
+  checkupUser: {
+    insert: {
+      url: '/api/hea/checkup/checkupusers'      
+    },
+    delete: {
+      url: '/api/hea/checkup/checkupusers' 
+    }
+  },
+  infirmaryUsage: {
+    insert: {
+      url: '/api/hea/infirmary/infirmaryusage'
+    },
+    edit: {
+      url: '/api/hea/infirmary/infirmaryusage'
+    }
+  },
+  
+  // 안전 Config
+  wkodChkItem: {
+    insert: {
+      url: '/api/saf/wkod/wkodChkItem',
+    },
+    edit: {
+      url: '/api/saf/wkod/wkodChkItem',
+    }
+  },
+  wkodMatMst: {
+    insert: {
+      url: '/api/saf/wkod/wkodMatMst',
+    },
+    edit: {
+      url: '/api/saf/wkod/wkodMatMst',
+    }
   },
 };
 

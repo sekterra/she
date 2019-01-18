@@ -1,5 +1,6 @@
 <!--
-  목적 : 예약변경
+  목적 : 건강검진 예약변경
+  작성자 : khk
   Detail :
   *
   examples:
@@ -9,249 +10,222 @@
   <b-container fluid>
     <b-row>
       <b-col sm="12">
-        <b-card no-body class="px-3 py-2 mb-3">
+        <b-card no-body class="px-3 py-2">
           <b-row class="mt-2">
             <b-col sm="4">
-              <y-label label="검진종류" />
-              : {{checkItem.checkType}}
+              <y-label label="검진종류: " /><y-label :label="checkupPlan.heaCheckupClassNm" />
             </b-col>
             <b-col sm="4">
-              <y-label label="검진계획" />
-              : {{checkItem.checkPlan}}
+              <y-label label="검진계획: " /><y-label :label="checkupPlan.heaCheckupPlanNm" />
             </b-col>
             <b-col sm="4">
-              <y-label label="검진일자" />
-              : {{checkItem.checkDate}}
+              <y-label label="검진일자: " /><y-label :label="checkupPlan.heaCheckupPlanPeriod" />
             </b-col>
           </b-row>
         </b-card>
       </b-col>
+    </b-row> 
+
+    <b-row class="mt-3">
       <b-col sm="12">
-        <b-card header-class="default-card">
+        <b-card header-class="default-card" body-class="default-body-card" class="py-0">
           <div slot="header">
             <div class="float-left">
               <y-label label="검색" />
             </div>
             <div class="float-right">
               <y-btn
-                :action-url="saveUrl"
-                :param="searchParam"
-                type="search"
-                title="검색"
-                size="mini"
-                color="success"
-                action-type="get"
-                @btnClicked="btnSearchCallback" 
-                @btnClickedErrorCallback="btnClickedErrorCallback"
-              />
+                  v-if="editable&&checkupPlan.heaCheckupPlanNo>0"
+                  :action-url="searchUrl"
+                  :param="searchParam"
+                  type="search"
+                  title="검색"
+                  size="mini"
+                  color="success"
+                  action-type="get"
+                  @btnClicked="btnSearchClickedCallback" 
+                  @btnClickedErrorCallback="btnClickedErrorCallback"
+                />
             </div>
           </div>
           <b-row>
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <y-select
-                :width="baseWidth"
+                :width="8"
                 :editable="editable"
-                :comboItems="processItems"
-                itemText="processName"
-                itemValue="processPk"
+                :comboItems="processNoItems"
+                itemText="processNm"
+                itemValue="processNo"
                 ui="bootstrap"
                 type="search"
                 label="공정"
-                name="processValue"
-                v-model="reserveChange.processValue"
-              >
-              </y-select>
+                name="processNo"
+                v-model="searchParam.processNo"
+              />
             </b-col>
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <y-select
-                :width="baseWidth"
+                :width="8"
                 :editable="editable"
-                :comboItems="deptItems"
-                itemText="deptName"
-                itemValue="deptPk"
+                :comboItems="deptCdItems"
+                itemText="deptNm"
+                itemValue="deptCd"
                 ui="bootstrap"
                 type="search"
                 label="부서"
-                name="deptValue"
-                v-model="reserveChange.deptValue"
-              >
-              </y-select>
+                name="deptCd"
+                v-model="searchParam.deptCd"
+              />
             </b-col>
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <y-text
-                :width="baseWidth"
+                :width="8"
                 :editable="editable"
-                :maxlength="20"
+                ui="bootstrap"
+                label="사번"
+                name="userId"
+                v-model="searchParam.userId"
+              />
+            </b-col>
+            <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
+              <y-text
+                :width="8"
+                :editable="editable"
                 ui="bootstrap"
                 label="사원명"
-                name="test"
-                :appendIcon="icons"
-                v-model="reserveChange.empNm"
-                @iconCallback="searchUserCallback"
-              >
-              </y-text>
+                name="userNm"
+                v-model="searchParam.userNm"
+              />
             </b-col>
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <y-datepicker
-                :width="baseWidth"
+                :width="8"
                 :editable="editable"
                 :range="true"
                 label="예약일"
-                name="remark"
-                v-model="reserveChange.period"
-              >
-              </y-datepicker>
+                name="reservePeriod"
+                v-model="searchParam.reservePeriod"
+              />
             </b-col>
             <b-col sm="12" md="12" lg="12" xl="12" class="col-xxl-6">
               <y-multi-select
                 :width="10"
                 :editable="editable"
-                :comboItems="heaCheckupOrgs"
-                v-model="reserveChange.heaCheckupOrg"
-                type="edit"
-                itemText="heaCheckupOrgName"
-                itemValue="heaCheckupOrgPk"
+                :comboItems="heaCheckupOrgNoItems"                                
+                itemText="heaCheckupOrgNm"
+                itemValue="heaCheckupOrgNo"
                 ui="bootstrap"
-                label="검진기관 선택"
-                name="heaCheckupOrg"
-                v-validate="'required'"
-                :state="validateState('heaCheckupOrg')"
-              >
-              </y-multi-select> 
+                type="search"
+                label="건강검진기관"
+                name="heaCheckupOrgNos"
+                v-model="searchParam.heaCheckupOrgNos"
+              />
             </b-col>
           </b-row>
         </b-card>
       </b-col>
     </b-row>
 
-    <!-- 예약인원 grid-->
     <b-row class="mt-3">
-      <b-col sm="12">
+      <b-col sm="9">
         <b-row>
-          <b-col sm="12">
-            <y-label label="예약자 목록" icon="user-edit" color-class="cutstom-title-color" />
-          </b-col>
-        </b-row>
-        <div class="float-right">
-          <y-btn
-            v-if="editable"
-            :action-url="saveUrl"
-            :param="reserveChange"
-            :is-submit="isSubmit"
-            type="save"
-            title="메일/알림톡/SMS 발송"
-            size="small"
-            color="primary"
-            action-type="POST"
-            beforeSubmit = "beforeSubmit"
-            @beforeSubmit="beforeSubmit"
-            @btnClicked="btnSaveClickedCallback" 
-            @btnClickedErrorCallback="btnClickedErrorCallback"
-          />
-          <y-btn
-            v-if="editable"
-            type="clear"
-            title="변경"
-            size="small"
-              color="primary"
-            @btnClicked="btnClearClickedCallback" 
-          />
-        </div>
-        <b-row>
-          <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
+          <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-6">
             <y-datepicker
-              :width="baseWidth"
-              :editable="editable"
-              label="변경일"
-              name="dt"
-              v-model="reserveChange.dt"
-            >
-            </y-datepicker>
-            <span class="ml-3"></span>
+            :width="8"
+            :editable="editable"
+            label="변경일"
+            name="reserveYmd"
+            placeholder=""
+            v-model="editParam.reserveYmd"
+          />
           </b-col>
-          <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
+          <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-6">
             <y-select
-              :width="baseWidth"
-              :editable="editable"
-              :comboItems="institutions"
-              itemText="value"
-              itemValue="key"
-              ui="bootstrap"
-              type="search"
-              label="건강검진 기관"
-              name="institution"
-              v-model="reserveChange.institution"
-            >
-            </y-select>
+            :width="8"
+            :editable="editable"
+            :comboItems="heaCheckupOrgNoReserveItems"
+            itemText="heaCheckupOrgNm"
+            itemValue="heaCheckupOrgNo"
+            ui="bootstrap"
+            type="search"
+            label="건강검진기관"
+            name="heaCheckupOrgNo"
+            v-model="editParam.heaCheckupOrgNo"
+          />
           </b-col>
         </b-row>
+      </b-col>
+      <b-col sm="3">
+        <y-datepicker
+          :width="8"
+          :editable="editable"
+          type="month"
+          label="선택월"
+          name="yearMonth"
+          placeholder=""
+          v-model="searchReserveParam.yearMonth"
+          />
+      </b-col>
+    </b-row>
+
+    <b-row class="mt-1">
+      <b-col sm="9">
         <b-col sm="12" class="px-0">
+          <div slot="buttonGroup" class="float-right mb-1">
+            <y-btn
+                v-if="editable&&checkupPlan.heaCheckupPlanNo>0"
+                type="save"
+                title="메일/알림톡/SMS 발송"
+                size="small"
+                color="primary"
+                @btnClicked="btnSendClickedCallback" 
+                @btnClickedErrorCallback="btnClickedErrorCallback"
+              />
+            <y-btn
+                v-if="editable&&checkupPlan.heaCheckupPlanNo>0"
+                :action-url="editUrl"
+                :param="gridSelectedRows"
+                :is-submit="isEditSubmit"
+                type="save"
+                title="변경"
+                size="small"
+                color="primary"
+                action-type="put"
+                beforeSubmit = "beforeEditSubmit"
+                @beforeEditSubmit="beforeEditSubmit"
+                @btnClicked="btnEditClickedCallback" 
+                @btnClickedErrorCallback="btnClickedErrorCallback"
+              />
+          </div>
           <y-data-table 
-            :headers="rsrvGridHeaderOptions"
-            :items="rsrvGridData"
+            label="예약자 목록"
+            :headers="gridHeaderOptions"
+            :items="gridData"
             :editable="editable"
             :excel-down="true"
             :print="true"
-            ref="dataTable"
+            :rows="5"
+            v-model="gridSelectedRows"
             >
             <el-table-column
               type="selection"
               slot="selection"
               width="55">
             </el-table-column>
-          </y-data-table>     
+          </y-data-table>
         </b-col>
       </b-col>
-    </b-row>
-          
-    <!-- 예약정보 grid-->
-    <b-row class="mt-3">
-      <b-col sm="12">
-        <b-row>
-          <b-col sm="12">
-            <y-label label="예약인원 목록" icon="user-edit" color-class="cutstom-title-color" />
-          </b-col>
-        </b-row>
-        <b-row>
-          <b-col sm="2" md="2" lg="2" xl="2" class="col-xxl-2">
-            <y-datepicker
-              :width="base"
-              :editable="editable"
-              type="year"
-              label=""
-              name="year"
-              placeholder=""
-              v-model="reserveChange.year"
-            >
-            </y-datepicker>
-          </b-col>
-          <y-label label="년" />
-          <b-col sm="2" md="2" lg="2" xl="2" class="col-xxl-2 ml-3">
-            <y-datepicker
-              :width="12"
-              :editable="editable"
-              type="month"
-              label=""
-              name="month"
-              placeholder=""
-              v-model="reserveChange.month"
-            >
-            </y-datepicker>
-          </b-col>
-          <y-label label="월" />
-        </b-row>
-          <b-col sm="6" class="px-0">
-            <y-data-table 
-              :headers="rsrvNumGridHeaderOptions"
-              :items="rsrvNumGridData"
-              :editable="editable"
-              :excel-down="true"
-              :print="true"
-              :rows="3"
-              title="예약인원"
-              ref="dataTable"
-            >
-          </y-data-table>
+      <b-col sm="3">
+        <b-col sm="12" class="px-0">
+          <y-data-table 
+            label="월별 예약인원"
+            :headers="reserveGridHeaderOptions"
+            :items="reserveGridData"
+            :editable="editable"
+            :excel-down="true"
+            :print="true"
+            :rows="5"
+            />
         </b-col>
       </b-col>
     </b-row>
@@ -259,58 +233,85 @@
 </template>
 
 <script>
+import selectConfig from '@/js/selectConfig';
+import transactionConfig from '@/js/transactionConfig';
 export default {
   /* attributes: name, components, props, data */
-  name: 'y-reserveChange',
+  name: 'reserve-change',
   props: {
+    selectedCheckupPlanNo: 0
   },
-  data: () => ({
-    reserveChange: {
-      type: '',
-      empNm: '',
-      deptPk: null,
-      period: null,
-      year: null,
-      month: null,
-      dt: null,
-      institution: '',
-      processSelect: null,
-      heaCheckupOrg: [],
+  data () {
+    return {
+      checkupPlan: {
+        heaCheckupPlanNo: 0,
+        heaCheckupPlanNm: '',
+        heaCheckupClassNm: '',
+        heaCheckupPlanPeriod: ''
+      },
+      searchParam: {
+        heaCheckupPlanNo: 0,
+        processNo: 0,
+        deptCd: '',
+        userId: '',
+        userNm: '',
+        reservePeriod: '',
+        heaCheckupOrgNos: [],
+        reserveYn: 'Y'
+      },
+      editParam: {
+        reserveYmd: '',
+        heaCheckupOrgNo: 0
+      },
+      searchReserveParam: {
+        heaCheckupPlanNo: 0,
+        heaCheckupOrgNo: 0,
+        yearMonth: ''
+      },
+      editable: true,
+      detailUrl: '',
+      editUrl: '',
+      searchUrl: '',
+      searchReserveUrl: '',
+      
+      isEditSubmit: false,
+      processNoItems: [],
+      deptCdItems: [],
+      heaCheckupOrgNoItems: [],
+      heaCheckupOrgNoReserveItems: [],
+            
+      gridHeaderOptions: [],
+      gridData: [],
+      gridSelectedRows: [],
+      reserveGridHeaderOptions: [],
+      reserveGridData: [],
+    };
+  },
+  watch: {
+    selectedCheckupPlanNo: function (newValue, oldValue) {
+      this.checkupPlan.heaCheckupPlanNo = this.selectedCheckupPlanNo;
+      this.searchParam.heaCheckupPlanNo = this.selectedCheckupPlanNo;
+      this.searchReserveParam.heaCheckupPlanNo = this.selectedCheckupPlanNo;
+      this.getDetail();
+      this.getList();
+      this.getReserveList();
     },
-    checkItem: {
-      checkType: '종합건강검진',
-      checkPlan: '2018년 종합건강검진',
-      checkDate: '2018-03-01 ~ 2018-04-30'
+    'editParam.heaCheckupOrgNo': function (newValue, oldValue) {
+      this.searchReserveParam.heaCheckupOrgNo = this.editParam.heaCheckupOrgNo;
+      this.getReserveList();
     },
-    searchParam: {
-    },
-    icons: [
-      { 'icon': 'search', callbackName: 'searchUserCallback' },
-      // { 'icon': 'times', callbackName: 'searchUserCallback' }
-    ],
-    institutions: [],
-    baseWidth: 8,
-    editable: true,
-    isSubmit: false,
-    rsrvNumGridData: [],
-    rsrvNumGridHeaderOptions: [],
-    rsrvGridData: [],
-    rsrvGridHeaderOptions: [],
-    multiSelectItems: [],
-    saveUrl: '',
-    deleteUrl: '',
-    processItems: [],
-  }),
+    'searchReserveParam.yearMonth': function (newValue, oldValue) {
+      this.getReserveList();
+    }
+  },
   //* Vue lifecycle: created, mounted, destroyed, etc */
   beforeCreate () {
   },
   created () {
   },
   beforeMount () {
-    this.getItems();
     Object.assign(this.$data, this.$options.data());
     this.init();
-    this.getList();
   },
   mounted () {
   },
@@ -318,114 +319,157 @@ export default {
   },
   //* methods */
   methods: {
-    /** Call API service **/
-    /**
-     * 부서 정보를 가져옴
-     */
-    getItems () {
-      // 이 부분을 api service 호출 하는 것으로 바꿀 것
-      setTimeout(() => {
-        this.processItems = [
-          { processPk: '1', processName: '일반공정' },
-          { processPk: '2', processName: '특수공정' }
-        ];
-        this.deptItems = [
-          { deptPk: '1', deptName: '경영팀' },
-          { deptPk: '2', deptName: 'SDG팀' },
-          { deptPk: '3', deptName: '영업팀' },
-        ];
-        this.institutions = [
-          { key: 's1', value: '새서울병원' },
-          { key: 's2', value: '서울대병원' },
-          { key: 's3', value: '세브란스병원' },
-          { key: 's4', value: '중앙의료원' }
-        ];
-        this.heaCheckupOrgs = [
-          { heaCheckupOrgPk: '1', heaCheckupOrgName: '새서울병원' },
-          { heaCheckupOrgPk: '2', heaCheckupOrgName: '서울대병원' },
-          { heaCheckupOrgPk: '3', heaCheckupOrgName: '세브란스병원' },
-          { heaCheckupOrgPk: '4', heaCheckupOrgName: '중앙의료원' },
-        ];
-      }, 3000);
-    },
-    /** /Call API service **/
     init () {
-      // 예약인원 그리드 헤더 설정
-      this.rsrvNumGridHeaderOptions = [
-        { text: '일자', name: 'rsrv_dt', width: '40%', align: 'center' },
-        { text: '병원', name: 'hospital', width: '40%', align: 'center' },
-        { text: '예약인원', name: 'rsrv_num', width: '40%', align: 'center' }
+      setTimeout(() => {
+        this.getProcessNoItems();
+        this.getDeptCdItems();
+        this.getHeaCheckupOrgNoItems();
+        this.getHeaCheckupOrgNoReserveItems();
+      }, 200);
+      
+      // 예약자목록
+      this.gridHeaderOptions = [
+        { text: '검진기관', name: 'heaCheckupOrgNm', width: '200px', align: 'center' },
+        { text: '예약일', name: 'reserveYmd', width: '120px', align: 'center' },
+        { text: '공정', name: 'processNm', width: '160px', align: 'center' },
+        { text: '부서', name: 'deptNm', width: '160px', align: 'center' },
+        { text: '사번', name: 'userId', width: '120px', align: 'center' },
+        { text: '성명', name: 'userNm', width: '120px', align: 'center' },
+        { text: '입사일', name: 'entryYmd', width: '120px', align: 'center' },
+        { text: '휴대전환', name: 'phoneNo', width: '120px', align: 'center' },
+        { text: '사내전화', name: 'officeTel', width: '120px', align: 'center' }
       ];
-      // 예약정보 그리드 헤더 설정
-      this.rsrvGridHeaderOptions = [
-        { text: '부서', name: 'dept', width: '20%', align: 'left' },
-        { text: '사번', name: 'emp_no', width: '15%', align: 'center' },
-        { text: '사원', name: 'emp_nm', width: '15%', align: 'center' },
-        { text: '검진기관', name: 'hospital', width: '20%', align: 'left' },
-        { text: '예약일', name: 'rsrv_dt', width: '20%', align: 'center' },
-        { text: '입사일', name: 'emp_dt', width: '20%', align: 'center' },
-        { text: '휴대전화', name: 'phone', width: '20%', align: 'center' },
-        { text: '원내전화', name: 'tel', width: '20%', align: 'center' }
+
+      // 월별예약인원
+      this.reserveGridHeaderOptions = [
+        { text: '일자', name: 'reserveStatusYmd', width: '120px', align: 'center' },
+        { text: '병원', name: 'heaCheckupOrgNm', width: '200px', align: 'center' },
+        { text: '예약인원', name: 'reserveUserCount', width: '100px', align: 'center' }
       ];
-    },
-    /** 저장 하기전 UI단 유효성 검사 **/
-    beforeSubmit () {
-      this.checkValidation();
-    },
-    /**
-     * 저장전 유효성 검사
-     */
-    checkValidation () {
-      this.$validator.validateAll().then((_result) => {
-        this.isSubmit = _result;
-        // TODO : 전역 성공 메시지 처리
-        // 이벤트는 ./event.js 파일에 선언되어 있음
-        if (!this.isSubmit) window.getApp.$emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
-      }).catch(() => {
-        this.isSubmit = false;
+
+      this.detailUrl = selectConfig.checkupPlan.get.url;
+      this.searchUrl = selectConfig.checkupUser.list.url;
+      this.searchReserveUrl = selectConfig.checkupReserve.orgStatus.url;
+      this.editUrl = transactionConfig.checkupReserve.multiEdit.url;
+
+      this.checkupPlan.heaCheckupPlanNo = this.selectedCheckupPlanNo;
+      this.searchParam.heaCheckupPlanNo = this.selectedCheckupPlanNo;
+      this.searchReserveParam.heaCheckupPlanNo = this.selectedCheckupPlanNo;
+      if (this.checkupPlan.heaCheckupPlanNo > 0) {
+        this.getDetail();
+        this.getList();
+        this.getReserveList();
+      }
+    },    
+    getDetail () {
+      this.$http.url = this.$format(this.detailUrl, this.checkupPlan.heaCheckupPlanNo);
+      this.$http.type = 'get'; 
+      this.$http.request((_result) => {
+        this.checkupPlan = _result.data;
+      }, (_error) => {         
       });
     },
-    validateState (ref) {
-      if (this.veeBag[ref] && (this.veeBag[ref].dirty || this.veeBag[ref].validated)) {
-        return !this.errors.has(ref);
-      }
-      return null;
-    },
     getList () {
-      // var baseUrl = this.$format(selectConfig.menus.get.url, this.menuId);
-      // var url = this.$backend.getUrl(baseUrl);
-      // var self = this;
-      setTimeout(() => {
-        this.rsrvNumGridData = [
-          { rsrv_dt: '2018-03-11', hospital: '새서울병원', rsrv_num: '2/10' },
-          { rsrv_dt: '2018-03-12', hospital: '서울대병원', rsrv_num: '5/10' },
-          { rsrv_dt: '2018-03-13', hospital: '서울대병원', rsrv_num: '8/10' },
-        ];
-        this.rsrvGridData = [
-          { dept: '시스템연구소', emp_no: '100000', emp_nm: '홍길동', hospital: '새서울병원', rsrv_dt: '2017-04-01', emp_dt: '2017-01-12', phone: '010-1234-5678', tel: '02-555-7033' },
-          { dept: 'EDM팀', emp_no: '100001', emp_nm: '임꺽정', hospital: '새서울병원', rsrv_dt: '2017-04-01', emp_dt: '2017-01-12', phone: '010-1111-1111', tel: '02-555-7034' },
-        ];
-      }, 2000);
+      if (this.searchParam.heaCheckupPlanNo > 0) { 
+        this.$http.url = this.searchUrl;
+        this.$http.type = 'get'; 
+        this.$http.param = this.searchParam;
+        this.$http.request((_result) => {
+          this.gridData = _result.data;
+        }, (_error) => {         
+        });
+      }
+    },
+    getReserveList () {
+      if (this.searchReserveParam.heaCheckupPlanNo > 0 
+        && this.searchReserveParam.heaCheckupOrgNo > 0
+        && this.searchReserveParam.yearMonth !== '') {
+        this.searchReserveParam.yearMonth = '2019-01';
+        this.$http.url = this.searchReserveUrl;
+        this.$http.type = 'get'; 
+        this.$http.param = this.searchReserveParam;
+        this.$http.request((_result) => {
+          this.reserveGridData = _result.data;
+        }, (_error) => {         
+        });        
+      }
+    },
+    getProcessNoItems () {
+      this.$http.url = selectConfig.process.list.url;
+      this.$http.type = 'get';
+      this.$http.param = {
+        'useYn': 'Y'
+      };
+      this.$http.request((_result) => {
+        _result.data.splice(0, 0, { 'processNo': 0, 'processNm': '전체' });
+        this.processNoItems = _result.data;
+        this.searchParam.processNo = 0;
+      }, (_error) => {
+      });
+    },
+    getDeptCdItems () {
+      this.$http.url = selectConfig.dept.list.url;
+      this.$http.type = 'get';
+      this.$http.request((_result) => {
+        _result.data.splice(0, 0, { 'deptCd': '', 'deptNm': '전체' });
+        this.deptCdItems = _result.data;
+        this.searchParam.deptCd = '';
+      }, (_error) => {
+      });
+    },
+    getHeaCheckupOrgNoItems () {
+      this.$http.url = selectConfig.checkupOrg.list.url;
+      this.$http.type = 'get';
+      this.$http.param = {
+        'useYn': 'Y'
+      };
+      this.$http.request((_result) => {
+        this.heaCheckupOrgNoItems = _result.data;
+        this.searchParam.heaCheckupOrgNos = [];
+      }, (_error) => {
+      });
+    },
+    getHeaCheckupOrgNoReserveItems () {
+      this.$http.url = selectConfig.checkupOrg.list.url;
+      this.$http.type = 'get';
+      this.$http.param = {
+        'useYn': 'Y'
+      };
+      this.$http.request((_result) => {
+        _result.data.splice(0, 0, { 'heaCheckupOrgNo': 0, 'heaCheckupOrgNm': '선택하세요' });
+        this.heaCheckupOrgNoReserveItems = _result.data;
+        this.searchReserveParam.heaCheckupOrgNo = 0;
+      }, (_error) => {
+      });
     },
 
-    /** Component Events, Callbacks (버튼 제외) **/
-    searchUserCallback () {
-      console.log('::::::: searchUserCallback :::::::');
+    beforeEditSubmit () {
+      if (this.gridSelectedRows.length > 0 && confirm('선택된 대상자의 건강검진예약을 변경 하시겠습니까?')) {
+        this.gridSelectedRows.forEach(item => {
+          item.heaCheckupOrgNo = this.editParam.heaCheckupOrgNo;
+          item.reserveYmd = '2019-01-25';
+          // item.reserveYmd = this.editParam.reserveYmd;            
+        });
+        this.isEditSubmit = true;
+      }
     },
-    /** /Component, Callbacks (버튼 제외) **/
+
     /** button 관련 이벤트 **/
-    btnSearchCallback () {
-      window.getApp.$emit('APP_REQUEST_SUCCESS', '검색 버튼이 클릭 되었습니다.');
+    btnSearchClickedCallback (_result) {
+      this.gridData = _result.data;
     },
-    btnClearClickedCallback () {
-      this.$validator.reset();
-      window.getApp.$emit('APP_REQUEST_SUCCESS', '초기화 버튼이 클릭 되었습니다.');
+    btnEditClickedCallback (_result) {
+      this.isEditSubmit = false;
+      this.getList();
+      this.getReserveList();
+      alert('선택된 대상자의 건강검진예약을 변경 하였습니다.'); 
     },
-    btnSaveClickedCallback (_result) {
-      window.getApp.$emit('APP_REQUEST_SUCCESS', '저장 버튼이 클릭 되었습니다.');
+    btnSendClickedCallback (_result) {
+      alert('아직 지원하지 않는 기능입니다.');
     },
     btnClickedErrorCallback (_result) {
-      window.getApp.$emit('APP_REQUEST_ERROR', '에러가 발생하였습니다.');
+      this.isEditSubmit = false;       
+      alert('작업진행 중 오류가 발생했습니다. 재시도 후 지속적으로 오류 발생시 관리자에게 문의하세요.');
     },
     /** end button 관련 이벤트 **/
   }

@@ -15,6 +15,9 @@
       :is-popup-open="popup.isPopupOpen"
       :path="popup.path"
       :childProps="popup.childProps"
+      :fullscreen="popup.fullscreen"
+      :closeButtonText="popup.closeButtonText"
+      :confirmButtonText="popup.confirmButtonText"
     />
     </div>
 </template>
@@ -35,7 +38,11 @@ export default {
         id: '',
         label: '',
         editable: false,
-        type: 'test'
+        type: 'test',
+        childProps: null,
+        fullscreen: true,
+        closeButtonText: '닫기',
+        confirmButtonText: '승인'
       }
     }
   },
@@ -74,7 +81,9 @@ export default {
 <style>
 .app-main {
   /*84 = navbar + tags-view = 50 +34 */
-  min-height: calc(100vh - 84px);
+  /* min-height: calc(100vh - 84px); */
+  /* TODO : 1024 - 84에서 적정 사이즈 조정 */
+  max-height: 860px;
   width: 100%;
   position: relative;
   /* overflow: hidden; */

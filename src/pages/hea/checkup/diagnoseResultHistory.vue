@@ -15,8 +15,8 @@
             ref="dataTable"
             label="건강검진 결과 이력"
             :rows="5"
-            :headers="gridResultHeaderOptions"
-            :items="gridResultData" 
+            :headers="gridHeaderOptions"
+            :items="gridData" 
             :excel-down="true"
             :print="true" />
         </b-col>
@@ -38,19 +38,19 @@
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <b-row>
               <b-col sm="4"><y-label label="업무수행적합"></y-label></b-col>
-              <b-col sm="8">{{checkupResult.heaWorkableNm}}</b-col>
+              <b-col sm="8"><y-label :label="checkupResult.heaWorkableNm"></y-label></b-col>
               </b-row>
             </b-col>
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <b-row>
               <b-col sm="4"><y-label label="사후관리"></y-label></b-col>
-              <b-col sm="8">{{checkupResult.heaFollowUpNm}}</b-col>
+              <b-col sm="8"><y-label :label="checkupResult.heaWorkableNm"></y-label></b-col>
               </b-row>
             </b-col>
-            <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
+            <b-col sm="12" md="12" lg="12" xl="12" class="col-xxl-6">
               <b-row>
-              <b-col sm="4"><y-label label="종합소견"></y-label></b-col>
-              <b-col sm="8">{{checkupResult.heaFollowUpRemark}}</b-col>
+              <b-col sm="2"><y-label label="종합소견"></y-label></b-col>
+              <b-col sm="10"><y-label :label="checkupResult.overallOpinion"></y-label></b-col>
               </b-row>
             </b-col>
           </b-row>         
@@ -59,19 +59,18 @@
     </b-row>
 
     <b-row class="mt-3">
-      <b-col sm="12" class="px-0">
-        <b-col sm="12">
+      <b-col sm="12">
+        <b-col sm="9" class="px-0">
           <y-data-table 
             ref="dataTable"
-            label="판정이력"
-            :rows="5"
+            label="판정목록"
+            :rows="3"
             :headers="gridResultDiagHeaderOptions"
-            :items="gridResultDiagData" 
-            :excel-down="true"
-            :print="true" />
-        </b-col>
-      </b-col>
+            :items="gridResultDiagData" />
+          </b-col>
+      </b-col>      
     </b-row>
+    
   </b-container>
 </template>
 
@@ -91,47 +90,32 @@ export default {
       // Naming Rule : JAVA model class와 연동되는 vue model은 model class명을 Camel case로 변환해서 선언하시고 기본값은 {}로 초기화 시켜주세요.
       // 예) ExamData -> examData: {},
       checkupResult: {
-        heaCheckupPlanNo: 0,
+        heaCheckupPlanNo: 1,
         heaCheckupPlanNm: '',
+        userId: 'dev',
+        userNm: '',
         heaCheckupClassCd: '',
         heaCheckupClassNm: '',
-        heaCheckupOrgNo: 0,
-        heaCheckupOrgNm: '',
-        userId: '',
-        userNm: '',
-        deptCd: '',
-        deptNm: '',
-        deptCdOrg: '',
-        deptNmOrg: '',
-        heaCheckedYmd: '',
-        heaCheckupOrgEtc: '',
         heaWorkableCd: '',
         heaWorkableNm: '',
         heaFollowUpCd: '',
         heaFollowUpNm: '',
-        heaFollowUpRemark: ''
+        overallOpinion: ''
       },
-      checkupResultDiag: {
-        heaDiagnoseCd: '',
-        heaDiagnoseNm: '',
-        heaDiseaseClassCd: '',
-        heaDiseaseClassNm: '',
-        heaDiseaseCd: '',
-        heaDiseaseNm: '',
-        heaHazardCd: '',
-        heaHazardNmKo: '',
-        heaHazardNmEn: ''
+      selectedData: {
+        heaCheckupPlanNo: 1,
+        userId: 'dev'
       },
       baseWidth: 9,
       editable: true,
 
-      gridResultData: [],
-      gridResultHeaderOptions: [],
+      gridData: [],
+      gridHeaderOptions: [],
       gridResultDiagData: [],
-      gridResultDiagHeaderOptions: [],    
+      gridResultDiagHeaderOptions: [],
 
-      resultDetailUrl: '',
-      searchResultUrl: '',
+      detailUrl: '',
+      searchUrl: '',
       searchResultDiagUrl: ''
     };
   },
@@ -161,17 +145,16 @@ export default {
       }, 200);
 
       // 그리드 헤더 설정
-      this.gridResultHeaderOptions = [
-        { text: '검진계획', name: 'heaTestClassNm', width: '25%' },
-        { text: '검진종류', name: 'heaTestItemNm', width: '10%', align: 'center' },
-        { text: '사번', name: 'prev1YearResult', width: '10%', align: 'center' },
-        { text: '성명', name: 'prev2YearResult', width: '10%', align: 'center' },
-        { text: '검진일', name: 'charResult', width: '10%', align: 'center' },
-        { text: '검진기관', name: 'unit', width: '15%', align: 'center' },
-        { text: '판정', name: 'unit', width: '10%', align: 'center' },
-        { text: '질환', name: 'unit', width: '10%', align: 'center' }
+      this.gridHeaderOptions = [
+        { text: '검진계획', name: 'heaCheckupPlanNm', width: '25%' },
+        { text: '검진종류', name: 'heaCheckupClassNm', width: '10%', align: 'center' },
+        { text: '사번', name: 'userId', width: '10%', align: 'center' },
+        { text: '성명', name: 'userNm', width: '10%', align: 'center' },
+        { text: '검진일', name: 'heaCheckupYmd', width: '10%', align: 'center' },
+        { text: '검진기관', name: 'heaCheckupOrgNm', width: '15%', align: 'center' },
+        { text: '판정', name: 'heaDiagnoseNm', width: '10%', align: 'center' },
+        { text: '질환', name: 'heaDiseaseNm', width: '10%', align: 'center' }
       ];
-
       this.gridResultDiagHeaderOptions = [
         { text: '판정', name: 'heaDiagnoseNm', width: '20%', align: 'center' },
         { text: '질환종류', name: 'heaDiseaseClassNm', width: '40%' },
@@ -179,11 +162,13 @@ export default {
         { text: '유해인자', name: 'heaHazardNm', width: '20%' }
       ];
       
-      this.resultDetailUrl = '';
-      this.searchResultUrl = '';
-      this.searchResultDiagUrl = '';      
+      this.detailUrl = selectConfig.checkupResult.get.url;
+      this.searchUrl = selectConfig.checkupResult.list.url;
+      this.searchResultDiagUrl = selectConfig.checkupResultDiag.list.url;
 
-      this.getResultList();
+      this.getList();
+      this.getDetail(1);
+      this.getResultDiagList(1);
     },
     /** /초기화 관련 함수 **/
     
@@ -193,27 +178,35 @@ export default {
     * ex) getExamData () {}
     * ex) getExamDatas () {}
     */
-    getResultList (data) {
-      this.$http.url = this.$format(this.detailUrl, data.processNo);
+    getList () {
+      this.$http.url = this.searchUrl;
       this.$http.type = 'GET'; 
+      this.$http.param = {
+        'userId': this.checkupResult.userId
+      };
       this.$http.request((_result) => {
-        this.updateMode = true;
-        this.process = _result.data;
+        this.gridData = _result.data;
       }, (_error) => {
         console.log(_error);
       });
     },
+    getDetail () {
+      this.$http.url = this.$format(this.detailUrl, this.selectedData.heaCheckupPlanNo, this.selectedData.userId);
+      this.$http.type = 'GET'; 
+      this.$http.request((_result) => {
+        this.checkupResult = _result.data;
+      }, (_error) => {         
+      });            
+    },
     getResultDiagList () {
       this.$http.url = this.searchResultDiagUrl;
-      this.$http.type = 'GET';      
+      this.$http.type = 'GET';
+      this.$http.param = this.selectedData;
       this.$http.request((_result) => {
         this.gridResultDiagData = _result.data;
       }, (_error) => {
         console.log(_error);
       });
-    }, 
-    getDetail () {
-      this.getResultDiagList();
     },
     
     /** /Call API service **/

@@ -54,7 +54,7 @@ examples:
         <b-col 
           v-if="editable"
           :sm="width">
-          <b-input-group>
+          <b-input-group :class="{'ic': hasAppend1, 'ic2': hasAppend2}">
             <!-- 앞쪽에 ICON을 추가해야 할 경우 -->
             <b-input-group-prepend 
               v-if="prependIcon">
@@ -81,15 +81,18 @@ examples:
               type="text"
               @input="input">
             </b-form-input>
-            <b-input-group-append v-if="clearable">
+            
+            <!-- clear icon 추가 -->
+            <span class="form-control-clear form-control-feedback">
               <f-icon 
                 icon="times" 
-                :size="iconSize" 
+                size="sm" 
                 :style="{'cursor': 'pointer', color: iconColor}"
                 @click.stop="clearableClicked"
-                class="mt-1 ml-1"/>
-            </b-input-group-append>
-            <!-- clearable -->
+                class="mt-1"/>
+            </span>
+            <!-- /clear icon 추가 -->
+
             <!-- 컴포넌트 뒷편에 아이콘을 추가해야 할 경우 -->
             <b-input-group-append 
               v-if="appendIcon">
@@ -344,6 +347,12 @@ export default {
       console.log('numberFormat:' + format);
       return format;
     },
+    hasAppend1 () {
+      return this.appendIcon && this.appendIcon.length === 1;
+    },
+    hasAppend2 () {
+      return this.appendIcon && this.appendIcon.length === 2;
+    }
   },
   watch: {
     // todo : 부모 v-model 값이 변경되었을 경우 바인딩
@@ -424,6 +433,42 @@ export default {
 :-ms-input-placeholder {  
    font-style: italic;
    font-size: 1rem; 
+}
+
+/** todo : clear icon 추가 **/
+.clear {
+  padding-right: 2.25rem;
+  background-repeat: no-repeat;
+  background-position: center right calc(2.25rem / 4);
+  background-size: calc(2.25rem / 2) calc(2.25rem / 2);
+  cursor:pointer;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='%23BDBDBD' viewBox='-2 -2 7 7'%3e%3cpath stroke='%23BDBDBD' d='M0 0l3 3m0-3L0 3'/%3e%3ccircle r='.5'/%3e%3ccircle cx='3' r='.5'/%3e%3ccircle cy='3' r='.5'/%3e%3ccircle cx='3' cy='3' r='.5'/%3e%3c/svg%3E");
+}
+.form-control-feedback {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 2;
+  display: block;
+  width: 34px;
+  height: 31px;
+  line-height: 31px;
+  text-align: center;
+  pointer-events: none;
+}
+.form-control-clear {
+    z-index: 10;
+    pointer-events: auto;
+    cursor: pointer;
+}
+
+/** TODO : 뒤에 icon이 한 개 일 경우 **/
+.ic .form-control-clear {
+  right: 24px;
+}
+/** TODO : 뒤에 icon이 두 개 일 경우 **/
+.ic2 .form-control-clear {
+  right: 48px;
 }
 </style>
 

@@ -1,5 +1,6 @@
 <!--
-  목적 : 건강검진기관 일정
+  목적 : 건강검진 예약변경 및 일괄예약
+  작성자 : khk
   Detail : 
   *
   examples:
@@ -75,7 +76,7 @@
           {{ item.title }}
         </span>
         <keep-alive>
-          <component :is="component" v-if="component" :selectedCheckupPlanNo="heaCheckupPlanNo" @changeCheckupUsers="changeCheckupUsers" />
+          <component :is="component" v-if="component" :selectedCheckupPlanNo="heaCheckupPlanNo" />
         </keep-alive>
       </el-tab-pane>
     </el-tabs>
@@ -86,7 +87,7 @@
 import selectConfig from '@/js/selectConfig';
 export default {
   /* attributes: name, components, props, data */
-  name: 'y-base-info-organ',
+  name: 'checkup-reserve',
   components: {
   },
   props: {
@@ -99,9 +100,8 @@ export default {
       // TODO : 현재까지 파악된 바로는 tab은 같은 폴더 또는 하위 폴더의 컴포넌트만 접근이 가능한 것으로 파악됨
       //                즉, 반드시 메인페이지 역할을 하는 vue와 동일 폴더나 하위 폴더에 tabItem 역할을 하는 vue 파일을 위치 시킬 것
       tabItems: [
-        { title: '검진기관 일정', url: './orgCalendar' },
-        { title: '대상자 선정', url: './checkupUser' },
-        { title: '대상자 선정 현황', url: './checkupUserStatus' },
+        { title: '예약변경', url: './reserveChange' },
+        { title: '일괄예약', url: './reserveBatch' },
       ],
       component: null,
       tabIndex: 0,
@@ -170,9 +170,6 @@ export default {
         console.log(_error);
       });
     }, 
-    changeCheckupUsers (data) {
-      this.getList();
-    },
     selectedRow (data) {
       this.heaCheckupPlanNo = data.heaCheckupPlanNo;
     },

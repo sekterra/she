@@ -36,8 +36,8 @@
                 :width="baseWidth"
                 :editable="editable"
                 :comboItems="comboDeptItems"
-                itemText="codeNm"
-                itemValue="code"
+                itemText="deptNm"
+                itemValue="deptCd"
                 ui="bootstrap"
                 type="edit"
                 label="부서"
@@ -52,7 +52,7 @@
                 :editable="editable"
                 ui="bootstrap"
                 type="edit"
-                label="사용자"
+                label="사용자명"
                 name="userNm"
                 v-model="searchParam.userNm"
               >
@@ -99,7 +99,6 @@ export default {
       },
       baseWidth: 8,
       editable: true,
-      isSubmit: false,
       comboDeptItems: [],
       searchUrl: '',
       gridData: [],
@@ -114,8 +113,8 @@ export default {
   beforeMount () {
     Object.assign(this.$data, this.$options.data());
     this.init();
-    this.getDataList();
     this.getDeptItems();
+    this.getDataList();
   },
   mounted () {
   },
@@ -127,26 +126,28 @@ export default {
     /** 초기화 관련 함수 **/
     init () {
       this.gridHeaderOptions = [
-        { text: '사용자Id', name: 'userId', width: '10%', align: 'center' },
-        { text: '사용자명', name: 'userNm', width: '10%', align: 'center' },
-        { text: '부서', name: 'deptNm', width: '10%', align: 'center' },
-        { text: '방문일', name: 'visitYmd', width: '10%', align: 'center' },
-        { text: '진료내역', name: 'heaTreatCd', width: '15%', align: 'left' },
-        { text: '주호소 및 증상', name: 'symptom', width: '15%', align: 'left' },
-        { text: '간호 및 상담내용', name: 'consult', width: '20%', align: 'left' },
-        { text: '특이사항', name: 'remark', width: '20%', align: 'left' },
+        { text: '사번', name: 'userId', width: '10px', align: 'center' },
+        { text: '사용자명', name: 'userNm', width: '15px', align: 'center' },
+        { text: '부서', name: 'deptNm', width: '15px', align: 'center' },
+        { text: '방문일', name: 'visitYmd', width: '20px', align: 'center' },
+        { text: '진료내역', name: 'heaTreatNm', width: '20px', align: 'left' },
+        { text: '주호소 및 증상', name: 'symptom', width: '20px', align: 'left' },
+        { text: '간호 및 상담내용', name: 'consult', width: '20px', align: 'left' },
+        { text: '특이사항', name: 'remark', width: '20px', align: 'left' },
       ];
     },
-    getDeptItems () {
-      setTimeout(() => {
-        this.comboDeptItems = [
-          { code: '', codeNm: '전체' },
-          { code: '1', codeNm: '부서' },
-        ];
-      }, 2000);
-    },
     /** /초기화 관련 함수 **/
-    
+
+    getDeptItems () {
+      this.$http.url = selectConfig.dept.list.url;
+      this.$http.type = 'GET';
+      this.$http.request((_result) => {
+        _result.data.splice(0, 0, { 'deptCd': '', 'deptNm': '전체' });
+        this.comboDeptItems = _result.data;
+      }, (_error) => {
+        console.log(_error);
+      });
+    },
     getDataList () {
       this.$http.url = selectConfig.infirmaryUsageHistory.list.url;
       this.$http.type = 'GET';
@@ -161,7 +162,6 @@ export default {
 
     /** Button Event **/
     btnClickedErrorCallback (_result) {
-      this.isSubmit = false;
       window.getApp.emit('APP_REQUEST_ERROR', _result);
     },
     btnSearchCallback () {

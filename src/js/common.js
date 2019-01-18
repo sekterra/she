@@ -1,4 +1,5 @@
 import moment from 'moment';
+import _ from 'lodash';
 
 var comm = {
   baseDeviceSize: 600,
@@ -30,7 +31,8 @@ var comm = {
   getPercentage: null,
   getImgFileAsUrl: null,
   getFileAsBlob: null,
-  defaultGapOfDate: 3
+  defaultGapOfDate: 3,
+  hasArray: null,
 };
 
 /**
@@ -303,6 +305,21 @@ comm.getFileAsBlob = (_isImage, _fileData) => {
   var type = _isImage ? 'image/png' : 'application/octet-stream';
   var fileData = new Uint8Array(_fileData);
   return new window.Blob([fileData], { type: type });
+};
+
+/**
+ * 배열과 배열을 비교해서 포함되어 있는지 확인하는 함수
+ * _targetArray : 대상 배열
+ * _array : 원본 배열
+ */
+comm.hasArray = (_targetArray, _array) => {
+  var hasItems = false;
+  _.forEach(_targetArray, (_item) => {
+    _.forEach(_array, (__item) => {
+      if (JSON.stringify(_item) === JSON.stringify(__item)) hasItems = true;
+    })
+  });
+  return hasItems;
 };
 
 export default comm;

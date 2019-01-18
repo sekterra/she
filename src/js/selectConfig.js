@@ -19,7 +19,7 @@ let selectConfig = {
   },
   checkupOrgTestItem: {
     list: {
-      url: '/api/hea/baseinfo/checkuporgtestitems/{0}'
+      url: '/api/hea/baseinfo/checkuporgtestitems'
     }
   },
   checkupOrg: {
@@ -70,40 +70,58 @@ let selectConfig = {
       url: '/api/hea/checkup/checkupresult/{0}/{1}'
     }
   },
+  checkupResultDiag: {
+    list: {
+      url: '/api/hea/checkup/checkupresultdiags'
+    }
+  },
+  testItemResult: {
+    list: {
+      url: '/api/hea/checkup/testitemresults'
+    }
+  },
   drugManage: {
     list: {
-      url: '/api/hea/drug/drugManages'
+      url: '/api/hea/drug/drugmanages'
     },
     get: {
-      url: '/api/hea/drug/drugManage/{0}'
+      url: '/api/hea/drug/drugmanage/{0}'
     }
   },
   infirmaryPrescribe: {
     list: {
-      url: '/api/hea/infirmary/infirmaryPrescribes'
+      url: '/api/hea/infirmary/infirmaryprescribes'
     },
     get: {
-      url: '/api/hea/infirmary/infirmaryPrescribe/{0}'
+      url: '/api/hea/infirmary/infirmaryprescribe/{0}'
     }
   },
   infirmaryUsageHistory: {
     list: {
-      url: '/api/hea/infirmary/infirmaryUsageHistorys'
+      url: '/api/hea/infirmary/infirmaryusagehistorys'
+    },
+    get: {
+      url: '/api/hea/infirmary/infirmaryusagehistory'
+    },
+  },
+  infirmaryUsage: {
+    get: {
+      url: '/api/hea/infirmary/infirmaryusage/{0}'
     },
   },
   prescribeHistory: {
     list: {
-      url: '/api/hea/infirmary/prescribeHistorys'
+      url: '/api/hea/infirmary/prescribehistorys'
     },
   },
   checkupHistory: {
     list: {
-      url: '/api/hea/infirmary/checkupHistorys'
+      url: '/api/hea/infirmary/checkuphistorys'
     },
   },
   suspectUser: {
     list: {
-      url: '/api/hea/infirmary/suspectUsers'
+      url: '/api/hea/infirmary/suspectusers'
     },
   },
   process: {
@@ -112,19 +130,114 @@ let selectConfig = {
     },
     get: {
       url: '/api/manage/process/process'
-    },
-    create: {
-      url: '/api/manage/process/process'
-    },
-    update: {
-      url: '/api/manage/process/process'
     }
   },
   hazard: {
     list: {
       url: '/api/hea/workingenvmanage/hazards'
+    },
+    get: {
+      url: '/api/hea/workingenvmanage/hazard/{0}'
     }
   },
+  suspectUserPopup: {
+    list: {
+      url: '/api/hea/infirmary/suspectuserpopups'
+    },
+  },
+  consult: {
+    list: {
+      url: '/api/hea/infirmary/consults'
+    },
+    get: {
+      url: '/api/hea/infirmary/consult/{0}'
+    }
+  },
+  checkupPlan: {
+    list: {
+      url: '/api/hea/checkup/checkupplans'
+    },
+    get: {
+      url: '/api/hea/checkup/checkupplan/{0}'
+    }
+  },
+  checkupPlanOrg: {
+    list: {
+      url: '/api/hea/checkup/checkupplanorgs'
+    }
+  },
+  dept: {
+    list: {
+      url: 'api/manage/user/depts'
+    },
+  },
+  user: {
+    list: {
+      url: 'api/manage/user/users'
+    },
+  },
+  checkupReserve: {
+    list: {
+      url: '/api/hea/checkup/checkupreserves'
+    },
+    get: {
+      url: '/api/hea/checkup/checkupreserve'
+    },
+    orgStatus: {
+      url: '/api/hea/checkup/checkupreserveorgstatus'
+    }
+  },
+  checkupPlanOrgTestItem: {
+    list: {
+      url: '/api/hea/checkup/checkupplanorgtestitems'
+    }
+  },
+  rsrvDate: {
+    list: {
+      url: '/api/hea/checkup/rsrvdates'
+    }
+  },
+  checkupStatus: {
+    list: {
+      url: '/api/hea/checkup/checkupstatuses'
+    }
+  },
+  checkupUser: {
+    list: {
+      url: '/api/hea/checkup/checkupusers'      
+    }
+  },
+  checkupUserNoTarget: {
+    list: {
+      url: '/api/hea/checkup/checkupusersnotarget'      
+    }
+  },
+
+  // 안전 Config
+  wkodChkItem: {
+    list: {
+      url: '/api/saf/wkod/wkodChkItems'
+    },
+    get: {
+      url: '/api/saf/wkod/wkodChkItem/{0}'
+    }
+  },
+  wkodMatMst: {
+    list: {
+      url: '/api/saf/wkod/wkodMatMsts'
+    },
+    get: {
+      url: '/api/saf/wkod/wkodMatMst/{0}'
+    }
+  },
+  wkodMaster: {
+    list: {
+      url: '/api/saf/wkod/wkodMaster'
+    },
+    get: {
+      url: '/api/saf/wkod/wkodMaster/{0}'
+    }
+  }
 };
 
 export default selectConfig;

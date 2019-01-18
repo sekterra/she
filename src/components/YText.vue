@@ -54,7 +54,7 @@ examples:
         <b-col 
           v-if="editable"
           :sm="width">
-          <b-input-group>
+          <b-input-group :class="{'ic': hasAppend1, 'ic2': hasAppend2}">
             <!-- 앞쪽에 ICON을 추가해야 할 경우 -->
             <b-input-group-prepend 
               v-if="prependIcon">
@@ -82,7 +82,10 @@ examples:
               :class="{clear: false}"
               @input="input">
             </b-form-input>
-            <span class="form-control-clear form-control-feedback">
+
+            <!-- clear icon 추가 -->
+            <span v-if="!disabled"
+            class="form-control-clear form-control-feedback">
               <f-icon 
                 icon="times" 
                 size="sm" 
@@ -90,16 +93,8 @@ examples:
                 @click.stop="clearableClicked"
                 class="mt-1"/>
             </span>
-            <!-- clearable -->
-            <!-- <b-input-group-append v-if="clearable">
-              <f-icon 
-                icon="times" 
-                :size="iconSize" 
-                :style="{'cursor': 'pointer', color: iconColor}"
-                @click.stop="clearableClicked"
-                class="mt-1 ml-1"/>
-            </b-input-group-append> -->
-            <!-- clearable -->
+            <!-- /clear icon 추가 -->
+            
             <!-- 컴포넌트 뒷편에 아이콘을 추가해야 할 경우 -->
             <b-input-group-append 
               v-if="appendIcon">
@@ -327,6 +322,12 @@ export default {
     },
     hasCustomIconClass () {
       return !this.customIconClass
+    },
+    hasAppend1 () {
+      return this.appendIcon && this.appendIcon.length === 1;
+    },
+    hasAppend2 () {
+      return this.appendIcon && this.appendIcon.length === 2;
     }
   },
   watch: {
@@ -411,7 +412,7 @@ export default {
    font-size: 1rem; 
 }
 
-/****/
+/** todo : clear icon 추가 **/
 .clear {
   padding-right: 2.25rem;
   background-repeat: no-repeat;
@@ -427,8 +428,8 @@ export default {
   z-index: 2;
   display: block;
   width: 34px;
-  height: 34px;
-  line-height: 34px;
+  height: 31px;
+  line-height: 31px;
   text-align: center;
   pointer-events: none;
 }
@@ -436,6 +437,15 @@ export default {
     z-index: 10;
     pointer-events: auto;
     cursor: pointer;
+}
+
+/** TODO : 뒤에 icon이 한 개 일 경우 **/
+.ic .form-control-clear {
+  right: 24px;
+}
+/** TODO : 뒤에 icon이 두 개 일 경우 **/
+.ic2 .form-control-clear {
+  right: 48px;
 }
 </style>
 

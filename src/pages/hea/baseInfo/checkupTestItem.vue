@@ -11,14 +11,14 @@
     <b-row >
       <b-col sm="12">
           <b-col sm="10" class="px-0">
-            <div slot="buttonGroup" class="float-right">
+            <div slot="buttonGroup" class="float-right mb-1">
               <y-btn 
                 :action-url="deleteUrl"
                 :param="deleteValue"
-                :is-submit="isSubmit3"
+                :is-submit="isDelete"
                 type="delete"
                 title="삭제"
-                size="small"
+                size="mini"
                 color="danger"
                 action-type="DELETE"
                 beforeSubmit = "beforeDelete"
@@ -33,10 +33,10 @@
               :excel-down="true"
               :print="true"
               :rows="5"
-              editable="editable"
               v-model="selectedValue"
               label="검진종류 - 검진항목 목록"
               ref="dataTable"
+              @selectedRow="selectedRow"
               >
               <el-table-column
                 type="selection"
@@ -60,9 +60,9 @@
                   <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-4">
                     <y-select
                       :width="8"
-                      :editable="editable"
                       :comboItems="comboCheckupTypeItems"
                       :required="true"
+                      :disabled="disabled"
                       itemText="codeNm"
                       itemValue="code"
                       ui="bootstrap"
@@ -78,7 +78,6 @@
                   <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-4">
                     <y-select
                       :width="baseWidth"
-                      :editable="editable"
                       :comboItems="comboTestClassTypeItems"
                       itemText="codeNm"
                       itemValue="code"
@@ -86,15 +85,16 @@
                       type="edit"
                       label="건강검진검사"
                       name="heaTestClassCd"
-                      v-model="checkupTestItem.heaTestClassCd"
+                      v-model="heaTestClassCd"
                     >
                     </y-select>
                   </b-col>
                   <b-col sm="12" md="12" lg="12" xl="12" class="col-xxl-8">
+                    <!-- TODO : 기존 추가된 항목을 직접 등록할 수 있도록 selected-items props 추가  -->
                     <y-shuttlebox
                       :width="10"
-                      :editable="editable"
                       :items="comboTestItems"
+                      :selected-items="selectedItems"
                       :needDefaultView="true"
                       itemText="heaTestItemNm"
                       itemValue="heaTestItemCd"
@@ -104,11 +104,12 @@
                       v-model="heaTestItemTempCd"
                     >
                     </y-shuttlebox>
+                    <!-- TODO : 테스트 용으로 나중에 삭제 하세요 -->
+                    {{heaTestItemTempCd}}
                   </b-col>
                 </b-row>
                 <div class="float-right mt-3">
                     <y-btn
-                      v-if="editable"
                       type="clear"
                       title="초기화"
                       size="small"
@@ -116,10 +117,9 @@
                       @btnClicked="btnClearClickedCallback" 
                       />
                     <y-btn
-                      v-if="editable"
                       :action-url="insertUrl"
                       :param="checkupTestItem"
-                      :is-submit="isSubmit"
+                      :is-submit="isInsert"
                       type="save"
                       title="신규등록"
                       size="small"
@@ -132,9 +132,9 @@
                     />
                     <y-btn
                       v-if="editable"
-                      :action-url="saveUrl"
+                      :action-url="editUrl"
                       :param="checkupTestItem"
-                      :is-submit="isSubmit2"
+                      :is-submit="isEdit"
                       type="save"
                       title="수정"
                       size="small"
@@ -167,32 +167,35 @@ export default {
   data: () => ({
     checkupTestItem: {
       heaCheckupTypeNm: '',
-      heaCheckupClassCd: '',
+      heaCheckupClassCd: null,
       heaTestItemNm: '',
       heaTestItemCd: '',
-      heaCheckupTypeCd: '01', // 종합건강검진 유형 해당하지 않는 경우
-      heaTestClassCd: '',
+      updateUserId: '',
+      createUserId: '',
     },
+    heaTestClassCd: '',
     heaTestItemTempCd: [],
     // mutiTestItemSelectValues: [],
     comboCheckupTypeItems: [],
     comboTestClassTypeItems: [],
     comboTestItems: [],
+    selectedItems: [],
     baseWidth: 9,
-    editable: true,
-    isSubmit: false,
-    isSubmit2: false,
-    isSubmit3: false,
+    disabled: false,
+    editable: false,
+    isInsert: false,
+    isEdit: false,
+    isDelete: false,
     gridData: [],
     gridHeaderOptions: [],
-    saveUrl: '',
+    editUrl: '',
     insertUrl: '',
     deleteUrl: '',
     selectedValue: [],
     deleteValue: null,
   }),
   watch: {
-    'checkupTestItem.heaTestClassCd': {
+    'heaTestClassCd': {
       handler: function (value, oldVal) {
         this.getComboTestItems(value); 
       },
@@ -214,16 +217,19 @@ export default {
   //* methods */
   methods: {
     init () {
+      // Create User, Update User setting
+      this.checkupTestItem.createUserId = 'dev';
+      this.checkupTestItem.updateUserId = 'dev';
       // URL setting
       this.deleteUrl = transactionConfig.checkupTestItem.delete.url;
-      this.saveUrl = transactionConfig.checkupTestItem.edit.url;
+      this.editUrl = transactionConfig.checkupTestItem.edit.url;
       this.insertUrl = transactionConfig.checkupTestItem.insert.url;
       // 그리드 헤더 설정
       this.gridHeaderOptions = [
         { text: '건강검진종류', name: 'heaCheckupClassNm', width: '25%', align: 'left' },
         { text: '건강검진검사', name: 'heaTestClassNm', width: '25%', align: 'left' }, 
         { text: '건강검진항목', name: 'heaTestItemNm', width: '30%' },
-        { text: '출력순서', name: 'sortOrder', width: '12%', align: 'center' }
+        // { text: '출력순서', name: 'sortOrder', width: '12%', align: 'center' }
       ];
 
       this.getComboItems('HEA_CHECKUP_CLASS'); // 검진종류
@@ -237,11 +243,15 @@ export default {
       this.$http.request((_result) => {
         if (codeGroupCd === 'HEA_CHECKUP_CLASS') 
         {
-          this.comboCheckupTypeItems = _result.data;
+          this.comboCheckupTypeItems = this.$_.clone(_result.data);
+          this.comboCheckupTypeItems.splice(0, 0, { 'code': '', 'codeNm': '선택하세요' });
+          this.checkupTestItem.heaCheckupClassCd = '';
         }
         else
         {
-          this.comboTestClassTypeItems = _result.data;
+          this.comboTestClassTypeItems = this.$_.clone(_result.data);
+          this.comboTestClassTypeItems.splice(0, 0, { 'code': '', 'codeNm': '선택하세요' });
+          this.heaTestClassCd = '';
         }
       }, (_error) => {
         console.log(_error);
@@ -249,7 +259,6 @@ export default {
     },
 
     getComboTestItems (heaTestClassCd) {
-      console.log(heaTestClassCd);
       if (heaTestClassCd === null || heaTestClassCd === '')
       {
         this.comboTestItems = [];
@@ -261,13 +270,13 @@ export default {
         'heaTestClassCd': heaTestClassCd
       };
       this.$http.request((_result) => {
-        this.comboTestItems = _result.data;
+        this.comboTestItems = this.$_.clone(_result.data);
       }, (_error) => {
         console.log(_error);
       });
     },
 
-    ReceivesData (data) {
+    selectedRow (data) {
       this.$http.url = selectConfig.checkupTestItem.list.url;
       this.$http.type = 'GET';
       this.$http.param = {
@@ -275,40 +284,69 @@ export default {
         'heaCheckupTypeCd': data.heaCheckupTypeCd // 01
       };
       this.$http.request((_result) => {
-        this.gridData = _result.data;
+        this.editable = true;
+        this.disabled = true;
+
+        this.checkupTestItem = this.$_.clone(_result.data[0]);
+        // TODO : shuttlebox의 selectedItems를 사용할 때는 굳이 아래와 같이 별도로 값을 할당 할 필요가 없음
+        // 그렇지 않을 경우에는, shuttlebox의 v-model과 연동할 때는 값만 따로 추출한 배열로 값을 할당 해야 함
+        // this.heaTestItemTempCd = this.$_.map(_result.data, 'heaTestItemCd');
+        this.selectedItems = this.$_.clone(_result.data);
       }, (_error) => {
         console.log(_error);
       });
-
-      Object.assign(this.checkupTestItem, data);
-      // this.checkupTestItem.useYn = data.useYn === '사용' ? 'Y' : 'N';
     },
 
     /** 수정 하기전 UI단 유효성 검사 **/
     beforeSubmit () {
-      this.isSubmit2 = true;
+      if (window.confirm("수정하시겠습니까?"))
+      {
+        this.checkValidationSave();
+      }
     },
     beforeInsert () {
-      this.checkupTestItem.heaTestItemCd = this.heaTestItemTempCd.toString();
-      this.checkValidation();
+      if (window.confirm("저장하시겠습니까?"))
+      {
+        this.checkupTestItem.heaTestItemCd = this.heaTestItemTempCd.toString();
+        this.checkValidationInsert();
+      }
     },
     beforeDelete () {
-      this.deleteValue = {
-        'data': Object.values(this.$_.clone(this.selectedValue))
-      };
-      this.isSubmit3 = true;
+      if (this.selectedValue.length === 0) 
+      {
+        window.alert("항목을 선택해주세요.");
+        return;
+      }
+
+      if (window.confirm("삭제하시겠습니까?"))
+      {
+        this.deleteValue = {
+          'data': Object.values(this.$_.clone(this.selectedValue))
+        };
+        this.isDelete = true;
+      }
     },
     /**
      * 수정전 유효성 검사
      */
-    checkValidation () {
+    checkValidationSave () {
       this.$validator.validateAll().then((_result) => {
-        this.isSubmit = _result;
+        this.isEdit = _result;
         // TODO : 전역 성공 메시지 처리
         // 이벤트는 ./event.js 파일에 선언되어 있음
-        if (!this.isSubmit) window.getApp.$emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
+        if (!this.isEdit) window.getApp.$emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
       }).catch(() => {
-        this.isSubmit = false;
+        this.isEdit = false;
+      });
+    },
+    checkValidationInsert () {
+      this.$validator.validateAll().then((_result) => {
+        this.isInsert = _result;
+        // TODO : 전역 성공 메시지 처리
+        // 이벤트는 ./event.js 파일에 선언되어 있음
+        if (!this.isInsert) window.getApp.$emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
+      }).catch(() => {
+        this.isInsert = false;
       });
     },
     validateState (ref) {
@@ -334,29 +372,37 @@ export default {
     },
     /** button 관련 이벤트 **/
     btnSaveClickedCallback (_result) {
+      this.checkupTestItem.heaCheckupClassCd = this.$_.clone(_result.data.heaCheckupClassCd);
+      this.checkupTestItem.heaCheckupTypeCd = this.$_.clone(_result.data.heaCheckupTypeCd);
       // this.$emit('APP_REQUEST_SUCCESS', '수정 버튼이 클릭 되었습니다.');
       this.getList();
-      this.btnClearClickedCallback();
-      this.isSubmit2 = false;
+      this.isEdit = false;
+      window.alert("수정되었습니다.");
     },
     btnInsertClickedCallback (_result) {
+      this.checkupTestItem.heaCheckupClassCd = this.$_.clone(_result.data.heaCheckupClassCd);
+      this.checkupTestItem.heaCheckupTypeCd = this.$_.clone(_result.data.heaCheckupTypeCd);
       this.getList();
-      this.btnClearClickedCallback();
-      this.isSubmit = false;
+      this.isInsert = false;
+      window.alert("저장되었습니다.");
     },
     btnDeleteClickedCallback (_result) {
       this.getList();
-      this.btnClearClickedCallback();
-      this.isSubmit3 = false;
+      this.isDelete = false;
+      window.alert("삭제되었습니다.");
     },
     btnClickedErrorCallback (_result) {
-      this.isSubmit = false;
-      this.isSubmit2 = false;
-      this.isSubmit3 = false;
+      this.isInsert = false;
+      this.isEdit = false;
+      this.isDelete = false;
+      this.editable = false;
+      this.disabled = false;
       this.btnClearClickedCallback();
       this.$emit('APP_REQUEST_ERROR', _result);
     },
     btnClearClickedCallback () {
+      this.editable = false;
+      this.disabled = false;
       Object.assign(this.$data.checkupTestItem, this.$options.data().checkupTestItem);
       this.heaTestItemTempCd = []; // suttlebox 우축 리스트 reset을 위한 용도 ** 더 봐야함
       this.$validator.reset();

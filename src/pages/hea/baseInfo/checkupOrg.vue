@@ -12,16 +12,14 @@
       <b-col sm="12">
           <b-col sm="12" class="px-0">
             <y-data-table 
-              label="건강검진기관"
-              ref="dataTable"
-              gridType="edit"
-              @editItem="ReceivesData"
               :headers="gridHeaderOptions"
               :items="gridData"
               :excel-down="true"
               :print="true"
               :rows="5"
-              editable="editable"
+              label="건강검진기관"
+              ref="dataTable"
+              @selectedRow="selectedRow"
               >
             </y-data-table>
           </b-col>
@@ -31,7 +29,7 @@
             <b-col sm="12">
               <b-row>
                 <b-col sm="12">
-                  <y-label label="질환 상세" icon="user-edit" color-class="cutstom-title-color" />
+                  <y-label label="건강검진기관 상세" icon="user-edit" color-class="cutstom-title-color" />
                 </b-col>
               </b-row>
               <b-card >
@@ -39,13 +37,12 @@
                   <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
                     <y-text
                     :width="8"
-                    :editable="editable"
                     :maxlength="30"
                     :required="true"
                     ui="bootstrap"
                     name="heaCheckupOrgNm"
                     label="건강검진기관명"
-                    v-model="healthOrgan.heaCheckupOrgNm"
+                    v-model="checkupOrgan.heaCheckupOrgNm"
                     v-validate="'required'"
                     :state="validateState('heaCheckupOrgNm')"
                     >
@@ -54,91 +51,73 @@
                   <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
                     <y-text
                       :width="7"
-                      :editable="editable"
                       :maxlength="15"
                       ui="bootstrap"
                       name="businessNo"
                       label="사업자번호"
-                      v-model="healthOrgan.businessNo"
+                      v-model="checkupOrgan.businessNo"
                       >
                     </y-text>
                   </b-col>
                   <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
                     <y-text
                     :width="8"
-                    :editable="editable"
                     :maxlength="15"
                     ui="bootstrap"
                     name="telNo"
                     label="담당자 전화번호"
-                    v-model="healthOrgan.telNo"
+                    v-model="checkupOrgan.telNo"
                     >
                     </y-text>
                   </b-col>
                   <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
                     <y-text
                     :width="7"
-                    :editable="editable"
                     :maxlength="30"
                     ui="bootstrap"
                     name="chargerNm"
                     label="건강검진기관 담당자"
-                    v-model="healthOrgan.chargerNm"
+                    v-model="checkupOrgan.chargerNm"
                     >
                     </y-text>
                   </b-col>
                   <b-col sm="12" md="12" lg="12" xl="12" class="col-xxl-6">
                     <y-text
                       :width="10"
-                      :editable="editable"
                       :maxlength="150"
                       ui="bootstrap"
                       name="address"
                       label="주소"
-                      v-model="healthOrgan.address"
+                      v-model="checkupOrgan.address"
                       >
                     </y-text>
                   </b-col>
                   <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
                     <y-text
                     :width="8"
-                    :editable="editable"
                     :maxlength="30"
                     ui="bootstrap"
                     name="email"
                     label="eMail"
-                    v-model="healthOrgan.email"
+                    v-model="checkupOrgan.email"
                     >
                     </y-text>
                   </b-col>
                   <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
                     <y-number
                     :width="7"
-                    :editable="editable"
                     :maxlength="5"
                     :hasSeperator="false"
                     ui="bootstrap"
                     name="sortOrder"
                     label="출력순서"
-                    v-model="healthOrgan.sortOrder"
+                    v-model="checkupOrgan.sortOrder"
                     >
                     </y-number>
                   </b-col>
                   <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
-                    <!-- <y-radio
-                      :width="8"
-                      :editable="editable"
-                      :comboItems="radioItems"
-                      itemText="useName"
-                      itemValue="useYn"
-                      ui="bootstrap"
-                      name="radioValue"
-                    label="사용여부"
-                      v-model="healthOrgan.useYn"
-                    /> -->
                     <y-switch
                       :width="8"
-                      :editable="editable"
                       true-value="Y"
                       false-value="N"
                       ui="bootstrap"
@@ -146,13 +125,12 @@
                       name="radioValue"
                       selectText="사용"
                       unselectText="미사용"
-                      v-model="healthOrgan.useYn"
+                      v-model="checkupOrgan.useYn"
                     />
                   </b-col>
                 </b-row>
                 <div class="float-right mt-3">
                     <y-btn
-                      v-if="editable"
                       type="clear"
                       title="초기화"
                       size="small"
@@ -160,10 +138,9 @@
                       @btnClicked="btnClearClickedCallback" 
                       />
                     <y-btn
-                      v-if="editable"
                       :action-url="insertUrl"
-                      :param="healthOrgan"
-                      :is-submit="isSubmit"
+                      :param="checkupOrgan"
+                      :is-submit="isInsert"
                       type="save"
                       title="신규등록"
                       size="small"
@@ -176,9 +153,9 @@
                     />
                     <y-btn
                       v-if="editable"
-                      :action-url="saveUrl"
-                      :param="healthOrgan"
-                      :is-submit="isSubmit2"
+                      :action-url="editUrl"
+                      :param="checkupOrgan"
+                      :is-submit="isEdit"
                       type="save"
                       title="수정"
                       size="small"
@@ -209,7 +186,7 @@ export default {
   },
   data () {
     return {
-      healthOrgan: {
+      checkupOrgan: {
         heaCheckupOrgNo: '',
         heaCheckupOrgNm: '',
         address: '',
@@ -218,19 +195,18 @@ export default {
         chargerNm: '',
         email: '',
         sortOrder: '',
-        useYn: '',
+        useYn: 'Y',
+        updateUserId: '',
+        createUserId: '',
       },
       baseWidth: 9,
-      editable: true,
-      isSubmit: false,
-      isSubmit2: false,
-      isSubmit3: false,
+      editable: false,
+      isInsert: false,
+      isEdit: false,
       gridData: [],
       gridHeaderOptions: [],
-      radioItems: null,
-      saveUrl: '',
+      editUrl: '',
       insertUrl: '',
-      deleteUrl: '',
     }
   },
   computed: {
@@ -252,17 +228,12 @@ export default {
   //* methods */
   methods: {
     init () {
+      // Create User, Update User setting
+      this.checkupOrgan.updateUserId = 'dev';
+      this.checkupOrgan.createUserId = 'dev';
       // URL setting
-      this.saveUrl = transactionConfig.checkupOrg.edit.url;
+      this.editUrl = transactionConfig.checkupOrg.edit.url;
       this.insertUrl = transactionConfig.checkupOrg.insert.url;
-      this.deleteUrl = this.$format(transactionConfig.checkupOrg.delete.url, this.healthOrgan.heaCheckupOrgNo);
-      // Radio button setting
-      setTimeout(() => {
-        this.radioItems = [
-          { useYn: 'Y', useName: '사용' },
-          { useYn: 'N', useName: '미사용' },
-        ];
-      }, 1000);
 
       // 그리드 헤더 설정
       this.gridHeaderOptions = [
@@ -271,49 +242,67 @@ export default {
         { text: '사업자번호', name: 'businessNo', width: '150px', align: 'center' },
         { text: '담당자', name: 'chargerNm', width: '120px', align: 'center' },
         { text: '전화번호', name: 'telNo', width: '160px', align: 'center' },
-        { text: 'E-mail', name: 'eMail', width: '200px' },
+        { text: 'eMail', name: 'eMail', width: '200px' },
         { text: '출력순서', name: 'sortOrder', width: '100px', align: 'center' },
-        { text: '사용여부', name: 'useYn', width: '100px', align: 'center' },
+        { text: '사용여부', name: 'useYnNm', width: '100px', align: 'center' },
       ];
     },
-    ReceivesData (data) {
-      this.$http.url = selectConfig.checkupOrg.get.url;
+    selectedRow (data) {
+      if (data === null) return;
+
+      this.$http.url = this.$format(selectConfig.checkupOrg.get.url, data.heaCheckupOrgNo);
       this.$http.type = 'GET';
-      this.$http.param = {
-        'heaCheckupOrgNo': data.heaCheckupOrgNo
-      };
+      // this.$http.param = {
+      //   'heaCheckupOrgNo': data.heaCheckupOrgNo
+      // };
       this.$http.request((_result) => {
-        this.gridData = _result.data;
+        this.editable = true;
+        this.checkupOrgan = this.$_.clone(_result.data);
       }, (_error) => {
         console.log(_error);
       });
-
-      Object.assign(this.healthOrgan, data);
-      this.healthOrgan.useYn = data.useYn === '사용' ? 'Y' : 'N';
     },
     /** 수정 하기전 UI단 유효성 검사 **/
     beforeSubmit () {
-      // this.checkValidation();
-      this.isSubmit2 = true;
+      if (window.confirm("수정하시겠습니까?"))
+      {
+        this.checkValidationSave();
+      }
     },
     beforeInsert () {
-      this.checkValidation();
-    },
-    beforeDelete () {
-      // this.checkValidation();
-      this.isSubmit3 = true;
+      var heaCheckupOrgNms = this.$_.map(this.gridData, 'heaCheckupOrgNm');
+      if (this.$_.indexOf(heaCheckupOrgNms, this.checkupOrgan.heaCheckupOrgNm) > -1)
+      {
+        window.alert("이미 같은 이름의 건강검진기관이 존재합니다.");
+        return;
+      }
+
+      if (window.confirm("저장하시겠습니까?"))
+      {
+        this.checkValidationInsert();
+      }
     },
     /**
      * 수정전 유효성 검사
      */
-    checkValidation () {
+    checkValidationSave () {
       this.$validator.validateAll().then((_result) => {
-        this.isSubmit = _result;
+        this.isEdit = _result;
         // TODO : 전역 성공 메시지 처리
         // 이벤트는 ./event.js 파일에 선언되어 있음
-        if (!this.isSubmit) window.getApp.$emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
+        if (!this.isEdit) window.getApp.$emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
       }).catch(() => {
-        this.isSubmit = false;
+        this.isEdit = false;
+      });
+    },
+    checkValidationInsert () {
+      this.$validator.validateAll().then((_result) => {
+        this.isInsert = _result;
+        // TODO : 전역 성공 메시지 처리
+        // 이벤트는 ./event.js 파일에 선언되어 있음
+        if (!this.isInsert) window.getApp.$emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
+      }).catch(() => {
+        this.isInsert = false;
       });
     },
     validateState (ref) {
@@ -339,7 +328,7 @@ export default {
       // this.$http.param = this.param;
       this.$http.request((_result) => {
         // console.log(JSON.parse(JSON.stringify(_result.data)));
-        this.gridData = _result.data;
+        this.gridData = this.$_.clone(_result.data);
       }, (_error) => {
         console.log(_error);
       });
@@ -360,27 +349,42 @@ export default {
     btnSaveClickedCallback (_result) {
       // this.$emit('APP_REQUEST_SUCCESS', '수정 버튼이 클릭 되었습니다.');
       this.getList();
-      this.isSubmit2 = false;
+      this.isEdit = false;
+      if (_result.data > 0)
+      {
+        window.alert("수정되었습니다.");
+        this.editable = true;
+      }
+      else
+      {
+        window.alert("수정에 실패하였습니다.");
+      }
     },
     btnInsertClickedCallback (_result) {
       this.getList();
-      this.btnClearClickedCallback();
-      this.isSubmit = false;
-    },
-    btnDeleteClickedCallback (_result) {
-      this.getList();
-      this.btnClearClickedCallback();
-      this.isSubmit3 = false;
+      this.isInsert = false;
+      if (_result.data > 0)
+      {
+        this.checkupOrgan.heaCheckupOrgNo = _result.data;
+        window.alert("저장되었습니다.");
+        this.editable = true;
+      }
+      else
+      {
+        window.alert("저장에 실패하였습니다.");
+      }
     },
     btnClickedErrorCallback (_result) {
       this.$emit('APP_REQUEST_ERROR', _result);
-      this.isSubmit = false;
-      this.isSubmit2 = false;
-      this.isSubmit3 = false;
+      this.isInsert = false;
+      this.isEdit = false;
+      this.editable = false;
+      window.alert("ERROR.. 담당자에게 연락바랍니다.");
       // Object.assign(this.$data, this.$options.data());
     },
     btnClearClickedCallback () {
-      Object.assign(this.$data.healthOrgan, this.$options.data().healthOrgan);
+      Object.assign(this.$data.checkupOrgan, this.$options.data().checkupOrgan);
+      this.editable = false;
       this.$validator.reset();
       // window.getApp.$emit('APP_REQUEST_SUCCESS', '초기화 버튼이 클릭 되었습니다.');
     },

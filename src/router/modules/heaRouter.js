@@ -54,69 +54,10 @@ const heaRouter = {
       // TODO : 3 Level
       children: [
         {
-          path: 'checkupPlan/:checkupPlanNo',
+          path: 'checkupPlan',
           component: () => import('@/pages/hea/checkup/checkupPlan'),
-          props: (route) => ({ 
-            checkupPlanNo: route.query.checkupPlanNo,
-            ...route.params
-          }),
           name: 'checkupPlan',
           meta: { title: 'checkupPlan' }
-        },
-        {
-          path: 'checkupResult',
-          component: () => import('@/pages/hea/checkup/checkupResult'),
-          props: (route) => ({ query: route.query.pk }),
-          name: 'checkupResult',
-          meta: { title: 'checkupResult' },
-        },
-        {
-          path: 'checkupResultDetail',
-          component: () => import('@/pages/hea/checkup/checkupResultDetail'),
-          name: 'checkupResultDetail',
-          meta: { title: 'checkupResultDetail' },
-        },
-        {
-          path: 'diagnoseResultHistory',
-          component: () => import('@/pages/hea/checkup/diagnoseResultHistory'),
-          name: 'diagnoseResultHistory',
-          meta: { title: 'diagnoseResultHistory' },
-        },
-        {
-          path: 'diagnoseResultUpload',
-          component: () => import('@/pages/hea/checkup/diagnoseResultUpload'),
-          name: 'diagnoseResultUpload',
-          meta: { title: 'diagnoseResultUpload' },
-        },
-        {
-          path: 'checkupUser',
-          component: () => import('@/pages/hea/checkup/checkupUser'),
-          name: 'checkupUser',
-          meta: { title: 'checkupUser' },
-        },
-        {
-          path: 'checkupUserStatus',
-          component: () => import('@/pages/hea/checkup/checkupUserStatus'),
-          name: 'checkupUserStatus',
-          meta: { title: 'checkupUserStatus' },
-        },
-        {
-          path: 'interviewResultUpload',
-          component: () => import('@/pages/hea/checkup/interviewResultUpload'),
-          name: 'interviewResultUpload',
-          meta: { title: 'interviewResultUpload' },
-        },
-        {
-          path: 'reserveChange',
-          component: () => import('@/pages/hea/checkup/reserveChange'),
-          name: 'reserveChange',
-          meta: { title: 'reserveChange' },
-        },
-        {
-          path: 'checkupStatus',
-          component: () => import('@/pages/hea/checkup/checkupStatus'),
-          name: 'checkupStatus',
-          meta: { title: 'checkupStatus' },
         },
         {
           path: 'checkupOrgCalendar',
@@ -125,11 +66,23 @@ const heaRouter = {
           meta: { title: 'checkupOrgCalendar' },
         },
         {
-          path: 'suspectSend',
-          component: () => import('@/pages/hea/checkup/suspectSend'),
-          name: 'suspectSend',
-          meta: { title: 'suspectSend' },
+          path: 'checkupReserve',
+          component: () => import('@/pages/hea/checkup/checkupReserve'),
+          name: 'checkupReserve',
+          meta: { title: 'checkupReserve' },
         },
+        {
+          path: 'checkupStatus',
+          component: () => import('@/pages/hea/checkup/checkupStatus'),
+          name: 'checkupStatus',
+          meta: { title: 'checkupStatus' },
+        },
+        {
+          path: 'checkupResult',
+          component: () => import('@/pages/hea/checkup/checkupResult'),
+          name: 'checkupResult',
+          meta: { title: 'checkupResult' },
+        }        
       ]
     },
     // 건강관리실
@@ -152,12 +105,6 @@ const heaRouter = {
           component: () => import('@/pages/hea/infirmary/suspectUser'),
           name: 'suspectUser',
           meta: { title: 'suspectUser' },
-        },
-        {
-          path: 'suspectUserPopup',
-          component: () => import('@/pages/hea/infirmary/suspectUserPopup'),
-          name: 'suspectUserPopup',
-          meta: { title: 'suspectUserPopup' },
         },
         {
           path: 'historySearch',
@@ -200,10 +147,10 @@ const heaRouter = {
       // TODO : 3 Level
       children: [
         {
-          path: 'checkupReserve',
+          path: 'userCheckupReserve',
           component: () => import('@/pages/hea/user/checkupReserve'),
-          name: 'checkupReserve',
-          meta: { title: 'checkupReserve' },
+          name: 'userCheckupReserve',
+          meta: { title: 'userCheckupReserve' },
         },
         {
           path: 'checkupHistory',
@@ -222,12 +169,6 @@ const heaRouter = {
           component: () => import('@/pages/hea/user/suspectHistory'),
           name: 'suspectHistory',
           meta: { title: 'suspectHistory' },
-        },
-        {
-          path: 'checkupResultConsent',
-          component: () => import('@/pages/hea/user/checkupResultConsent'),
-          name: 'checkupResultConsent',
-          meta: { title: 'checkupResultConsent' },
         },
       ]
     },
