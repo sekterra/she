@@ -358,6 +358,17 @@ export default {
     // todo : 부모 v-model 값이 변경되었을 경우 바인딩
     value () {
       this.vValue = this.numberValue;
+    },
+    state () {
+      if (this.state) {
+        this.$nextTick(() => {
+          $(this.$refs.input.$el).removeClass('is-valid').addClass('valid');
+        });
+      } else {
+        this.$nextTick(() => {
+          $(this.$refs.input.$el).removeClass('is-invalid').addClass('invalid');
+        });
+      }
     }
   },
   /* Vue lifecycle: created, mounted, destroyed, etc */
@@ -417,7 +428,7 @@ export default {
 };
 </script>
 
-<style>
+<style scoped>
 ::-webkit-input-placeholder {
    font-style: italic;
    font-size: 1rem;
@@ -469,6 +480,16 @@ export default {
 /** TODO : 뒤에 icon이 두 개 일 경우 **/
 .ic2 .form-control-clear {
   right: 48px;
+}
+
+.valid {
+  border-color: #28a745;
+  padding-right: 2.25rem;
+}
+
+.invalid {
+  border-color: #dc3545;
+  padding-right: 2.25rem;
 }
 </style>
 

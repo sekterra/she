@@ -32,7 +32,7 @@ var comm = {
   getImgFileAsUrl: null,
   getFileAsBlob: null,
   defaultGapOfDate: 3,
-  hasArray: null,
+  removeDuplicatedArray: null,
 };
 
 /**
@@ -312,14 +312,17 @@ comm.getFileAsBlob = (_isImage, _fileData) => {
  * _targetArray : 대상 배열
  * _array : 원본 배열
  */
-comm.hasArray = (_targetArray, _array) => {
+comm.removeDuplicatedArray = (_targetArray, _array) => {
   var hasItems = false;
-  _.forEach(_targetArray, (_item) => {
-    _.forEach(_array, (__item) => {
+  var filteredArray = [];
+  _.forEach(_array, (_item) => {
+    hasItems = false;
+    _.forEach(_targetArray, (__item) => {
       if (JSON.stringify(_item) === JSON.stringify(__item)) hasItems = true;
-    })
+    });
+    if (!hasItems) filteredArray.push(_item);
   });
-  return hasItems;
+  return filteredArray;
 };
 
 export default comm;

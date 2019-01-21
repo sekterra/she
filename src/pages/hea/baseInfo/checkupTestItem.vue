@@ -105,7 +105,7 @@
                     >
                     </y-shuttlebox>
                     <!-- TODO : 테스트 용으로 나중에 삭제 하세요 -->
-                    {{heaTestItemTempCd}}
+                    <!-- {{heaTestItemTempCd}} -->
                   </b-col>
                 </b-row>
                 <div class="float-right mt-3">

@@ -33,7 +33,6 @@
             :excel-down="true"
             :print="true"
             :rows="5"
-            :use-paging="true"
             v-model="selectedValue"
             label="건강검진종류 - 공통 건강검진항목 목록"
             ref="dataTable"

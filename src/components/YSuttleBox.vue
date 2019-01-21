@@ -335,9 +335,9 @@ export default {
       // 1. 왼쪽 항목중 선택된 항목만 가져옴
       var filtered = this.getFilteredArrayfromValueArray(this.filteredOptionsOrg, this.vValue, 'value');
       // 2. 추가된 아이템 중 기존 항목이 있는지 체크
-      var hasItems = this.$comm.hasArray(this.selectedOptions, filtered);     
+      var filteredDuplicatedArray = this.$comm.removeDuplicatedArray(this.selectedOptions, filtered);     
       // 3. 선택된 항목중에서 기존에 선택된 항목을 제외한 항목을 가져와서 기존 항목과 합침
-      if (!hasItems) this.selectedOptions = this.$_.concat(this.selectedOptions, filtered);
+      if (filteredDuplicatedArray.length > 0) this.selectedOptions = this.$_.concat(this.selectedOptions, filteredDuplicatedArray);
     },
     /**
      * < 버튼 클릭시, 선택된 항목에서 제거
