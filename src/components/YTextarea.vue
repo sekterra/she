@@ -225,7 +225,7 @@ export default {
     },
     clearable: {
       type: Boolean,
-      default: true
+      default: false
     },
     disabled: {
       type: Boolean,

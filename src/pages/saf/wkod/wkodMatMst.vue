@@ -8,7 +8,7 @@
 <template>
   <b-container fluid>
     <!-- 검색 -->
-    <b-row>
+    <b-row ref="searchBox">
       <b-col sm="12">
         <b-card header-class="default-card" body-class="default-body-card" class="py-0">
           <div slot="header" >
@@ -17,20 +17,22 @@
             <!-- </div> -->
             <div class="float-right">
               <y-btn
+                :title="searchArea.title"
+                color="green"                
+                @btnClicked="btnSearchVisibleClicked" 
+              />
+              <y-btn
                 :action-url="searchUrl"
                 :param="searchParam"
-                type="search"
                 title="검색"
-                size="mini"
-                color="success"
-                icon="el-icon-search"
+                color="green"
                 action-type="get"
                 @btnClicked="btnSearchClickedCallback" 
                 @btnClickedErrorCallback="btnClickedErrorCallback"
               />
             </div>
           </div>
-          <b-row>
+          <b-row v-if="searchArea.show">
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <y-select
                 :width="8"
@@ -64,8 +66,9 @@
       <b-col sm="12">
           <b-col sm="12" class="px-0">
             <y-data-table 
-              :headers="gridHeaderOptions"
-              :items="gridData"
+              :headers="gridOptions.header"
+              :items="gridOptions.data"
+              :height="gridOptions.height"
               :excel-down="true"
               :print="true"
               :rows="5"
@@ -78,7 +81,7 @@
           </b-col>
 
           <!-- 등록 -->
-          <b-row class="mt-3">
+          <b-row class="mt-3" ref="insertBox">
             <b-col sm="12">
               <b-row>
                 <b-col sm="12">
@@ -146,22 +149,15 @@
                 </b-row>
                 <div class="float-right mt-3">
                     <y-btn
-                      type="clear"
                       title="초기화"
-                      size="small"
-                      color="info"
-                      icon="el-icon-edit"
                       @btnClicked="btnClearClickedCallback" 
                       />
                     <y-btn
                       :action-url="insertUrl"
                       :param="wkodMatMst"
                       :is-submit="isInsert"
-                      type="save"
                       title="신규등록"
-                      size="small"
-                      color="warning"
-                      icon="el-icon-edit"
+                      color="blue"
                       action-type="POST"
                       beforeSubmit = "beforeInsert"
                       @beforeInsert="beforeInsert"
@@ -173,11 +169,8 @@
                       :action-url="editUrl"
                       :param="wkodMatMst"
                       :is-submit="isEdit"
-                      type="save"
                       title="수정"
-                      size="small"
-                      color="warning"
-                      icon="el-icon-edit-outline"
+                      color="orange"
                       action-type="PUT"
                       beforeSubmit = "beforeSubmit"
                       @beforeSubmit="beforeSubmit"
@@ -203,31 +196,41 @@ export default {
   name: 'wkod-mat-mst',
   props: {
   },
-  data: () => ({
-    wkodMatMst: {
-      matMstId: '',
-      wkodMatClass: '',
-      wkodMatNm: '',
-      sortOrder: 0,
-      useYn: 'Y',
-    },
-    searchParam: {
-      wkodMatClass: '',
-      wkodMatNm: '',
-    },
-    baseWidth: 9,
-    editable: false,
-    isInsert: false,
-    isEdit: false,
-    gridData: [],
-    gridHeaderOptions: [],
-    comboWkodMatClassItems: [],
-    comboDetailWkodMatClassItems: [],
-    radioItems: null,
-    editUrl: '',
-    insertUrl: '',
-    searchUrl: '',
-  }),
+  data () {
+    return {
+      wkodMatMst: {
+        matMstNo: '',
+        wkodMatClass: null,
+        wkodMatNm: '',
+        sortOrder: 0,
+        useYn: 'Y',
+      },
+      searchParam: {
+        wkodMatClass: '',
+        wkodMatNm: '',
+      },
+      searchArea: {
+        title: '검색박스숨기기',
+        show: true
+      },
+      gridOptions: {
+        header: [],
+        data: [],
+        height: 300
+      },
+      baseWidth: 9,
+      editable: false,
+      isInsert: false,
+      isEdit: false,
+      comboWkodMatClassItems: [],
+      comboDetailWkodMatClassItems: [],
+      radioItems: null,
+      editUrl: '',
+      insertUrl: '',
+      searchUrl: '',
+      test: []
+    }
+  },
   //* Vue lifecycle: created, mounted, destroyed, etc */
   beforeCreate () {
   },
@@ -235,12 +238,13 @@ export default {
   },
   beforeMount () {
     Object.assign(this.$data, this.$options.data());
-    console.log("::::::::::::::::::::: beforeMount ::::::::::::::::::::  ");
     this.init();
-    this.getComboItems('WKOD_MAT_CLS'); // 작업종류
+    this.getComboItems('SAF_WKOD_MAT_CLASS'); // 작업종류
+    this.setGridSize();
     this.getList();
   },
   mounted () {
+    window.addEventListener('resize', this.setGridSize);
   },
   beforeDestory () {
   },
@@ -249,9 +253,9 @@ export default {
     init () {
       setTimeout(() => {
         // Url Setting
-        this.searchUrl = selectConfig.wkodMatMst.list.url;
-        this.editUrl = transactionConfig.wkodMatMst.edit.url;
-        this.insertUrl = transactionConfig.wkodMatMst.insert.url;
+        this.searchUrl = selectConfig.saf.wkodMatMst.list.url;
+        this.editUrl = transactionConfig.saf.wkodMatMst.edit.url;
+        this.insertUrl = transactionConfig.saf.wkodMatMst.insert.url;
         // radio 버튼 셋팅
         this.radioItems = [
           { useYn: 'Y', useName: '사용' },
@@ -260,7 +264,7 @@ export default {
       }, 1000);
       
       // 그리드 헤더 설정
-      this.gridHeaderOptions = [
+      this.gridOptions.header = [
         { text: '취급물질분류', name: 'wkodMatClassNm', width: '25%', align: 'center' },
         { text: '취급물질명', name: 'wkodMatNm', width: '35%', },
         { text: '출력순서', name: 'sortOrder', width: '20%', align: 'center' },
@@ -276,33 +280,71 @@ export default {
         this.comboDetailWkodMatClassItems = this.$_.clone(_result.data);
 
         this.comboWkodMatClassItems.splice(0, 0, { 'code': '', 'codeNm': '전체' });
+        this.comboDetailWkodMatClassItems.splice(0, 0, { 'code': '', 'codeNm': '선택하세요' });
+        this.wkodMatMst.wkodMatClass = '';
       }, (_error) => {
-        console.log(_error);
+        this.$emit('APP_REQUEST_ERROR', _error);
       });
     },
     selectedRow (data) {
       if (data === null) return;
-      this.$http.url = this.$format(selectConfig.wkodMatMst.get.url, data.matMstId);
+      this.test = data;
+      this.$http.url = this.$format(selectConfig.saf.wkodMatMst.get.url, data.matMstNo);
       this.$http.type = 'GET';
       this.$http.request((_result) => {
         this.editable = true;
-        Object.assign(this.wkodMatMst, _result.data);
+        this.wkodMatMst = this.$_.clone(_result.data);
       }, (_error) => {
-        console.log(_error);
+        this.$emit('APP_REQUEST_ERROR', _error);
       });
+    },
+    setGridSize () {
+      window.getApp.$emit('LOADING_SHOW');
+      setTimeout(() => {
+        this.gridOptions.height = window.innerHeight - this.$refs.searchBox.clientHeight - this.$refs.insertBox.clientHeight - 270;
+        window.getApp.$emit('LOADING_HIDE');
+      }, 600);
+    },
+    /** button 관련 이벤트 **/
+    /**
+     * 검색박스 숨기기/보이기 처리 후 setGridSize 호출
+     */
+    btnSearchVisibleClicked () {      
+      this.searchArea.show = !this.searchArea.show;
+      if (this.searchArea.show) this.searchArea.title = '검색박스숨기기';
+      else this.searchArea.title = '검색박스보이기';
+
+      window.getApp.$emit('LOADING_PASS_COUNT', 1);
+      this.setGridSize();
     },
     /** 수정 하기전 UI단 유효성 검사 **/
     beforeSubmit () {
-      if (window.confirm("수정하시겠습니까?"))
-      {
-        this.checkValidationSave();
-      }
+      window.getApp.$emit('CONFIRM', {
+        title: '확인',
+        message: '수정하시겠습니까?',
+        // TODO : 필요시 추가하세요.
+        type: 'info',  // success / info / warning / error
+        // 확인 callback 함수
+        confirmCallback: () => {
+          this.checkValidationSave();
+        }
+      });
     },
     beforeInsert () {
-      if (window.confirm("저장하시겠습니까?"))
-      {
-        this.checkValidationInsert();
-      }
+      // if (window.confirm("저장하시겠습니까?"))
+      // {
+      //   this.checkValidationInsert();
+      // }
+      window.getApp.$emit('CONFIRM', {
+        title: '확인',
+        message: '저장하시겠습니까?',
+        // TODO : 필요시 추가하세요.
+        type: 'info',  // success / info / warning / error
+        // 확인 callback 함수
+        confirmCallback: () => {
+          this.checkValidationInsert();
+        }
+      });
     },
     /**
      * 수정전 유효성 검사
@@ -334,13 +376,13 @@ export default {
       return null;
     },
     getList () {
-      this.$http.url = selectConfig.wkodMatMst.list.url;
+      this.$http.url = selectConfig.saf.wkodMatMst.list.url;
       this.$http.type = 'GET';
       this.$http.param = this.searchParam;
       this.$http.request((_result) => {
-        this.gridData = _result.data;
+        this.gridOptions.data = this.$_.clone(_result.data);
       }, (_error) => {
-        console.log(_error);
+        this.$emit('APP_REQUEST_ERROR', _error);
       });
     },
     /**
@@ -350,21 +392,32 @@ export default {
     },
     /** button 관련 이벤트 **/
     btnSearchClickedCallback (_result) {
-      this.getList();
       this.isEdit = false;
+      this.gridOptions.data = this.$_.clone(_result.data);
+
       this.btnClearClickedCallback();
       window.getApp.$emit('APP_REQUEST_SUCCESS', '조회 버튼이 클릭되었습니다.');
     },
     btnSaveClickedCallback (_result) {
       this.getList();
-      window.alert("수정되었습니다.");
+      // window.alert("수정되었습니다.");
+      window.getApp.$emit('ALERT', {
+        title: '안내',
+        message: '수정되었습니다.',
+        type: 'success',  // success / info / warning / error
+      });
       this.isEdit = false;
       // this.$emit('APP_REQUEST_SUCCESS', '수정 버튼이 클릭 되었습니다.');
     },
     btnInsertClickedCallback (_result) {
       this.getList();
-      window.alert("저장되었습니다.");
-      this.wkodMatMst.matMstId = _result.data;
+      // window.alert("저장되었습니다.");
+      window.getApp.$emit('ALERT', {
+        title: '안내',
+        message: '저장되었습니다.',
+        type: 'success',  // success / info / warning / error
+      });
+      this.wkodMatMst.matMstNo = this.$_.clone(_result.data);
       this.isInsert = false;
     },
     btnClearClickedCallback () {

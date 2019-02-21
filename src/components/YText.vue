@@ -57,15 +57,16 @@ examples:
           <b-input-group :class="{'ic': hasAppend1, 'ic2': hasAppend2}">
             <!-- 앞쪽에 ICON을 추가해야 할 경우 -->
             <b-input-group-prepend 
-              v-if="prependIcon">
+              v-if="prependIcon"
+              :style="{'border': 'solid #ced4da 1px', 'padding-right': '5px'}">
               <f-icon 
                 v-for="item in prependIcon"
                 :key="item.icon"
                 :icon="item.icon" 
                 :size="item.iconSize ? item.iconSize : iconSize" 
-                :style="{color: item.iconColor ? item.iconColor : iconColor, 'cursor': 'pointer'}"
+                :style="{color: item.iconColor ? item.iconColor : iconColor, 'cursor': 'pointer', 'padding-left': '3px', 'padding-right': '3px'}"
                 @click.stop="iconClicked(item)"
-                class="mt-2 mr-1"/>
+                class="mt-1 ml-1"/>
                 <slot name="customPrependIcon"></slot>
           </b-input-group-prepend>
           <!-- /앞쪽에 ICON을 추가해야 할 경우 -->
@@ -75,6 +76,7 @@ examples:
               :label="label"
               :name="name"
               :placeholder="placeholder"
+              :readonly="readonly"
               :size="size"
               :state="state"
               :maxlength="maxlength"
@@ -85,7 +87,7 @@ examples:
 
             <!-- clear icon 추가 -->
             <span v-if="!disabled"
-            class="form-control-clear form-control-feedback">
+              class="form-control-clear form-control-feedback">
               <f-icon 
                 icon="times" 
                 size="sm" 
@@ -97,16 +99,17 @@ examples:
             
             <!-- 컴포넌트 뒷편에 아이콘을 추가해야 할 경우 -->
             <b-input-group-append 
-              v-if="appendIcon">
-                <f-icon 
-                  v-for="item in appendIcon"
-                  :key="item.icon"
-                  :icon="item.icon" 
-                  :size="item.iconSize ? item.iconSize : iconSize" 
-                  :style="{color: item.iconColor ? item.iconColor : iconColor, 'cursor': 'pointer'}"
-                  @click.stop="iconClicked(item)"
-                  class="mt-1 ml-1"/>
-                  <slot name="customAppendIcon"></slot>
+              v-if="appendIcon"
+              :style="{'border': 'solid #ced4da 1px', 'padding-right': '5px'}">
+              <f-icon 
+                v-for="item in appendIcon"
+                :key="item.icon"
+                :icon="item.icon" 
+                :size="item.iconSize ? item.iconSize : iconSize" 
+                :style="{color: item.iconColor ? item.iconColor : iconColor, 'cursor': 'pointer', 'padding-left': '3px', 'padding-right': '3px'}"
+                @click.stop="iconClicked(item)"
+                class="mt-1 ml-1"/>
+              <slot name="customAppendIcon"></slot>
             </b-input-group-append>
             <!-- /컴포넌트 뒷편에 아이콘을 추가해야 할 경우 -->
           </b-input-group>
@@ -122,7 +125,11 @@ examples:
           <span v-if="vValue">
             {{vValue}}
           </span>
-          <small v-else class="text-muted"><em>데이터가 없거나 조회중 입니다.</em></small>
+          <small v-else class="text-muted">
+            <em v-if="placeholder">{{placeholder}}</em>
+            <em v-else>데이터가 없거나 조회중 입니다.</em>
+          </small>
+          <slot name="customAppendIcon"></slot>
         </b-col>
       </b-row>
     </template>
@@ -275,7 +282,11 @@ export default {
     disabled: {
       type: Boolean,
       default: false
-    }
+    },
+    readonly: {
+      type: Boolean,
+      default: false
+    },
   },
   data () {
     return {
@@ -392,7 +403,7 @@ export default {
       if (!_item.callbackName) {
         return window.alert('[개발자용] callback 함수명이 없습니다.');
       }
-      this.$emit(_item.callbackName);
+      this.$emit(_item.callbackName, _item);
     },
     /**
      * 입력값 초기화

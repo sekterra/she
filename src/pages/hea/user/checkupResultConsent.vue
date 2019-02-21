@@ -12,7 +12,13 @@
       <b-col sm="12">
         <b-row>
           <b-col sm="12">
-            <y-label label="건강검진 결과활용 동의서" icon="user-edit" color-class="cutstom-title-color" />
+            <div slot="buttonGroup" class="float-right mb-1">
+              <y-btn 
+              title="닫기"
+              @btnClicked="closePopup" 
+              />
+            </div>
+            <y-label label="검진결과 활용 동의서" icon="user-edit" color-class="cutstom-title-color" />
           </b-col>
         </b-row>
         <b-card>
@@ -48,10 +54,8 @@
               v-if="editable"
               :param="param"
               :is-submit="false"
-              type="save"
               title="예약등록"
-              color="primary"
-              size="small"
+              color="blue"
               action-type="POST"
               beforeSubmit = "beforeAgree"
               @beforeAgree="beforeAgree"
@@ -59,10 +63,7 @@
               @btnClickedErrorCallback="btnClickedErrorCallback"
             />
             <y-btn
-              type="clear"
-              title="목록"
-              size="small"
-              color="info"
+              title="닫기"
               @btnClicked="closePopup" 
             />
           </div>
@@ -115,7 +116,19 @@ export default {
   methods: {
     /** 초기화 관련 함수 **/
     init () {
-      this.param.consent = '제18조(검진자료의 활용)'
+      this.param.consent += '제11조(검진자료의 수집·관리 및 통계의 작성)\n'
+      this.param.consent += '① 법 제18조에 따른 건강검진자료를 활용한 통계의 작성은 「통계법」을 준용한다.\n'
+      this.param.consent += '② 보건복지부장관 및 관계 중앙행정기관의 장은 법 제18조에 따라 개인정보가 포함된 건강검진자료를 활용하려는 경우에는 개인정보의 활용에 관하여 검진대상자의 동의를 받아야 한다.<개정 2010. 3. 15.>\n\n'
+      this.param.consent += '제18조(검진자료의 활용) \n'
+      this.param.consent += '① 보건복지부장관 및 관계 중앙행정기관의 장은 국가건강검진을 통하여 얻은 검진자료를 다음 각 호의 목적으로 활용할 수 있다.  <개정 2010. 1. 18.>\n'
+      this.param.consent += ' 1. 건강정책 수립 및 이를 위한 통계자료의 작성\n'
+      this.param.consent += ' 2. 지역사회 건강증진사업\n'
+      this.param.consent += ' 3. 만성질환 관리 및 지원 사업\n'
+      this.param.consent += ' 4. 국가건강검진 검사항목 및 검진주기의 평가 및 지침 개발\n'
+      this.param.consent += ' 5. 국가건강검진제도 개선 및 평가를 위한 연구사업\n'
+      this.param.consent += '② 보건복지부장관은 검진자료를 활용하여 건강상태 및 질병에 관한 통계를 생산하여 발표할 수 있다.  <개정 2010. 1. 18.>\n'
+      this.param.consent += '③ 제1항에 따라 검진자료를 활용함에 있어서 개인의 사생활의 비밀을 침해하지 아니하도록 정보를 보호하여야 한다.\n'
+      this.param.consent += '④ 검진자료의 수집, 관리 및 통계의 작성이나 개인정보 및 사생활 보호 등에 필요한 세부사항은 대통령령으로 정한다.';
     },
     getAgreeYnItems () {
       setTimeout(() => {

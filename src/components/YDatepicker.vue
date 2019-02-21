@@ -11,7 +11,7 @@ examples:
       label="요청일*"
       name="rqstDt"
       v-model="saveData.workOrder.rqstDt"
-      defaultType="today"
+      default="today"
       validate-type="required"
       :parentValidateCheck="validateCheck"
       >
@@ -95,6 +95,7 @@ examples:
             :disabled="disabled"
             input-class="inputClass"
             @input="input"
+            @change="change"
             >
           </datetime-picker>
         </b-col>
@@ -128,15 +129,11 @@ export default {
   props: {
     label: {
       type: String,
-      default: '날짜를 선택하세요.'
+      default: ''
     },
     name: {
       type: String,
       default: 'date'
-    },
-    defaultType: {
-      type: String,
-      default: ''
     },
     childValidateType: {
       type: [String, Object],
@@ -186,9 +183,13 @@ export default {
       type: String,
       default: null
     },
+    defaultPeriod: {
+      type: String,
+      default: '1m'
+    },
     placeholder: {
       type: String,
-      default: '날짜 범위를 선택해주세요'
+      default: ''
     },
     datepickerWidth: {
       type: [ Number, String ],
@@ -231,19 +232,12 @@ export default {
   data () {
     return {
       datePickerMenu: null,
-      vValue: null, // TODO : datepicker 내부 값, YYYY-MM-DD(ISO 표준) 형태의 값
       localFormattedDate: null, // TODO : 날짜 값을 표시하는 v-text-field에 표시되는 값으로 local date format 형태의 값(언어 설정 변경시 같이 변경됨)
       locale: 'ko-KR', // window.getApp.locale.datepicker
-      period: []
-      // krLanguage: {
-      //   'days': ['일', '월', '화', '수', '목', '금', '토'],
-      //   'months': ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'],
-      //   'pickers': ['다음 7일', '다음 30일', '이전 7일', '이전 30일'],
-      //   'placeholder': {
-      //     'date': '',
-      //     'dateRange': '날짜 범위를 선택해주세요'
-      //   }
-      // }
+      period: [],
+      vValue: null, // TODO : datepicker 내부 값, YYYY-MM-DD(ISO 표준) 형태의 값      
+      vNullable: false,
+      vPlaceholder: ''
     };
   },
   computed: {
@@ -262,7 +256,7 @@ export default {
       if (this.type === '') return 'YYYY-MM-DD';
       else if (this.type === 'month') return 'YYYY-MM';
       else if (this.type === 'year') return 'YYYY';
-      else if (this.type === 'time') return 'HH-mm-dd';
+      else if (this.type === 'time') return 'HH-mm-ss';
     },
     krLanguage() {
       return {
@@ -270,8 +264,8 @@ export default {
         'months': ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'],
         'pickers': ['다음 7일', '다음 30일', '이전 7일', '이전 30일'],
         'placeholder': {
-          'date': this.placeholder,
-          'dateRange': this.placeholder
+          'date': this.vPlaceholder,
+          'dateRange': this.vPlaceholder
         }
       }
     },
@@ -291,6 +285,7 @@ export default {
       if (!this.default) return;
       if (this.default === 'today') {
         this.vValue = this.$comm.getToday();
+        this.$emit('input', this.$comm.moment(this.vValue).format('YYYY-MM-DD'));
       }
       else {
         this.vValue = this.$comm.getCalculatedDate(this.$comm.getToday(), this.default, 'yyyy-mm-dd');
@@ -300,16 +295,16 @@ export default {
     },
     // todo : 부모의 v-model 변경을 감시
     value () {
-      // if (this.range){
-      //   this.vValue = this.transform.value2date(this.value, this.format);
-      // } else {
-      //   this.vValue = this.value;
-      // }
       this.vValue = this.value;
+    },
+    vPlaceholder () {      
+    },
+    placeholder () {
+      this.vPlaceholder = this.placeholder;
     },
   },
   /* Vue lifecycle: created, mounted, destroyed, etc */
-  beforeMount () {
+  beforeMount () {    
     window.getApp.$on('LOCALE_CHANGE', (_localeCode) => {
       // datepicker의 언어설정
       this.locale = localeMapper[_localeCode].datepicker;
@@ -317,17 +312,44 @@ export default {
     });
 
     // TODO : 팝업창의 z-index가 2001이어서 강제로 z-index를 높게 지정, element-ui의 popover도 z-index가 2021임
-    $('.mx-datepicker-popup').css('z-index', '3000');
+    // $('.mx-datepicker-popup').css('z-index', '3000');
   },
   mounted () {
+    if (this.range) this.vPlaceholder = '날짜 범위를 선택하세요.';
+    else this.vPlaceholder = '날짜를 선택하세요.';
+
+    if (this.type === 'year') this.vPlaceholder = '년도를 선택하세요.';
+    
+    // 초기값 설정
     if (!this.default) return;
-    if (this.default === 'today') {
-      if (this.value) this.vValue = this.value;
-      else this.vValue = this.$comm.getToday();
+    if (this.range) {
+      if (this.value == null || this.value.length == 0) {
+        if (this.default === 'today') {
+          var f = this.$comm.getToday(); 
+          var t  = this.$comm.getCalculatedDate(this.$comm.getToday(), this.defaultPeriod, 'yyyy-mm-dd');
+          this.vValue = [f, t];
+        }    
+        else {
+          var f = this.$comm.getCalculatedDate(this.$comm.getToday(), this.default, 'yyyy-mm-dd');
+          var t  = this.$comm.getCalculatedDate(f, this.defaultPeriod, 'yyyy-mm-dd');
+          this.vValue = [f, t];
+        }
+      }
+      else this.vValue = this.value;
     }
     else {
-      this.vValue = this.$comm.getCalculatedDate(this.$comm.getToday(), this.default, 'yyyy-mm-dd');
+      if (this.value == null || this.value == '') {
+        if (this.default === 'today') {
+          this.vValue = this.$comm.getToday(); 
+        }    
+        else {
+          this.vValue = this.$comm.getCalculatedDate(this.$comm.getToday(), this.default, 'yyyy-mm-dd');
+        }        
+      }
+      else this.vValue = this.value;
     }
+    // alert(this.vValue);
+    this.$emit('input', this.vValue);
   },
   beforeDestroy () {
     // TODO : remove event listener, 삭제 하지 않으면 이벤트가 중복 발생됨
@@ -338,19 +360,48 @@ export default {
     input () {
       // this.$refs.datePickerMenu.save(this.vValue);
       var value = null;
+      var invalidDate = false;
       if (this.range) {
-        console.log(':::::::::::::::: range convert');
         value = [];
         this.$_.forEach(this.vValue, (_item) => {
-          // var date = this.transform.value2date(_item);
-          var dateStr = this.$comm.moment(_item).format('YYYY-MM-DD')
-          value.push(dateStr);
+          if (_item !== null){
+            // var date = this.transform.value2date(_item);
+            var dateStr;
+            if (this.type === 'time') {
+              // dateStr = this.$comm.moment(_item).format('HH-mm-ss');
+              dateStr = _item;
+            }
+            else
+            {
+              dateStr = this.$comm.moment(_item).format('YYYY-MM-DD');
+            }
+            value.push(dateStr);
+          }
+          else
+          {
+            invalidDate = true;
+          }
         });
+
+        if (invalidDate) value = null;
       } else {
-        value = this.vValue;
+        if (this.type === 'time') {
+          // value = this.$comm.moment(this.vValue).format('HH-mm-ss');
+        }
+        else if (this.type === 'year')
+        {
+          value = this.vValue !== null ? this.$comm.moment(this.vValue).format('YYYY') : this.vValue;
+        }
+        else
+        {
+          // value = this.vValue;
+          value = this.$comm.moment(this.vValue).format('YYYY-MM-DD');
+        }
       }
-      console.log(JSON.stringify(value));
       this.$emit('input', value);
+    },
+    change () {
+      // 값 변경 이벤트
     },
     /**
      * delete icon 클릭시 값 초기화
@@ -371,7 +422,7 @@ export default {
     setLocalFormattedPeriod () {
       var dateFormat = 'L';
       if (this.locale.toLowerCase() === 'ko-kr') dateFormat = 'YYYY-MM-DD';
-      console.log('this.vValue:' + JSON.stringify(this.vValue));
+      // console.log('this.vValue:' + JSON.stringify(this.vValue));
       this.period = [
         this.$comm.moment(this.vValue[0]).format(dateFormat),
         this.$comm.moment(this.vValue[1]).format(dateFormat),

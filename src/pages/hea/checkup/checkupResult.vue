@@ -1,5 +1,5 @@
 <!--
-  목적 : 건강검진결과 검색
+  목적 : 검진결과 검색
   작성자 : khk
   Detail : 
   *
@@ -8,28 +8,26 @@
   -->
 <template>
   <b-container fluid>
-    <b-row>
+    <b-row ref="searchBox">
       <b-col sm="12">
         <b-card header-class="default-card" body-class="default-body-card" class="py-0">
           <div slot="header">
-            <y-label label="검색" />
-            <!-- <div class="right" style="cursor:pointer">검색조건 열기/숨기기</div> -->
+            <y-label label="검색" />            
             <div class="float-right">
               <y-btn
+                :title="searchArea.title"
+                color="green"                
+                @btnClicked="btnSearchVisibleClicked" 
+              />
+              <y-btn
                 v-if="editable"
-                :action-url="searchUrl"
-                :param="searchParam"
-                type="search"
                 title="검색"
-                size="mini"
-                color="success"
-                action-type="GET"
-                @btnClicked="btnSearchClickedCallback" 
-                @btnClickedErrorCallback="btnClickedErrorCallback"
+                color="green"
+                @btnClicked="btnSearchClicked"
               />
             </div>
           </div>
-          <b-row>
+          <b-row v-if="searchArea.show">
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">              
               <y-select
                 :width="8"
@@ -40,7 +38,7 @@
                 ui="bootstrap"
                 type="search"
                 name="checkupYear"
-                label="건강검진년도"
+                label="검진년도"
                 v-model="searchParam.checkupYear"
                 />
             </b-col>
@@ -54,7 +52,7 @@
                 ui="bootstrap"
                 type="search"
                 name="heaCheckupPlanNo"
-                label="건강검진계획"
+                label="검진계획"
                 v-model="searchParam.heaCheckupPlanNo"
                 />
             </b-col>
@@ -67,6 +65,8 @@
                 name="userNm"
                 label="성명"
                 v-model="searchParam.userNm"
+                :appendIcon="[{ 'icon': 'search', callbackName: 'searchUser' }]"
+                @searchUser="btnSearchUserClicked"
                 />
             </b-col>
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
@@ -124,7 +124,7 @@
                 v-model="searchParam.heaDiagnoseCds"
                 />              
             </b-col>
-            <b-col sm="12" md="12" lg="12" xl="12" class="col-xxl-7">
+            <b-col sm="12" md="12" lg="12" xl="12" class="col-xxl-6">
                 <y-multi-select
                 :width="10"
                 :editable="editable"
@@ -132,7 +132,6 @@
                 itemText="heaCheckupOrgNm"
                 itemValue="heaCheckupOrgNo"
                 ui="bootstrap"
-                type="search"
                 label="검진병원"
                 name="heaCheckedOrgNos"
                 v-model="heaCheckedOrgNos"
@@ -143,47 +142,24 @@
       </b-col>
     </b-row>
     
-    <b-row class="mt-3">
+    <b-row class="mt-3 h-100">
       <b-col sm="12" class="px-0">
         <b-col sm="12">
           <div slot="buttonGroup" class="float-right mb-1">
             <y-btn 
-              :is-submit="false"
-              type="clear"
               title="검진결과/판정 Upload"
-              size="mini"
-              color="primary"
+              color="blue"
               @btnClicked="btnDiagnoseResultUploadClicked" 
             />
           </div>
           <y-data-table 
-            label="건강검진 목록"
+            label="검진 목록"
             ref="dataTable"
-            :rows="7"
-            :headers="gridHeaderOptions"
-            :items="gridData"
-            :excel-down="true"
-            :print="true" 
-            @selectedRow="selectedRow"
+            :height="gridOptions.height"
+            :headers="gridOptions.header"
+            :items="gridOptions.data"
             @tableLinkClicked="tableLinkClicked"
-            >
-            <el-table-column
-              slot="selection"
-              align="center"
-              width="80" 
-              >
-              <template slot-scope="tableData">
-                <y-btn
-                  v-if="editable"
-                  type="search"
-                  title="상세"
-                  size="mini"
-                  color="info"
-                  @btnClicked="getDetail(tableData.row)" 
-                />
-              </template>
-            </el-table-column>
-          </y-data-table>
+            />
           </b-col>
       </b-col>      
     </b-row>
@@ -191,12 +167,13 @@
       :title="popupOptions.title"
       :visible.sync="popupOptions.visible"
       :fullscreen="false"
-      :close-on-click-modal="true"
-      :close-on-press-escape="true"
+      :append-to-body="true"
+      :close-on-click-modal="false"
+      :close-on-press-escape="false"
       :show-close="false"
       :width="popupOptions.width"
       :top="popupOptions.top">
-      <component :is="popupOptions.target" :popupParam="popupOptions.param" @closePopup="closePopup" />
+      <component :is="popupOptions.target" :popupParam="popupOptions.param" @closePopup="popupOptions.closeCallback" />
     </el-dialog>
   </b-container>
 </template>
@@ -218,7 +195,12 @@ export default {
         visible: false,
         width: '90%',
         top: '10px',
-        param: {}
+        param: {},
+        closeCallback: null
+      },
+      searchArea: {
+        title: '검색박스숨기기',
+        show: true
       },
       searchParam: {
         checkupYear: '',
@@ -230,9 +212,12 @@ export default {
         heaCheckedOrgNos: [],
         userNm: ''
       },
+      gridOptions: {
+        header: [],
+        data: [],
+        height: 300
+      },
       editable: true,
-      gridData: [],
-      gridHeaderOptions: [],
       checkupYearItems: [],
       heaCheckupPlanNoItems: [],
       heaDiagnoseCdsItems: [],
@@ -268,15 +253,14 @@ export default {
     // 이유 : vue.js는 SPA기반으로 동작하기 때문에 페이지를 이동하더라도 기존 입력된 정보가 그대로 남아 있는 문제가 있음
     Object.assign(this.$data, this.$options.data());
     this.init(); 
-
-    // 팝업 반환정보 수신
-    window.getApp.$on('POPUP_CLOSE_CALLBACK', this.popupCloseCallback);
   },
   mounted () {
+    // 윈도우 resize event
+    window.addEventListener('resize', this.setGridSize);
   },
   beforeDestroy () {
-    // 팝업 반환정보 수신
-    window.getApp.$on('POPUP_CLOSE_CALLBACK', this.popupCloseCallback);
+    // 윈도우 resize event 제거-SPA 기반이므로 제거하지 않으면 다른페이지에서 해당 이벤트가 호출됨
+    window.removeEventListener('resize', this.setGridSize);
   },
   destroyed () {
   },
@@ -306,14 +290,14 @@ export default {
       }, 200);
 
       // 그리드 헤더 설정
-      this.gridHeaderOptions = [
-        { text: '통보여부', name: 'notifyResultYn', width: '120px' },
-        { text: '판정', name: 'heaDiagnoseNm', width: '120px', align: 'center' },
-        { text: '질환종류', name: 'heaDiseaseClassNm', width: '200px' },
-        { text: '질환', name: 'heaDiseaseNm', width: '200px' },
+      this.gridOptions.header = [
+        { text: '통보여부', name: 'notifyResultYn', width: '120px', align: 'center' },
         { text: '부서', name: 'deptNm', width: '160px' },
         { text: '성명', name: 'userNm', width: '160px', align: 'center', type: 'link' },
         { text: '성별', name: 'comSexTypeNm', width: '80px', align: 'center' },
+        { text: '판정', name: 'heaDiagnoseNm', width: '120px', align: 'center' },
+        { text: '질환종류', name: 'heaDiseaseClassNm', width: '200px' },
+        { text: '질환', name: 'heaDiseaseNm', width: '200px' },        
         { text: '검진종류', name: 'heaCheckupClassNm', width: '200px', align: 'center' },
         { text: '검진일', name: 'heaCheckedYmd', width: '160px', align: 'center' },
         { text: '유소견자', name: 'suspectYn', width: '120px', align: 'center' }
@@ -322,6 +306,7 @@ export default {
       this.searchUrl = selectConfig.checkupResult.list.url;
 
       this.getList();
+      this.setGridSize();
     },
     /** /초기화 관련 함수 **/
 
@@ -331,9 +316,9 @@ export default {
       this.$http.type = 'get';
       this.$http.param = this.searchParam;
       this.$http.request((_result) => {
-        this.gridData = _result.data;
+        this.gridOptions.data = _result.data;
       }, (_error) => {
-        console.log(_error);
+        window.getApp.$emit('APP_REQUEST_ERROR', _error);
       });
     }, 
     getHeaCheckupPlanNoItems () {
@@ -348,6 +333,7 @@ export default {
         this.heaCheckupPlanNoItems = _result.data;
         this.searchParam.heaCheckupPlanNo = 0;
       }, (_error) => {
+        window.getApp.$emit('APP_REQUEST_ERROR', _error);
       });
     },
     getHeaDiagnoseCdsItems () {
@@ -357,6 +343,7 @@ export default {
       this.$http.request((_result) => {
         this.heaDiagnoseCdsItems = _result.data;
       }, (_error) => {
+        window.getApp.$emit('APP_REQUEST_ERROR', _error);
       });
     },
     getHeaDiseaseClassCdItems () {
@@ -367,6 +354,7 @@ export default {
         _result.data.splice(0, 0, { 'code': '0', 'codeNm': '전체' });
         this.heaDiseaseClassCdItems = _result.data;
       }, (_error) => {
+        window.getApp.$emit('APP_REQUEST_ERROR', _error);
       });
     },
     getHeaDiseaseCdItems () {
@@ -381,6 +369,7 @@ export default {
         this.heaDiseaseCdItems = _result.data;
         this.searchParam.heaDiseaseCd = '';
       }, (_error) => {
+        window.getApp.$emit('APP_REQUEST_ERROR', _error);
       });
     },
     getHeaCheckedOrgNosItems () {
@@ -393,13 +382,13 @@ export default {
         this.heaCheckedOrgNosItems = _result.data;
         this.searchParam.heaCheckedOrgNos = [];
       }, (_error) => {
+        window.getApp.$emit('APP_REQUEST_ERROR', _error);
       });
     },
-    selectedRow (data) {
-      alert(data.userId);
-    },
     tableLinkClicked (header, row) {
-      alert(12312);
+      if (header.name === 'userNm') {
+        this.getDetail(row);
+      }
     },
     getDetail (data) {
       this.popupOptions.param = {
@@ -407,23 +396,57 @@ export default {
         'userId': data.userId
       };
       this.popupOptions.target = () => import(`${'./checkupResultDetail.vue'}`);
-      this.popupOptions.title = '건강검진결과 상세';
+      this.popupOptions.title = '검진결과 상세';
       this.popupOptions.visible = true;
+      this.popupOptions.width = '80%';
+      this.popupOptions.top = '20px';
+      this.popupOptions.closeCallback = this.closePopup;
     },
     closePopup (data) {
       this.popupOptions.target = null;
       this.popupOptions.visible = false;
+    },
+    closePopupSearchUser (data) {
+      this.popupOptions.target = null;
+      this.popupOptions.visible = false;
+      if (data.user) {
+        this.searchParam.userNm = data.user.userNm;
+      }
+    },
+    /**
+     * 그리드 리사이징
+     */
+    setGridSize () {
+      window.getApp.$emit('LOADING_SHOW');
+      setTimeout(() => {
+        this.gridOptions.height = window.innerHeight - this.$refs.searchBox.clientHeight - 245;
+        window.getApp.$emit('LOADING_HIDE');
+      }, 600);
     },
     /** /Call API service **/
 
     /** /Events, Callbacks (버튼 제외) **/
 
     /** button 관련 이벤트 **/
-    btnSearchClickedCallback (_result) {
-      this.gridData = _result.data;
+    btnSearchClicked () {
+      this.getList();
     },
-    btnClickedErrorCallback (_result) {
-      window.getApp.$emit('APP_REQUEST_ERROR', _result);
+    btnSearchVisibleClicked () {      
+      this.searchArea.show = !this.searchArea.show;
+      if (this.searchArea.show) this.searchArea.title = '검색박스숨기기';
+      else this.searchArea.title = '검색박스보이기';
+
+      window.getApp.$emit('LOADING_PASS_COUNT', 2);
+      this.getHeaCheckedOrgNosItems();
+      this.setGridSize();
+    },
+    btnSearchUserClicked (_item) {
+      this.popupOptions.target = () => import(`${'../../manage/user/userSearch.vue'}`);
+      this.popupOptions.title = '사용자검색';
+      this.popupOptions.visible = true;
+      this.popupOptions.width = '60%';
+      this.popupOptions.top = '100px';
+      this.popupOptions.closeCallback = this.closePopupSearchUser;
     },    
     btnDiagnoseResultUploadClicked (_result) {
       this.popupOptions.target = () => import(`${'./diagnoseResultUpload.vue'}`);
@@ -431,7 +454,8 @@ export default {
       this.popupOptions.visible = true;
       this.popupOptions.width = '80%';
       this.popupOptions.top = '50px';
-    },
+      this.popupOptions.closeCallback = this.closePopup;
+    }
     /** end button 관련 이벤트 **/
 
     /** 기타 로직 **/

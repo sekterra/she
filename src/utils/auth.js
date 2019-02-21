@@ -1,7 +1,7 @@
 /* eslint-disable */
 import Cookies from 'js-cookie'
 
-const TokenKey = 'Admin-Token'
+const TokenKey = 'x-token'
 
 export function getToken() {
   return Cookies.get(TokenKey)

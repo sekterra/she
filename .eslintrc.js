@@ -51,6 +51,7 @@ module.exports = {
     'semi': 0,
     'no-new': 0,
     'object-curly-newline': 0,
+    'guard-for-in': 0,
     // "vue/max-attributes-per-line": [2, {
     //   "singleline": 10,
     //   "multiline": {

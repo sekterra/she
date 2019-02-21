@@ -13,13 +13,13 @@
         <b-card no-body class="px-3 py-2">
           <b-row class="mt-2">
             <b-col sm="4">
-              <y-label label="검진종류: " /><y-label :label="checkupPlan.heaCheckupClassNm" />
+              <y-label label="검진종류: " /><y-label :label="checkupPlan.heaCheckupClassNm" fieldable="true" />
             </b-col>
             <b-col sm="4">
-              <y-label label="검진계획: " /><y-label :label="checkupPlan.heaCheckupPlanNm" />
+              <y-label label="검진계획: " /><y-label :label="checkupPlan.heaCheckupPlanNm" fieldable="true" />
             </b-col>
             <b-col sm="4">
-              <y-label label="검진일자: " /><y-label :label="checkupPlan.heaCheckupPlanPeriod" />
+              <y-label label="검진일자: " /><y-label :label="checkupPlan.heaCheckupPlanPeriod" fieldable="true" />
             </b-col>
           </b-row>
         </b-card>
@@ -35,20 +35,23 @@
             </div>
             <div class="float-right">
               <y-btn
+                :title="searchArea.title"
+                color="green"                
+                @btnClicked="btnSearchVisibleClicked" 
+              />
+              <y-btn
                   v-if="editable&&checkupPlan.heaCheckupPlanNo>0"
                   :action-url="searchUrl"
                   :param="searchParam"
-                  type="search"
                   title="검색"
-                  size="mini"
-                  color="success"
+                  color="green"
                   action-type="get"
                   @btnClicked="btnSearchClickedCallback" 
                   @btnClickedErrorCallback="btnClickedErrorCallback"
                 />
             </div>
           </div>
-          <b-row>
+          <b-row v-if="searchArea.show" ref="searchBox">
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <y-select
                 :width="8"
@@ -140,10 +143,8 @@
                 :action-url="insertUrl"
                 :param="gridSelectedRows"
                 :is-submit="isInsertSubmit"
-                type="save"
                 title="검진대상자로 추가"
-                size="small"
-                color="primary"
+                color="blue"
                 action-type="post"
                 beforeSubmit = "beforeInsertSubmit"
                 @beforeInsertSubmit="beforeInsertSubmit"
@@ -156,6 +157,7 @@
             :headers="gridHeaderOptions"
             :items="gridData"
             :editable="editable"
+            :height="gridHeight"
             :excel-down="true"
             :print="true"
             :rows="5"
@@ -180,7 +182,8 @@ export default {
   /** attributes: name, components, props, data **/
   name: 'checkup-user',  
   props: {
-    selectedCheckupPlanNo: 0
+    selectedCheckupPlanNo: 0,
+    selectedTabIndex: 0
   },
   // TODO: 화살표 함수(=>)는 data에 사용하지 말 것
   //    data: () => { return { a: this.myProp }}) 화살표 함수가 부모 컨텍스트를 바인딩하기 때문에 this는 예상과 달리 Vue 인스턴스가 아니기 때문에 this.myProp는 undefined로 나옵니다.
@@ -202,6 +205,11 @@ export default {
         prevYearCheckupUserYn: 'N',
         age: 0
       },
+      searchArea: {
+        title: '검색박스숨기기',
+        show: true,
+        height: 0
+      },
       editable: true,
       detailUrl: '',
       insertUrl: '',
@@ -214,6 +222,7 @@ export default {
             
       gridHeaderOptions: [],
       gridData: [],
+      gridHeight: 300,
       gridSelectedRows: []
     };
   },
@@ -223,6 +232,11 @@ export default {
       this.searchParam.heaCheckupPlanNo = this.selectedCheckupPlanNo;
       this.getDetail();
       this.getList();
+    },
+    selectedTabIndex: function (newValue, oldValue) {
+      if (this.checkupPlan.heaCheckupPlanNo === this.selectedCheckupPlanNo) {
+        this.getList();      
+      }    
     }
   },
   /** Vue lifecycle: created, mounted, destroyed, etc **/
@@ -237,6 +251,7 @@ export default {
     this.init();
   },
   mounted () {
+    this.searchArea.height = this.$refs.searchBox.clientHeight;
   },
   beforeDestory () {
     this.init();
@@ -251,9 +266,9 @@ export default {
         this.getAgeItems();
       }, 200);
 
-      // 건강검진 전체 대상자 그리드 헤더 설정
+      // 검진 전체 대상자 그리드 헤더 설정
       this.gridHeaderOptions = [
-        { text: '건강검진 타입', name: 'heaCheckupTypeNm', width: '200px', align: 'center' },
+        { text: '검진 타입', name: 'heaCheckupTypeNm', width: '200px', align: 'center' },
         { text: '공정', name: 'processNm', width: '160px', align: 'center' },
         { text: '부서', name: 'deptNm', width: '160px', align: 'center' },
         { text: '사번', name: 'userId', width: '120px', align: 'center' },
@@ -282,7 +297,8 @@ export default {
       this.$http.type = 'get'; 
       this.$http.request((_result) => {
         this.checkupPlan = _result.data;
-      }, (_error) => {         
+      }, (_error) => {
+        window.getApp.$emit('APP_REQUEST_ERROR', _error);
       });
     },
     getList () {
@@ -291,7 +307,8 @@ export default {
       this.$http.param = this.searchParam;
       this.$http.request((_result) => {
         this.gridData = _result.data;
-      }, (_error) => {         
+      }, (_error) => {
+        window.getApp.$emit('APP_REQUEST_ERROR', _error);
       });
     },
 
@@ -306,16 +323,18 @@ export default {
         this.processNoItems = _result.data;
         this.searchParam.processNo = 0;
       }, (_error) => {
+        window.getApp.$emit('APP_REQUEST_ERROR', _error);
       });
     },
     getDeptCdItems () {
-      this.$http.url = selectConfig.dept.list.url;
+      this.$http.url = selectConfig.manage.dept.list.url;
       this.$http.type = 'get';
       this.$http.request((_result) => {
         _result.data.splice(0, 0, { 'deptCd': '', 'deptNm': '전체' });
         this.deptCdItems = _result.data;
         this.searchParam.deptCd = '';
       }, (_error) => {
+        window.getApp.$emit('APP_REQUEST_ERROR', _error);
       });
     },
     getAgeItems () {
@@ -326,6 +345,13 @@ export default {
       this.ageItems.push({ 'code': 5, 'codeNm': '50대이상' });
       this.searchParam.age = 0;
     },
+    setGridSize () {
+      window.getApp.$emit('LOADING_SHOW');
+      setTimeout(() => {  
+        this.gridHeight = this.gridHeight + ((this.searchArea.show ? -1 : 1) * this.searchArea.height);      
+        window.getApp.$emit('LOADING_HIDE');
+      }, 600);
+    },
     /** /Call API service **/
     
     /** validation checking**/
@@ -334,7 +360,22 @@ export default {
      **/
     beforeInsertSubmit () {
       if (this.gridSelectedRows.length > 0) {
-        this.isInsertSubmit = confirm('건강검진 대상자를 추가 하시겠습니까?');
+        window.getApp.$emit('CONFIRM', {
+          title: '확인',
+          message: '검진 대상자를 추가 하시겠습니까?',
+          type: 'info',
+          // 확인 callback 함수
+          confirmCallback: () => {
+            this.isInsertSubmit = true;
+          }
+        });
+      }
+      else {
+        window.getApp.$emit('ALERT', {
+          title: '안내',
+          message: '선택된 검진 대상자가 없습니다. 목록 앞단에 선택박스를 확인하세요.',
+          type: 'warning',
+        });
       }
     },
     /** /validation checking **/
@@ -343,6 +384,14 @@ export default {
     /** /Component, Callbacks (버튼 제외) **/
     
     /** Button Event **/
+    btnSearchVisibleClicked () {      
+      this.searchArea.show = !this.searchArea.show;
+      if (this.searchArea.show) this.searchArea.title = '검색박스숨기기';
+      else this.searchArea.title = '검색박스보이기';
+      
+      window.getApp.$emit('LOADING_PASS_COUNT', 1);
+      this.setGridSize();
+    },
     btnSearchClickedCallback (_result) {
       this.gridData = _result.data;
     },
@@ -350,11 +399,15 @@ export default {
       this.isInsertSubmit = false;
       this.getList();
       this.$emit('changeCheckupUsers');
-      alert('선택된 사용자를 대상자로 추가하였습니다.'); 
+      window.getApp.$emit('ALERT', {
+        title: '안내',
+        message: '선택된 사용자를 대상자로 추가하였습니다.',
+        type: 'success',
+      });
     },
     btnClickedErrorCallback (_result) {
-      this.isInsertSubmit = false;       
-      alert('작업진행 중 오류가 발생했습니다. 재시도 후 지속적으로 오류 발생시 관리자에게 문의하세요.');
+      this.isInsertSubmit = false;
+      window.getApp.$emit('APP_REQUEST_ERROR', _result);
     },
     /** /Button Event **/
     

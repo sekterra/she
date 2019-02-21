@@ -71,19 +71,23 @@ examples:
             <!-- /앞쪽에 ICON을 추가해야 할 경우 -->
 
             <b-form-input 
+              ref="input"
               v-model.trim="vValue"
               :label="label"
               :name="name"
               :placeholder="placeholder"
+              :readonly="readonly"
               :state="state"
               :size="size"
               :maxlength="maxlength"
+              :disabled="disabled"
               type="text"
               @input="input">
             </b-form-input>
             
             <!-- clear icon 추가 -->
-            <span class="form-control-clear form-control-feedback">
+            <span  v-if="!disabled"
+              class="form-control-clear form-control-feedback">
               <f-icon 
                 icon="times" 
                 size="sm" 
@@ -282,6 +286,14 @@ export default {
       type: Boolean,
       default: true
     },
+    disabled: {
+      type: Boolean,
+      default: false
+    },
+    readonly: {
+      type: Boolean,
+      default: false
+    },
   },
   data () {
     return {
@@ -335,16 +347,23 @@ export default {
       // this.formatOption.prefix = this.prefix;
       // this.formatOption.suffix = this.suffix;
       // return this.$formatNumber(this.formatOption)(this.value, { noSeparator: !this.hasSeperator });
-      return this.$numeral(this.value).format(this.numberFormat);
+      if (this.value != null && this.value != '')
+        return this.$numeral(this.value).format(this.numberFormat);
+      else 
+        return this.value;
     },
     // hasSeperator, prefix, suffix, pointNumber 속성에 따라서 숫자 포맷지정
     numberFormat () {
       var format = '0';
       if (this.hasSeperator) format += ',0';
-      if (this.pointNumber) format += '[.]0';
+      // if (this.pointNumber) format += '[.]0';
+      if (this.pointNumber) {
+        var pad = '[';
+        for (var i=0; i < this.pointNumber; i++) pad += '0';
+        format += ('[.]' + pad + ']');
+      }
       if (this.prefix) format = this.prefix + ' ' + format;
       if (this.suffix) format += format + ' ' + this.suffix;
-      console.log('numberFormat:' + format);
       return format;
     },
     hasAppend1 () {
@@ -388,7 +407,7 @@ export default {
   updated () {
     this.$nextTick(() => {
       // 모든 화면이 렌더링된 후 실행합니다.
-      console.log('numberValue:' + this.numberValue);
+      // console.log('numberValue:' + this.numberValue);
       this.vValue = this.numberValue;
     });
   },
@@ -401,10 +420,16 @@ export default {
       //   // this.vValue = truncStr;
       //   // console.log(this.vValue);
       // }
-
-
       var value = this.limitAsByte ? this.truncValue : this.vValue;
-      value = value.replace(/[^-\.0-9]/g, '');
+      if (value != null) {
+        if (typeof value == 'string') {
+          value = value.replace(/[^-\.0-9]/g, '');
+        }
+        else {
+          value = Number(value.toString().replace(/[^-\.0-9]/g, ''));
+        }
+      }
+
       // TODO : 부모에게 변경여부 전달
       this.$emit('input', value);
     },

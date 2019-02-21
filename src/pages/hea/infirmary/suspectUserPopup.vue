@@ -8,22 +8,8 @@
   -->
 <template>
   <b-container fluid>
-    <b-row>
-      <b-col sm="12">  
-        <div class="float-right">
-          <y-btn
-            type="clear"
-            title="닫기"
-            size="small"
-            color="info"
-            @btnClicked="closePopup" 
-          />
-        </div>  
-      </b-col>
-    </b-row>
-
     <!-- 검색 -->
-    <b-row class="mt-3">
+    <b-row ref="searchBox">
       <b-col sm="12">
         <b-card header-class="default-card" body-class="default-body-card" class="py-0">
           <div slot="header">
@@ -32,19 +18,32 @@
             </div>
             <div class="float-right">
               <y-btn
-                :action-url="searchUrl"
-                :param="searchParam"
-                type="search"
+                :title="searchArea.title"
+                color="green"                
+                @btnClicked="btnSearchVisibleClicked" 
+              />
+              <y-btn
+                v-if="editable"
                 title="검색"
-                size="mini"
-                color="success"
-                action-type="get"
-                @btnClicked="btnSearchCallback" 
-                @btnClickedErrorCallback="btnClickedErrorCallback"
+                color="green"
+                @btnClicked="btnSearchClicked" 
               />
             </div>
           </div>
-          <b-row>
+          <b-row v-if="searchArea.show">
+            <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
+              <y-select
+                :width="baseWidth"
+                :comboItems="processNoItems"
+                itemText="processNm"
+                itemValue="processNo"
+                ui="bootstrap"
+                type="search"
+                name="processNo"
+                label="공정"
+                v-model="searchParam.processNo"
+                />
+            </b-col>
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <y-select
                 :width="baseWidth"
@@ -93,9 +92,11 @@
                 :editable="editable"
                 ui="bootstrap"
                 type="edit"
-                label="사용자명"
+                label="직원명"
                 name="userNm"
                 v-model="searchParam.userNm"
+                :appendIcon="[{ 'icon': 'search', callbackName: 'searchUser' }]"
+                @searchUser="btnSearchUserClicked"
               >
               </y-text>
             </b-col>
@@ -114,10 +115,8 @@
               :action-url="insertUrl"
               :param="insertValue"
               :is-submit="isInsertSubmit"
-              type="save"
               title="유소견자 지정"
-              color="primary"
-              size="mini"
+              color="blue"
               action-type="delete"
               beforeSubmit = "beforeInsert"
               @beforeInsert="beforeInsert"
@@ -129,15 +128,17 @@
               :action-url="deleteUrl"
               :param="deleteValue"
               :is-submit="isDeleteSubmit"
-              type="delete"
               title="유소견자 해제"
-              color="primary"
-              size="mini"
+              color="blue"
               action-type="delete"
               beforeSubmit = "beforeDelete"
               @beforeDelete="beforeDelete"
               @btnClicked="btnDeleteClickedCallback" 
               @btnClickedErrorCallback="btnClickedErrorCallback"
+            />
+            <y-btn
+              title="닫기"
+              @btnClicked="closePopup" 
             />
           </div>
           <b-row class="mb-3"></b-row>
@@ -145,34 +146,60 @@
             label="유소견자 지정 목록"
             title="유소견자 지정 목록"
             ref="dataTable"
-            :headers="gridHeaderOptions"
-            :items="gridData"
+            :height="gridOptions.height"
+            :headers="gridOptions.header"
+            :items="gridOptions.data"
             :editable="editable"
             v-model="selectedValue"
-            :excel-down="true"
-            :print="true">
+            @expandChange="expandChange"
+          >
             <el-table-column
               type="selection"
               slot="selection"
               width="55">
             </el-table-column>
+            <el-table-column
+              type="expand"
+              slot="expand"
+              label="이력"
+              width="55"> 
+              <template slot-scope="scope">
+                <y-label label="* 유소견자 지정/해제 이력"></y-label>
+                <el-table
+                  ref="suspectHistsData"
+                  :border="true"
+                  header-cell-class-name="default-th"
+                  cell-class-name="default-td"
+                  :data="scope.row.suspectHists"
+                  style="max-height: 200px;"> 
+                  <el-table-column label="지정여부" width="100px" prop="suspectYn" align="center" /> 
+                  <el-table-column label="변경일" width="160px" prop="changedDt" align="center"/> 
+                  <el-table-column label="당시부서" width="120px" prop="deptNm" align="center"/> 
+                  <el-table-column label="검진종류" width="120px" prop="heaCheckupClassNm" align="center"/> 
+                  <el-table-column label="검진계획" width="200px" prop="heaCheckupPlanNm" /> 
+                  <el-table-column label="판정" width="415px" prop="heaDiagnoseNms" /> 
+                  <el-table-column label="질환" width="415px" prop="heaDiseaseNms" /> 
+                  <el-table-column label="검진기관" width="120px" prop="heaCheckedOrgNm" align="center"/> 
+                  <el-table-column label="검진일" width="163px" prop="heaCheckedYmd" align="center"/> 
+                </el-table>
+              </template>
+            </el-table-column>
           </y-data-table>
         </b-col>
       </b-col>
     </b-row>
-    <b-row>
-      <b-col sm="12">  
-        <div class="float-right mt-3">
-          <y-btn
-            type="clear"
-            title="닫기"
-            size="small"
-            color="info"
-            @btnClicked="closePopup" 
-          />
-        </div>  
-      </b-col>
-    </b-row>
+    <el-dialog
+      :title="popupOptions.title"
+      :visible.sync="popupOptions.visible"
+      :fullscreen="false"
+      :append-to-body="true"
+      :close-on-click-modal="false"
+      :close-on-press-escape="false"
+      :show-close="false"
+      :width="popupOptions.width"
+      :top="popupOptions.top">
+      <component :is="popupOptions.target" :popupParam="popupOptions.param" @closePopup="popupOptions.closeCallback" />
+    </el-dialog>
   </b-container>
 </template>
 
@@ -186,11 +213,30 @@ export default {
   },
   data () {
     return {
+      popupOptions: {
+        target: null,
+        title: '',
+        visible: false,
+        width: '90%',
+        top: '10px',
+        param: {},
+        closeCallback: null
+      },
+      searchArea: {
+        title: '검색박스숨기기',
+        show: true
+      },
+      gridOptions: {
+        header: [],
+        data: [],
+        height: '300'
+      },
       searchParam: {
         deptCd: '',
         userId: '',
         userNm: '',
         suspectYn: '',
+        processNo: 0,
       },
       baseWidth: 8,
       editable: true,
@@ -200,14 +246,15 @@ export default {
       suspectYnItems: [],
       deptItems: [],
       searchUrl: '',
+      searchHistUrl: '',
       insertUrl: '',
       deleteUrl: '',
       gridData: [],
       gridHeaderOptions: [],
-      saveUrl: '',
       selectedValue: [],
       insertValue: null,
       deleteValue: null,
+      processNoItems: [],
     };
   },
   /** Vue lifecycle: created, mounted, destroyed, etc **/
@@ -218,115 +265,214 @@ export default {
   beforeMount () {
     Object.assign(this.$data, this.$options.data());
     this.init();
-    this.getDeptItems();
-    this.getSuspectYnItems();
-    this.getDataList();
   },
   mounted () {
+    window.addEventListener('resize', this.setGridSize);
   },
-  beforeDestory () {
-    this.init();
+  beforeDestroy () {
+    window.removeEventListener('resize', this.setGridSize);
   },
   /** methods **/
   methods: {
     /** 초기화 관련 함수 **/
     init () {
-      this.gridHeaderOptions = [
-        { text: '검진계획', name: 'heaCheckupPlanNm', width: '200px', align: 'center' },
-        { text: '검진종류', name: 'heaCheckupClassNm', width: '200px', align: 'center' },
-        { text: '사번', name: 'userId', width: '120px', align: 'center' },
-        { text: '사용자명', name: 'userNm', width: '160px', align: 'center' },
-        { text: '부서', name: 'deptNm', width: '160px', align: 'center' },
-        { text: '유소견자 여부', name: 'suspectYn', width: '120px', align: 'center' },
-        { text: '검진일', name: 'heaCheckedYmd', width: '160px', align: 'left' },
-        { text: '검진기관', name: 'heaCheckupOrgNm', width: '200px', align: 'center' },
-        { text: '판정', name: 'heaDiagnoseNm', width: '120px', align: 'center' },
-        { text: '질병종류', name: 'heaDiseaseClassNm', width: '200px', align: 'center' },
-        { text: '질환', name: 'heaDiseaseNm', width: '200px', align: 'center' },
+      this.gridOptions.header = [
+        { text: '부서', name: 'deptNm', width: '120px', align: 'center' },
+        { text: '사번', name: 'userId', width: '100px', align: 'center' },
+        { text: '직원명', name: 'userNm', width: '100px', align: 'center' },
+        { text: '유소견자 여부', name: 'suspectYn', width: '130px', align: 'center' },
+        { text: '공정', name: 'processNm', width: '130px', align: 'center' },
+        { text: '최근 검진정보', child: 
+          [
+            { text: '검진종류', name: 'heaCheckupClassNm', width: '120px', align: 'center' },
+            { text: '검진계획', name: 'heaCheckupPlanNm', width: '200px', align: 'left' },
+            { text: '판정', name: 'heaDiagnoseNms', width: '350px', align: 'left' },
+            { text: '질환', name: 'heaDiseaseNms', width: '350px', align: 'left' },
+            { text: '검진기관', name: 'heaCheckedOrgNm', width: '120px', align: 'left' },
+            { text: '검진일', name: 'heaCheckedYmd', width: '160px', align: 'center' },
+          ]
+        }        
       ];
+
+      this.searchUrl = selectConfig.suspectUser.list.all.url;
+      this.searchHistUrl = selectConfig.suspectUser.list.hist.url;
+      this.insertUrl = transactionConfig.suspectUser.insert.url;
+      this.deleteUrl = transactionConfig.suspectUser.delete.url;
+
+      this.getDeptItems();
+      this.getSuspectYnItems();
+      this.getProcessNoItems();
+      this.getDataList();
+      this.setGridSize();
     },
+    /** /초기화 관련 함수 **/
+
     getSuspectYnItems () {
-      setTimeout(() => {
-        this.suspectYnItems = [
-          { code: '', codeNm: '전체' },
-          { code: 'Y', codeNm: 'Y' },
-          { code: 'N', codeNm: 'N' },
-        ];
-      }, 2000);
+      this.suspectYnItems.push({ 'code': '', 'codeNm': '전체' });
+      this.suspectYnItems.push({ 'code': 'Y', 'codeNm': 'Y' });
+      this.suspectYnItems.push({ 'code': 'N', 'codeNm': 'N' });
     },
     getDeptItems () {
-      this.$http.url = selectConfig.dept.list.url;
-      this.$http.type = 'GET';
+      this.$http.url = selectConfig.manage.dept.list.url;
+      this.$http.type = 'get';
       this.$http.request((_result) => {
         _result.data.splice(0, 0, { 'deptCd': '', 'deptNm': '전체' });
         this.deptItems = _result.data;
       }, (_error) => {
-        console.log(_error);
+        window.getApp.$emit('APP_REQUEST_ERROR', _error);
       });
     },
-    /** /초기화 관련 함수 **/
-    
+    getProcessNoItems () {
+      this.$http.url = selectConfig.process.list.url;
+      this.$http.type = 'get';
+      this.$http.param = {
+        'useYn': 'Y'
+      };
+      this.$http.request((_result) => {
+        _result.data.splice(0, 0, { 'processNo': 0, 'processNm': '전체' });
+        this.processNoItems = _result.data;
+        this.searchParam.processNo = 0;
+      }, (_error) => {
+        window.getApp.$emit('APP_REQUEST_ERROR', _error);
+      });
+    },
     getDataList () {
-      this.$http.url = selectConfig.suspectUserPopup.list.url;
-      this.$http.type = 'GET';
+      this.$http.url = this.searchUrl;
+      this.$http.type = 'get';
       this.$http.param = this.searchParam;
       this.$http.request((_result) => {
-        //  console.log(JSON.parse(JSON.stringify(_result.data)));
-        this.gridData = _result.data;
+        _result.data.forEach(item => {
+          item['suspectHists'] = [];
+        });
+        this.gridOptions.data = _result.data;
       }, (_error) => {
-        console.log(_error);
+        window.getApp.$emit('APP_REQUEST_ERROR', _error);
       });
     },
     
     beforeInsert () {
-      console.log(this.selectedValue.length);
       if (this.selectedValue.length === 0) 
       {
-        window.alert("항목을 선택해주세요.");
+        window.getApp.$emit('ALERT', {
+          title: '안내',
+          message: '항목을 선택해주세요.',
+          type: 'warning',
+        });
         return;
       }
-      this.insertUrl = transactionConfig.suspectUser.insert.url;
-      this.insertValue = {
-        'data': Object.values(this.$_.clone(this.selectedValue))
-      };
-      this.isInsertSubmit = true;
+
+      window.getApp.$emit('CONFIRM', {
+        title: '확인',
+        message: '유소견자를 지정하시겠습니까?',
+        type: 'info',
+        // 확인 callback 함수
+        confirmCallback: () => {
+          this.insertValue = {
+            'data': Object.values(this.$_.clone(this.selectedValue))
+          };
+          this.isInsertSubmit = true;
+        },
+      });
     },
     beforeDelete () {
-      console.log(this.selectedValue.length);
       if (this.selectedValue.length === 0) 
       {
-        window.alert("항목을 선택해주세요.");
+        window.getApp.$emit('ALERT', {
+          title: '안내',
+          message: '항목을 선택해주세요.',
+          type: 'warning',
+        });
         return;
       }
-      this.deleteUrl = transactionConfig.suspectUser.delete.url;
-      this.deleteValue = {
-        'data': Object.values(this.$_.clone(this.selectedValue))
+
+      window.getApp.$emit('CONFIRM', {
+        title: '확인',
+        message: '수정하시겠습니까?',
+        type: 'info',
+        // 확인 callback 함수
+        confirmCallback: () => {
+          this.deleteValue = {
+            'data': Object.values(this.$_.clone(this.selectedValue))
+          };
+          this.isDeleteSubmit = true;
+        }
+      });
+    },
+    expandChange (row) {
+      this.$http.url = this.searchHistUrl;
+      this.$http.type = 'get';
+      this.$http.param = {
+        'userId': row.userId
       };
-      this.isDeleteSubmit = true;
+      this.$http.request((_result) => {
+        row['suspectHists'] = _result.data;
+      }, (_error) => {
+        window.getApp.$emit('APP_REQUEST_ERROR', _error);
+      });
     },
     closePopup () {
       // 부모창에 값 전달
       this.$emit('closePopup', { 'success': true });
     },
-
+    /**
+     * 그리드 리사이징
+     */
+    setGridSize () {
+      window.getApp.$emit('LOADING_SHOW');
+      setTimeout(() => {
+        this.gridOptions.height = window.innerHeight - this.$refs.searchBox.clientHeight - 250;
+        window.getApp.$emit('LOADING_HIDE');
+      }, 600);
+    },
     /** Button Event **/
     btnInsertClickedCallback (_result) {
       this.getDataList();
       this.isInsertSubmit = false;
-      alert('유소견자가 지정 되었습니다.');
+      window.getApp.$emit('ALERT', {
+        title: '안내',
+        message: '유소견자가 지정 되었습니다.',
+        type: 'success',
+      });
     },
     btnDeleteClickedCallback (_result) {
       this.getDataList();
       this.isDeleteSubmit = false;
-      alert('유소견자가 해제 되었습니다.');
+      window.getApp.$emit('ALERT', {
+        title: '안내',
+        message: '유소견자가 해제 되었습니다.',
+        type: 'success',
+      });
     },
     btnClickedErrorCallback (_result) {
-      this.isSubmit = false;
+      this.isInsertSubmit = false;
+      this.isDeleteSubmit = false;
       window.getApp.emit('APP_REQUEST_ERROR', _result);
     },
-    btnSearchCallback () {
+    btnSearchClicked () {
       this.getDataList();
-      window.getApp.$emit('APP_REQUEST_SUCCESS', '검색 버튼이 클릭 되었습니다.');
+    },
+    btnSearchVisibleClicked () {      
+      this.searchArea.show = !this.searchArea.show;
+      if (this.searchArea.show) this.searchArea.title = '검색박스숨기기';
+      else this.searchArea.title = '검색박스보이기';
+
+      window.getApp.$emit('LOADING_PASS_COUNT', 1);
+      this.setGridSize();
+    },
+    btnSearchUserClicked (_item) {
+      this.popupOptions.target = () => import(`${'../../manage/user/userSearch.vue'}`);
+      this.popupOptions.title = '사용자검색';
+      this.popupOptions.visible = true;
+      this.popupOptions.width = '60%';
+      this.popupOptions.top = '100px';
+      this.popupOptions.closeCallback = this.closePopupSearchUser;
+    }, 
+    closePopupSearchUser (data) {
+      this.popupOptions.target = null;
+      this.popupOptions.visible = false;
+      if (data.user) {
+        this.searchParam.userNm = data.user.userNm;
+      }
     },
     /** /Button Event **/
   }

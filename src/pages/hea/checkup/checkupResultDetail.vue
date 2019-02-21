@@ -1,5 +1,5 @@
 <!--
-  목적 : 건강검진결과 상세
+  목적 : 검진결과 상세
   작성자 : khk
   Detail : 
   *
@@ -9,24 +9,16 @@
 <template>
   <b-container fluid>
     <b-row>
-      <b-col sm="12">  
-        <div class="float-right">
-          <y-btn
-            type="clear"
-            title="닫기"
-            size="small"
-            color="info"
-            @btnClicked="closePopup" 
-          />
-        </div>  
-      </b-col>
-    </b-row>
-
-    <b-row>
       <b-col sm="12">
         <b-row>
           <b-col sm="12">
-            <y-label label="건강검진 정보" icon="user-edit" color-class="cutstom-title-color" />
+            <y-label label="검진 정보" icon="user-edit" color-class="cutstom-title-color" />
+            <div slot="buttonGroup" class="float-right mb-1">  
+              <y-btn
+                title="닫기"
+                @btnClicked="closePopup" 
+              />
+            </div>
           </b-col>
         </b-row>
         <b-card>
@@ -34,49 +26,49 @@
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <b-row>
               <b-col sm="4"><y-label label="현재 부서"></y-label></b-col>
-              <b-col sm="8"><y-label :label="checkupResult.deptNm"></y-label></b-col>
+              <b-col sm="8"><y-label :label="checkupResult.deptNm" fieldable="true"></y-label></b-col>
               </b-row>
             </b-col>
 
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <b-row>
               <b-col sm="4"><y-label label="성명"></y-label></b-col>
-              <b-col sm="8"><y-label :label="checkupResult.userNm"></y-label></b-col>
+              <b-col sm="8"><y-label :label="checkupResult.userNm" fieldable="true"></y-label></b-col>
               </b-row>
             </b-col>
 
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <b-row>
               <b-col sm="4"><y-label label="사번"></y-label></b-col>
-              <b-col sm="8"><y-label :label="checkupResult.userId"></y-label></b-col>
+              <b-col sm="8"><y-label :label="checkupResult.userId" fieldable="true"></y-label></b-col>
               </b-row>
             </b-col>
 
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <b-row>
               <b-col sm="4"><y-label label="검진당시 부서"></y-label></b-col>
-              <b-col sm="8"><y-label :label="checkupResult.deptNmOrg"></y-label></b-col>
+              <b-col sm="8"><y-label :label="checkupResult.deptNmOrg" fieldable="true"></y-label></b-col>
               </b-row>
             </b-col>
 
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <b-row>
               <b-col sm="4"><y-label label="검진일"></y-label></b-col>
-              <b-col sm="8"><y-label :label="checkupResult.heaCheckedYmd"></y-label></b-col>
+              <b-col sm="8"><y-label :label="checkupResult.heaCheckedYmd" fieldable="true"></y-label></b-col>
               </b-row>
             </b-col>
 
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <b-row>
               <b-col sm="4"><y-label label="검진기관"></y-label></b-col>
-              <b-col sm="8"><y-label :label="checkupResult.heaCheckupOrgNm"></y-label></b-col>
+              <b-col sm="8"><y-label :label="checkupResult.heaCheckupOrgNm" fieldable="true"></y-label></b-col>
               </b-row>
             </b-col>
 
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <b-row>
               <b-col sm="4"><y-label label="검진계획(검진종류)"></y-label></b-col>
-              <b-col sm="8"><y-label :label="checkupResult.heaCheckupPlanNm"></y-label> <y-label :label="checkupResult.heaCheckupClassNm"></y-label></b-col>
+              <b-col sm="8"><y-label :label="checkupResult.heaCheckupPlanNm" fieldable="true"></y-label> <y-label :label="checkupResult.heaCheckupClassNm" fieldable="true"></y-label></b-col>
               </b-row>
             </b-col>        
           </b-row>          
@@ -143,11 +135,9 @@
               :action-url="editUrl"
               :param="checkupResult"
               :is-submit="isEditSubmit"
-              type="save"
               title="저장"
-              size="small"
-              color="primary"
-              action-type="PUT"
+              color="blue"
+              action-type="put"
               beforeSubmit = "beforeEditSubmit"
               @beforeEditSubmit="beforeEditSubmit"
               @btnClicked="btnUpdateClickedCallback" 
@@ -158,17 +148,14 @@
       </b-col>
     </b-row>
 
-    <component :is="compResultDiag" v-if="compResultDiag" />
-    <component :is="compItemResult" v-if="compItemResult" />
+    <component :is="compResultDiag" v-if="compResultDiag" :popupParam="popupParam" />
+    <component :is="compItemResult" v-if="compItemResult" :popupParam="popupParam" />
 
     <b-row>
       <b-col sm="12">  
         <div class="float-right mt-3">
           <y-btn
-            type="clear"
             title="닫기"
-            size="small"
-            color="info"
             @btnClicked="closePopup" 
           />
         </div>  
@@ -196,7 +183,7 @@ export default {
   //    data: () => { return { a: this.myProp }}) 화살표 함수가 부모 컨텍스트를 바인딩하기 때문에 this는 예상과 달리 Vue 인스턴스가 아니기 때문에 this.myProp는 undefined로 나옵니다.
   //    참고url: https://kr.vuejs.org/v2/api/index.html#data
   data () {
-    return {
+    return {      
       // Naming Rule : JAVA model class와 연동되는 vue model은 model class명을 Camel case로 변환해서 선언하시고 기본값은 {}로 초기화 시켜주세요.
       // 예) ExamData -> examData: {},
       checkupResult: {
@@ -293,7 +280,8 @@ export default {
       this.$http.type = 'get'; 
       this.$http.request((_result) => {
         this.checkupResult = _result.data;
-      }, (_error) => {         
+      }, (_error) => {
+        window.getApp.$emit('APP_REQUEST_ERROR', _error);
       });
     },
     getHeaWorkableCdItems () {
@@ -302,7 +290,8 @@ export default {
       this.$http.request((_result) => {
         _result.data.splice(0, 0, { 'code': null, 'codeNm': '선택하세요' });
         this.heaWorkableCdItems = _result.data;
-      }, (_error) => {         
+      }, (_error) => {
+        window.getApp.$emit('APP_REQUEST_ERROR', _error);
       });
     },
     getHeaFollowUpCdItems () {
@@ -311,7 +300,8 @@ export default {
       this.$http.request((_result) => {
         _result.data.splice(0, 0, { 'code': null, 'codeNm': '선택하세요' });
         this.heaFollowUpCdItems = _result.data;
-      }, (_error) => {         
+      }, (_error) => {
+        window.getApp.$emit('APP_REQUEST_ERROR', _error);
       });
     },
     
@@ -325,9 +315,26 @@ export default {
     /** validation checking(필요없으면 지워주세요) **/
     beforeEditSubmit () {
       this.$validator.validateAll().then((_result) => {
-        this.isEditSubmit = _result;
-      }).catch(() => {  
-        window.getApp.$emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');  
+        if (_result) {
+          window.getApp.$emit('CONFIRM', {
+            title: '확인',
+            message: '소견정보를 저장하시겠습니까?',
+            type: 'info',
+            // 확인 callback 함수
+            confirmCallback: () => {
+              this.isEditSubmit = true;
+            }
+          });
+        }
+        else {
+          window.getApp.$emit('ALERT', {
+            title: '안내',
+            message: '필수입력값을 입력해주세요.',
+            type: 'warning',
+          });
+        }
+      }).catch(() => {
+        window.getApp.$emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
       });
     },
     validateState (_ref) {
@@ -345,14 +352,19 @@ export default {
     /** Button Event **/
     btnUpdateClickedCallback (_result) {
       this.isEditSubmit = false;
+      window.getApp.$emit('ALERT', {
+        title: '안내',
+        message: '소견정보를 정상적으로 저장하였습니다.',
+        type: 'success',
+      });
     },
     /**
     * 버튼 에러 처리용 공통함수
     */
     btnClickedErrorCallback (_result) {
       this.isEditSubmit = false;
+      window.getApp.$emit('APP_REQUEST_ERROR', _result);
       // TODO : 여기에 추가 로직 삽입(로직 삽입시 지워주세요)
-      window.getApp.emit('APP_REQUEST_ERROR', _result);
     },
     /** /Button Event **/
     

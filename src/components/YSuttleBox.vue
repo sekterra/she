@@ -12,7 +12,7 @@
       <div>MetroUI용 컴포넌트는 준비중입니다.</div>
     </template>
     <template v-else>
-      <b-row  :row="rowClass">
+      <b-row  :class="rowClass">
         <b-col :sm="labelWidth">
           <y-label
             :name="name"
@@ -36,12 +36,27 @@
                     no-body
                     class="card">
                     <div slot="header" class="title-height">
-                      <y-text
-                        :ui="ui" 
-                        placeholder="검색어를 입력하세요."
-                        v-model="filterText"
-                      >
-                      </y-text>
+                      <b-row>
+                        <b-col sm="1" md="1" lg="1" xl="1" class="col-xxl-1">
+                          <b-form-checkbox 
+                            v-model="allLeftSelected"
+                            :indeterminate="indeterminateLeft"
+                            aria-describedby="flavours"
+                            aria-controls="flavours"
+                            @change="toggleLeftAll"
+                          >
+                          <!-- <y-label label="전체선택"></y-label> -->
+                          </b-form-checkbox>
+                        </b-col>
+                        <b-col sm="10" md="10" lg="10" xl="10" class="col-xxl-10">
+                          <y-text
+                            :ui="ui" 
+                            placeholder="검색어를 입력하세요."
+                            v-model="filterText"
+                          >
+                          </y-text>
+                        </b-col>
+                      </b-row>
                     </div>
                     <div class="card-text overflow pl-2" :style="'height:' + height">
                         <y-loader
@@ -52,7 +67,7 @@
                           :item-text="itemText"
                           :item-value="itemValue"
                           :size="size"
-                          v-model="vValue"
+                          v-model="selectedLeftValues"
                           :options="filteredOptions" />
                     </div>
                   </b-card>
@@ -92,7 +107,22 @@
                     no-body
                     class="card">
                     <div slot="header" class="title-height">
-                      <small>{{selectedTitle}}</small>
+                      <b-row>
+                        <b-col sm="1" md="1" lg="1" xl="1" class="col-xxl-1">
+                          <b-form-checkbox 
+                            v-model="allRightSelected"
+                            :indeterminate="indeterminateRight"
+                            aria-describedby="flavours"
+                            aria-controls="flavours"
+                            @change="toggleRightAll"
+                          >
+                          <!-- <y-label label="전체선택"></y-label> -->
+                          </b-form-checkbox>
+                        </b-col>
+                        <b-col sm="10" md="10" lg="10" xl="10" class="col-xxl-10">
+                          <small>{{selectedTitle}}</small>
+                        </b-col>
+                      </b-row>
                     </div>
                     <div class="card-text overflow pl-2" :style="'height:' + height">
                       <b-form-checkbox-group 
@@ -100,7 +130,7 @@
                         :size="size"
                         :item-text="itemText"
                         :item-value="itemValue"
-                        v-model="selectedValues"
+                        v-model="selectedRightValues" 
                         :options="selectedOptions"
                         />
                       </div>
@@ -129,9 +159,6 @@ export default {
   $_veeValidate: {
     name () {
       return this.name;
-    },
-    value () {
-      return this.vValue;
     }
   },
   props: {
@@ -175,12 +202,6 @@ export default {
       type: Array,
       default: null
     },
-    // 부모로 부터 직접 받아온 우측 항목값(기존에 선택한 항목)
-    // TODO : 부모 items에는 없으나, 선택된 항목으로 직접 표시해야 할 경우 활용
-    selectedItems: {
-      type: Array,
-      default: null
-    },
     // shuttle box 높이
     height: {
       type: String,
@@ -214,39 +235,56 @@ export default {
     required: {
       type: Boolean,
       default: false
-    }
+    },
+    // indeterminateLeft: {
+    //   type: Boolean,
+    //   default: false
+    // },
+    // indeterminateRight: {
+    //   type: Boolean,
+    //   default: false
+    // }
   },
   // TODO: 화살표 함수(=>)는 data에 사용하지 말 것
   //    data: () => { return { a: this.myProp }}) 화살표 함수가 부모 컨텍스트를 바인딩하기 때문에 this는 예상과 달리 Vue 인스턴스가 아니기 때문에 this.myProp는 undefined로 나옵니다.
   //    참고url: https://kr.vuejs.org/v2/api/index.html#data
   data () {
-    return {
-      vValue: [], // 좌측의 기준 항목에서 체크된 item
+    return {      
+      discoverItems: [], // 원본 항목을 value, text
+      selectedLeftValues: [], // 좌측의 기준 항목에서 체크된 item
+      selectedRightValues: [], // 우측의 체크박스로 선택된 항목이며, 삭제 전용이기 때문에 부모에게 전달하는 정보와 상관 없음
+
       filteredOptionsOrg: [], // 좌측의 기준 항목 원본(부모 items의 원본)
-      filteredOptions: [],  // 좌측의 기준 항목에서 text filtering 된 배열로써 화면에 표시되는 항목
-      selectedValues: [], // 우측의 체크박스로 선택된 항목이며, 삭제 전용이기 때문에 부모에게 전달하는 정보와 상관 없음
-      selectedOptions: [],  // 우측에 표시되는 선택된 항목이며, 이 항목의 value값의 배열이 부모에게 전달됨
+      filteredOptions: [],  // 좌측의 기준 항목에서 text filtering 된 배열로써 화면에 표시되는 항목      
+      selectedOptions: [],  // 우측에 표시되는 선택된 항목이며, 이 항목의 value값의 배열이 부모에게 전달됨      
       filterText: '',
+      allLeftSelected: false, // 좌측 전체 선택 여부
+      allRightSelected: false, // 우측 전체 선택 여부
+      indeterminateLeft: false,
+      indeterminateRight: false,
     };
   },
   watch: {
     // TODO : 부모의 v-model 변경을 감시(예를 들면, db로부터 데이터를 조회 한 후 값을 바인딩 할 경우)
-    value () {
+    value () {      
       // TODO : 선택된 항목이 있으면 skip
       // 예) 좌측Options인 filteredOptions에 없는 항목이 있지만, 선택 항목으로 나와야 할 경우
-      if (this.selectedItems && this.selectedItems.length > 0) return;
 
-      this.init();
+      // 선택값이 변경되면 기존에 체크된값을 초기화 함
+      this.selectedRightValues = [];
+      this.selectedOptions = this.getItemsOfKey(this.discoverItems, this.value);
+      this.filteredOptionsOrg =  this.getItemsOfWithout(this.discoverItems, this.selectedOptions);
+      this.filteredOptions = this.$_.clone(this.filteredOptionsOrg);
     },
     items () {
-      // 새로 바인딩 되면서 기존에 this.vValue에 들어간 값을 초기화
-      this.vValue = [];
-      this.filteredOptionsOrg = this.makeSelectOptions(this.items);
+      // 원본 items 를 options 에 맞도록 변경
+      this.discoverItems = this.makeSelectOptions(this.items);      
+      this.selectedOptions = this.getItemsOfKey(this.discoverItems, this.value);
+
+      // 새로 바인딩 되면서 기존에 체크된값을 초기화 함
+      this.selectedLeftValues = [];
+      this.filteredOptionsOrg =  this.getItemsOfWithout(this.discoverItems, this.selectedOptions);
       this.filteredOptions = this.$_.clone(this.filteredOptionsOrg);
-      // this.init();
-    },
-    selectedItems () {
-      this.selectedOptions = this.makeSelectOptions(this.selectedItems);
     },
     /**
      * Text Search
@@ -265,7 +303,37 @@ export default {
       var selectedValues = this.$_.map(this.selectedOptions, 'value');
       if (this.$_.isEqual(this.value, selectedValues)) return;
       this.$emit('input', selectedValues);
-    }
+    },
+    /**
+     * 좌측 리스트에 체크 될 때마다 전체 선택 체크박스 모습 바뀌도록 한다
+     */
+    selectedLeftValues (newVal, oldVal) {
+      if (newVal.length === 0) {
+        this.indeterminateLeft = false;
+        this.allLeftSelected = false;
+      } else if (newVal.length === this.filteredOptions.length) {
+        this.indeterminateLeft = false;
+        this.allLeftSelected = true;
+      } else {
+        this.indeterminateLeft = true; 
+        this.allLeftSelected = false;
+      }
+    },
+    /**
+     * 우측 리스트에 체크 될 때마다 전체 선택 체크박스 모습 바뀌도록 한다
+     */
+    selectedRightValues (newVal, oldVal) {
+      if (newVal.length === 0) {
+        this.indeterminateRight = false;
+        this.allRightSelected = false;
+      } else if (newVal.length === this.selectedOptions.length) {
+        this.indeterminateRight = false;
+        this.allRightSelected = true;
+      } else {
+        this.indeterminateRight = true;
+        this.allRightSelected = false;
+      }
+    },
   },
   computed: {
     // 현재 컨트롤에 에러가 존재하는지 여부
@@ -308,13 +376,15 @@ export default {
   /** methods **/
   methods: {
     /** 초기화 관련 함수 **/
-    init () {
-      // 1. itemText와 itemValue의 값을 가지고, shuttlebox에 맞는 형식으로 변환(원본)
-      this.filteredOptionsOrg = this.makeSelectOptions(this.items);
-      // 2. 검색에 활용하기 위해 1.의 원본을 복제
-      this.filteredOptions = this.$_.clone(this.filteredOptionsOrg);
-      // 3. 기존에 선택한 항목이 있을 경우 filtering해서 보여줌
-      this.selectedOptions = this.getFilteredArrayfromValueArray(this.filteredOptionsOrg, this.value, 'value');     
+    init () {      
+      this.discoverItems = this.makeSelectOptions(this.items);
+      this.selectedOptions = this.getItemsOfKey(this.discoverItems, this.value);
+      
+      this.filteredOptionsOrg =  this.getItemsOfWithout(this.discoverItems, this.selectedOptions);
+      this.filteredOptions = this.$_.clone(this.discoverItems);
+
+      // console.log('init --> ' + JSON.stringify(this.filteredOptionsOrg));
+      // console.log('init --> ' + JSON.stringify(this.selectedOptions));
     },
     /** /초기화 관련 함수 **/
     
@@ -331,84 +401,104 @@ export default {
      * > 버튼 클릭시, 선택된 항목으로 추가
      */
     moveRight () {
-      if (!this.vValue || this.vValue.length <=0) return;
+      if (!this.selectedLeftValues || this.selectedLeftValues.length <=0) return;
       // 1. 왼쪽 항목중 선택된 항목만 가져옴
-      var filtered = this.getFilteredArrayfromValueArray(this.filteredOptionsOrg, this.vValue, 'value');
+      var filtered = this.getItemsOfKey(this.filteredOptionsOrg, this.selectedLeftValues);
       // 2. 추가된 아이템 중 기존 항목이 있는지 체크
       var filteredDuplicatedArray = this.$comm.removeDuplicatedArray(this.selectedOptions, filtered);     
       // 3. 선택된 항목중에서 기존에 선택된 항목을 제외한 항목을 가져와서 기존 항목과 합침
       if (filteredDuplicatedArray.length > 0) this.selectedOptions = this.$_.concat(this.selectedOptions, filteredDuplicatedArray);
+      this.indeterminateLeft = false;
+      this.allLeftSelected = false;
+      this.selectedLeftValues = [];
     },
     /**
      * < 버튼 클릭시, 선택된 항목에서 제거
      */
     moveLeft () {
-      if (!this.selectedValues || this.selectedValues.length <=0) return;
-      this.selectedOptions = this.getArrayExceptValueArray(this.selectedOptions, this.selectedValues);
-      // [참고] : 선택 목록중 일부 항목만 배열형식으로 가져오는 방법에 대한 주석
-      // this.selectedValues = this.$_.map(this.selectedOptions, 'value');
+      if (!this.selectedRightValues || this.selectedRightValues.length <=0) return;
+      // 1. 오른쪽 항목 중 선택된 항목만 가져옴
+      var checked = this.getItemsOfKey(this.selectedOptions, this.selectedRightValues);
+      // 2. 오른쪽 항목 중 선택된거 제거
+      this.selectedOptions = this.getItemsOfWithout(this.selectedOptions, checked);
+      // 3. 왼쪽 항목에 추가
+      this.filteredOptionsOrg =  this.getItemsOfWithout(this.discoverItems, this.selectedOptions);
+      this.filteredOptions = this.$_.clone(this.filteredOptionsOrg);
+
+      // 4. 선택값이 하나도 없을경우 부모에게 전달
+      if (this.selectedOptions.length === 0) {
+        this.$emit('input', this.selectedOptions);
+      }
+
+      this.indeterminateRight = false;
+      this.allRightSelected = false;
+      this.selectedRightValues = [];
     },
     /** /Event, CallBack **/
     
     /** 기타 function **/
     /**
-     * 목적 : _target 배열을 기준으로 value값을 가지는 배열의 _key값이 포함 된 항목들만 filtering 해주는 함수
-     *            getArrayExceptValueArray 반대 역할
-     * 참고 url : https://stackoverflow.com/questions/17251764/lodash-filter-collection-using-array-of-values
-     * ex) 
-     * _target = [{text: a, value: 1}, {text: a, value: 2}]
-     * _value = [{value, 1}]
-     * _key = 'value
-     * return 값 : [{text: a, value: 1}]
+     * items 항목 중 values 에 있는 항목 반환
      */
-    getFilteredArrayfromValueArray(_target, _value, _key) {
-      if (!_target || !_value || _target.length < 0 || !_key) return [];
-      var filtered =  this.$_(_target).keyBy(_key).at(_value).value();
-      if (this.$_.includes(filtered, undefined)) {
-        return [];
-      }
-      return filtered;
+    getItesmOfInclude (_items, _values) {
+      var options = [];
+      if (!_items && !_items.length) return options;
+      this.$_.forEach(_values, (_value) => {
+        if (this.$_.indexOf(_items, _value) > -1) {
+          options.push(_value);
+        }
+      });
+      return options;
     },
+
     /**
-     * 목적 : _target 배열을 기준으로 value값을 가지는 배열의 _key값이 포함 되지 않는 항목들만 filtering 해주는 함수
-     *            getFilteredArrayfromValueArray와 반대역할
-     * ex) 
-     * _target = [{text: a, value: 1}, {text: a, value: 2}]
-     * _value = [{value, 1}]
-     * _key = 'value
-     * return 값 : [{text: a, value: 2}]
+     * items 항목 중 values 에 있는 항목을 제외 후 반환
      */
-    getArrayExceptValueArray(_target, _value) {
-      if (!_target || !_value || _target.length + _value.length === 0) return [];
-      return this.$_.differenceWith(_target, _value, ({value}, _value) => {
-        return value === _value;
-      })
+    getItemsOfWithout (_items, _values) {
+      var options = [];
+      if (!_items && !_items.length) return options;
+      this.$_.forEach(_items, (_item) => {
+        if (this.$_.indexOf(_values, _item) < 0) {
+          options.push(_item);
+        }
+      });
+      return options;
     },
+
+    /**
+     * options 항목 중 array 에 해당하는 options 항목 반환
+     */
+    getItemsOfKey (_items, _keyArray) {
+      var options = [];
+      if (!_items && !_items.length) return options;
+      this.$_.forEach(_items, (_item) => {
+        if (this.$_.indexOf(_keyArray, _item.value) > -1) {
+          options.push(_item);
+        }
+      });
+      return options;
+    },
+
+    /**
+     * text, value 를 사용하는 options 항목으로 변경
+     */
     makeSelectOptions (_items) {
       var options = [];
       if (!_items && !_items.length) return options;
-
       this.$_.forEach(_items, (_item) => {
         options.push({
-          text: _item[this.itemText],
-          value: _item[this.itemValue]
+          'text': _item[this.itemText],
+          'value': _item[this.itemValue]
         });
       });
-
       return options;
-      // this.filteredOptionsOrg = options;
-      // 기존 소스
-      // var options = [];
-      // if (!this.items && !this.items.length) return options;
+    },
 
-      // this.$_.forEach(this.items, (_item) => {
-      //   options.push({
-      //     text: _item[this.itemText],
-      //     value: _item[this.itemValue]
-      //   });
-      // });
-
-      // this.filteredOptionsOrg = options;
+    toggleLeftAll (checked) {
+      this.selectedLeftValues = checked ? this.$_.map(this.filteredOptions.slice(), 'value') : [];
+    },
+    toggleRightAll (checked) { 
+      this.selectedRightValues = checked ? this.$_.map(this.selectedOptions.slice(), 'value') : [];
     }
     /** /기타 function **/
   }

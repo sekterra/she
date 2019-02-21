@@ -32,6 +32,12 @@
             @selectionChanged="selectionChanged" 
           />
         </div>
+        <div v-if="type === 'menuSearch'">
+          <menu-search
+            :isPopupOpen="isPopupOpen"
+            ref="popupBody"
+            @selectionChanged="selectionChanged" />
+        </div>
         <!-- 기존에 만들어진 컴포넌트가 아닌 직접 바인딩 해야 할 경우 아래의 popupBody 슬롯에 추가 -->
         <slot name="popupBody"></slot>
         <span slot="footer" class="dialog-footer">
@@ -47,6 +53,7 @@
 // TODO : 팝업 본문에 표현되어야 할 페이지를 아래와 같이 선언 후 components에 등록
 import checkupUser from '@/pages/hea/checkup/checkupUser';
 import checkupResultConsent from '@/pages/hea/user/checkupResultConsent';
+import menuSearch from '@/pages/manage/menuManage/menuSearch';
 
 export default {
   /** attributes: name, components, props, data **/
@@ -54,7 +61,8 @@ export default {
   components: {
     // 팝업 본문에 추가해야 할 컴포넌트 선언
     checkupUser,
-    checkupResultConsent
+    checkupResultConsent,
+    menuSearch
   },
   props: {
     ui: {
@@ -105,6 +113,10 @@ export default {
     closeButtonText: {
       type: String,
       default: "닫기"
+    },
+    getPopupDataFuncName: {
+      type: String,
+      default: ''
     }
   },
   // TODO: 화살표 함수(=>)는 data에 사용하지 말 것
@@ -185,6 +197,9 @@ export default {
      * 팝업 창에서 부모 페이지로 정보 전달
      */
     popupConfirm () {
+      if (this.getPopupDataFuncName && typeof this.$refs.popupBody[this.getPopupDataFuncName] === 'function') {
+        this.popupData = this.$refs.popupBody[this.getPopupDataFuncName]();
+      }
       window.getApp.$emit('POPUP_SEND_DATA', this.popupData);
       this.popupClose();
     }

@@ -12,20 +12,18 @@
       <b-col sm="12">
         <b-col sm="12" class="px-0">
           <y-data-table 
-            gridType="edit"          
-            @editItem="getDetail"
             ref="dataTable"
             label="작업공정 목록"
-            :rows="5"
+            :height="gridHeight"
             :headers="gridHeaderOptions"
-            :items="gridData"
-            :excel-down="true"
-            :print="true" />
+            :items="gridData" 
+            @selectedRow="getDetail"
+            />
           </b-col>
       </b-col>      
     </b-row>
 
-    <b-row class="mt-3">
+    <b-row class="mt-3" ref="inputBox">
       <b-col sm="12">
         <b-row>
           <b-col sm="12">
@@ -49,7 +47,7 @@
             </b-col>
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
                 <y-switch
-                  :width="8"
+                  width="8"
                   :editable="editable"
                   true-value="Y"
                   false-value="N"
@@ -77,10 +75,7 @@
           <div class="float-right mt-3">
             <y-btn
               v-if="editable"
-              type="clear"
-              size="small"
               title="초기화"
-              color="info"
               @btnClicked="btnClearClickedCallback" 
               />
             <y-btn
@@ -88,10 +83,8 @@
               :action-url="insertUrl"
               :param="process"
               :is-submit="isCreateSubmit"
-              type="save"
-              size="small"
               title="신규등록"
-              color="warning"
+              color="orange"
               action-type="post"
               beforeSubmit = "beforeCreateSubmit"
               @beforeCreateSubmit="beforeCreateSubmit"
@@ -103,11 +96,9 @@
               :action-url="editUrl"
               :param="process"
               :is-submit="isUpdateSubmit"
-              type="save"
-              size="small"
               title="수정"
-              color="warning"
-              action-type="PUT"
+              color="orange"
+              action-type="put"
               beforeSubmit = "beforeUpdateSubmit"
               @beforeUpdateSubmit="beforeUpdateSubmit"
               @btnClicked="btnUpdateClickedCallback" 
@@ -147,13 +138,13 @@ export default {
         updateUserNm: '',
         updateDt: ''
       },
-      baseWidth: 9,
       editable: true,
       updateMode: false,
       isCreateSubmit: false,
       isUpdateSubmit: false,
       gridData: [],
       gridHeaderOptions: [],
+      gridHeight: '420',
       useYnItems: [],
       insertUrl: '',
       editUrl: '',
@@ -173,9 +164,12 @@ export default {
     this.init();
   },
   mounted () {
+    // 윈도우 resize event
+    window.addEventListener('resize', this.setGridSize);
   },
   beforeDestory () {
-    this.init();
+    // 윈도우 resize event 제거-SPA 기반이므로 제거하지 않으면 다른페이지에서 해당 이벤트가 호출됨
+    window.removeEventListener('resize', this.setGridSize);
   },
   /** methods **/
   methods: {
@@ -199,28 +193,24 @@ export default {
         { text: '수정자', name: 'updateUserNm', width: '120px', align: 'center' }
       ];
       
-      this.insertUrl = selectConfig.process.create.url;
-      this.editUrl = selectConfig.process.update.url;
-      this.searchUrl = selectConfig.process.list.url;
-      this.detailUrl = selectConfig.process.get.url;
+      this.insertUrl = transactionConfig.manage.process.insert.url;
+      this.editUrl = transactionConfig.manage.process.edit.url;
+      this.searchUrl = selectConfig.manage.process.list.url;
+      this.detailUrl = selectConfig.manage.process.get.url;
 
       this.getList();
+      this.setGridSize();
     },
     /** /초기화 관련 함수 **/
     
-    /** Call API service
-    * Naming Rule: get, post, put 등의 RESTFul verb를 접두사로 사용하고 그 뒤에 관련 모델명을 Camel case로 추가하세요.
-    * Naming Rule: get의 경우 복수의 데이터조회(리스트 데이터 등)시에는 복수를 나타내는 접미사 "s"를 붙여주세요.
-    * ex) getExamData () {}
-    * ex) getExamDatas () {}
-    */
+    /** Call API service */
     getList () {
       this.$http.url = this.searchUrl;
       this.$http.type = 'get';      
       this.$http.request((_result) => {
         this.gridData = _result.data;
       }, (_error) => {
-        console.log(_error);
+        window.getApp.$emit('APP_REQUEST_ERROR', _error);
       });
     },
     getDetail (data) {
@@ -230,23 +220,81 @@ export default {
         this.updateMode = true;
         this.process = _result.data;
       }, (_error) => {
-        console.log(_error);
+        window.getApp.$emit('APP_REQUEST_ERROR', _error);
       });
+    },
+    /**
+     * 그리드 리사이징
+     */
+    setGridSize () {
+      window.getApp.$emit('LOADING_SHOW');
+      setTimeout(() => {
+        this.gridHeight = window.innerHeight - this.$refs.inputBox.clientHeight - 250;        
+        window.getApp.$emit('LOADING_HIDE');
+      }, 600);
     },
     
     /** /Call API service **/    
 
     /** validation checking(필요없으면 지워주세요) **/
-    beforeCreateSubmit () {        
+    beforeCreateSubmit () {
+      var processNms = this.$_.map(this.gridData, 'processNm');
+      if (this.$_.indexOf(processNms, this.process.processNm) > -1) {
+        window.getApp.$emit('ALERT', {
+          title: '안내',
+          message: '이미 같은 이름의 작업공정명이 존재합니다.',
+          type: 'warning',
+        });
+        return;
+      }
+      
       this.$validator.validateAll().then((_result) => {
         this.process.processNo = 0;
-        this.isCreateSubmit = _result;
-      }).catch(() => { window.getApp.$emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.'); });
+        if (_result) {
+          window.getApp.$emit('CONFIRM', {
+            title: '확인',
+            message: '공정정보를 저장하시겠습니까?',
+            type: 'info',
+            // 확인 callback 함수
+            confirmCallback: () => {
+              this.isCreateSubmit = true;
+            }
+          });
+        }
+        else {
+          window.getApp.$emit('ALERT', {
+            title: '안내',
+            message: '필수입력값을 입력해주세요.',
+            type: 'warning',
+          });
+        }
+      }).catch(() => {
+        window.getApp.$emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
+      });
     },
     beforeUpdateSubmit () {
       this.$validator.validateAll().then((_result) => {
-        this.isUpdateSubmit = _result;
-      }).catch(() => { window.getApp.$emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.'); });
+        if (_result) {
+          window.getApp.$emit('CONFIRM', {
+            title: '확인',
+            message: '공정정보를 수정하시겠습니까?',
+            type: 'info',
+            // 확인 callback 함수
+            confirmCallback: () => {
+              this.isUpdateSubmit = true;
+            }
+          });
+        }
+        else {
+          window.getApp.$emit('ALERT', {
+            title: '안내',
+            message: '필수입력값을 입력해주세요.',
+            type: 'warning',
+          });
+        }
+      }).catch(() => {
+        window.getApp.$emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
+      });
     },
     validateState (_ref) {
       if (this.veeBag[_ref] && (this.veeBag[_ref].dirty || this.veeBag[_ref].validated)) {
@@ -268,6 +316,8 @@ export default {
       this.updateMode = false;
       this.process.processNo = 0;
       this.process.processNm = '';
+      this.process.useYn = 'Y';
+      this.process.sortOrder = null;
       this.process.createUserId = '';
       this.process.createUserNm = '';
       this.process.createDt = '';
@@ -279,21 +329,30 @@ export default {
       this.process.processNo = _result.data;
       this.isCreateSubmit = false;
       this.updateMode = true;
-      this.getList();      
+      this.getList(); 
+      window.getApp.$emit('ALERT', {
+        title: '안내',
+        message: '공정정보를 정상적으로 저장하였습니다.',
+        type: 'success',
+      });
     },
     btnUpdateClickedCallback (_result) {
       this.isUpdateSubmit = false;
       this.getList();
+      window.getApp.$emit('ALERT', {
+        title: '안내',
+        message: '공정정보를 정상적으로 수정하였습니다.',
+        type: 'success',
+      });
     },
     /**
     * 버튼 에러 처리용 공통함수
     */
     btnClickedErrorCallback (_result) {
-      this.isSubmit = false;  // 반드시 isSubmit을 false로 초기화 하세요. 그렇지 않으면 버튼을 다시 클릭해도 동작하지 않습니다.
-      // TODO : 여기에 추가 로직 삽입(로직 삽입시 지워주세요)
+      this.isSubmit = false;
       this.isCreateSubmit = false;
       this.isUpdateSubmit = false;
-      window.getApp.emit('APP_REQUEST_ERROR', _result);
+      window.getApp.$emit('APP_REQUEST_ERROR', _result);
     },
     /** /Button Event **/
     

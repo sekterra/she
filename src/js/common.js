@@ -33,6 +33,7 @@ var comm = {
   getFileAsBlob: null,
   defaultGapOfDate: 3,
   removeDuplicatedArray: null,
+  isDateType: null,
 };
 
 /**
@@ -81,7 +82,7 @@ comm.getToday = function (_isLocalSet) {
  */
 comm.getPrevDate = function (_gapOfDate, _format) {
   let gapOfDate = comm.defaultGapOfDate;
-  if (_gapOfDate) gapOfDate = _gapOfDate;
+  if (_gapOfDate) gapOfDate = _gapOfDate; 
   let div = gapOfDate.substr(gapOfDate.length - 1, 1).toLowerCase();
   let gap = Number(gapOfDate.substring(0, gapOfDate.length - 1));
   let date = new Date(comm.today);
@@ -152,7 +153,7 @@ comm.dateCompare = function (_fromDate, _toDate) {
   var toDate = null;
   if (_toDate) toDate = moment(_toDate).format('YYYYMMDD');
   else toDate = moment(comm.today).format('YYYYMMDD');
-  console.log('::::::::: toDate:' + toDate);
+  // console.log('::::::::: toDate:' + toDate);
   return fromDate <= toDate;
 };
 
@@ -247,21 +248,21 @@ comm.getCalculatedDate = function (_thisDateStr, _gapOfDate, _givenFormat, _form
   let gap = Number(gapOfDate.substring(0, gapOfDate.length - 1));
   let thisDate = comm.moment(_thisDateStr, _givenFormat);
   // let define = _isAdd ? 1 : -1
-  let format = null;
+  let format = _givenFormat.toUpperCase();
   let typeOfDate = null; // TODO : 계산되는 날짜 형식(https://momentjs.com/docs/ 페이지의 Add함수 참고)
   if (div === 'd') {
-    format = _format ? _format : 'YYYY-MM-DD';
+    // format = _format ? _format : 'YYYY-MM-DD';
     typeOfDate = 'd';
   }
   else if (div === 'm') {
-    format = _format ? _format : 'YYYY-MM';
+    // format = _format ? _format : 'YYYY-MM';
     typeOfDate = 'M';
   }
   else if (div === 'y') {
-    format = _format ? _format : 'YYYY';
+    // format = _format ? _format : 'YYYY';
     typeOfDate = 'y';
   }
-
+  
   return thisDate.add(gap, typeOfDate).format(format);
 };
 
@@ -323,6 +324,53 @@ comm.removeDuplicatedArray = (_targetArray, _array) => {
     if (!hasItems) filteredArray.push(_item);
   });
   return filteredArray;
+};
+
+/**
+ * 배열과 배열을 비교해서 포함되어 있는지 확인하는 함수 (배열안의 데이터타입이 object인 경우)
+ * _targetArray : 대상 배열
+ * _array : 원본 배열
+ * _key : 비교할 키
+ */
+comm.removeDuplicatedArrayObject = (_targetArray, _array, _key) => {
+  var hasItems = false;
+  var filteredArray = [];
+  _.forEach(_array, (_item) => {
+    hasItems = false;
+    _.forEach(_targetArray, (__item) => {
+      if (_item[_key] === __item[_key]) {
+        hasItems = true;
+      } 
+    });
+    if (!hasItems) filteredArray.push(_item);
+  });
+  return filteredArray;
+};
+
+/**
+ * 
+ * _targetArray : 대상 배열
+ * _array : 원본 배열
+ * _key : 비교할 키
+ */
+comm.removeDuplicatedArrayObject = (_targetArray, _array, _key) => {
+  var hasItems = false;
+  var filteredArray = [];
+  _.forEach(_array, (_item) => {
+    hasItems = false;
+    _.forEach(_targetArray, (__item) => {
+      if (_item[_key] === __item[_key]) {
+        hasItems = true;
+      } 
+    });
+    if (!hasItems) filteredArray.push(_item);
+  });
+  return filteredArray;
+};
+
+comm.isDateType = (_str) => {
+  var m = moment(_str);
+  return m.isValid(); 
 };
 
 export default comm;

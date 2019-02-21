@@ -1,5 +1,5 @@
 <!--
-  목적 : 건강검진결과 상세 - 판정
+  목적 : 검진결과 상세 - 판정
   작성자 : khk
   Detail : 
   *
@@ -39,8 +39,8 @@
                 :width="8"
                 :editable="editable"
                 :comboItems="heaHazardCdItems"
-                itemText="codeNm"
-                itemValue="code"
+                itemText="heaHazardNmKo"
+                itemValue="heaHazardCd"
                 ui="bootstrap"
                 type="save"
                 name="heaHazardCd"
@@ -82,26 +82,21 @@
           <div class="float-right mt-3">
             <y-btn
               v-if="editable"
-              :action-url="insertUrl"
-              :param="checkupResultDiag"
-              :is-submit="isCreateSubmit"
-              type="save"
-              title="판정추가"
-              size="small"
-              color="primary"
-              action-type="post"
-              beforeSubmit = "beforeCreateSubmit"
-              @beforeCreateSubmit="beforeCreateSubmit"
-              @btnClicked="btnCreateClickedCallback" 
+              title="과거판정데이터"
+              @btnClicked="btnHistoryClickedCallback" 
               @btnClickedErrorCallback="btnClickedErrorCallback"
             />
             <y-btn
               v-if="editable"
-              type="search"
-              title="과거판정데이터"
-              size="small"
-              color="primary"
-              @btnClicked="btnHistoryClickedCallback" 
+              :action-url="insertUrl"
+              :param="checkupResultDiag"
+              :is-submit="isCreateSubmit"
+              title="판정추가"
+              color="blue"
+              action-type="post"
+              beforeSubmit = "beforeCreateSubmit"
+              @beforeCreateSubmit="beforeCreateSubmit"
+              @btnClicked="btnCreateClickedCallback" 
               @btnClickedErrorCallback="btnClickedErrorCallback"
             />
           </div>
@@ -111,33 +106,51 @@
 
     <b-row class="mt-3">
       <b-col sm="12">
-        <b-col sm="11" class="px-0">
+        <b-col sm="12" class="px-0">
+          <div slot="buttonGroup" class="float-right mb-1">
+            <y-btn
+              v-if="editable"
+              :action-url="deleteUrl"
+              :param="deleteResultDiagRows"
+              :is-submit="isDeleteSubmit"
+              title="삭제"
+              color="red"
+              action-type="delete"
+              beforeSubmit = "beforeDeleteSubmit"
+              @beforeDeleteSubmit="beforeDeleteSubmit"
+              @btnClicked="btnDeleteClickedCallback" 
+              @btnClickedErrorCallback="btnClickedErrorCallback"
+            />
+          </div>
           <y-data-table 
             ref="dataTable"
             label="판정목록"
             :rows="3"
             :headers="gridResultDiagHeaderOptions"
-            :items="gridResultDiagData" >
+            :items="gridResultDiagData" 
+            v-model="gridResultDiagSelectedRows">
             <el-table-column
+              type="selection"
               slot="selection"
-              align="center"
-              width="80" 
-              >
-              <template slot-scope="tableData">
-                <y-btn
-                  v-if="editable"
-                  type="search"
-                  title="삭제"
-                  size="mini"
-                  color="info"
-                  @btnClicked="deleteResultDiag(tableData.row)" 
-                />
-              </template>
+              width="55">
             </el-table-column>
           </y-data-table>
           </b-col>
       </b-col>      
     </b-row>
+
+    <el-dialog
+      :title="popupOptions.title"
+      :visible.sync="popupOptions.visible"
+      :fullscreen="false"
+      :append-to-body="true"
+      :close-on-click-modal="false"
+      :close-on-press-escape="false"
+      :show-close="false"
+      :width="popupOptions.width"
+      :top="popupOptions.top">
+      <component :is="popupOptions.target" :popupParam="popupOptions.param" @closePopup="closePopup" />
+    </el-dialog>
 
   </b-container>
 </template>
@@ -149,17 +162,32 @@ export default {
   /** attributes: name, components, props, data **/
   name: 'checkup-result-diag',  // 반드시 입력하세요(안 하면 warning 발생). 네이밍 룰은 현재 vue component의 파일명의 단어를 "-"로 구분(예:exam-data)하여 입력하시면 됩니다. 입력후 이 주석은 지워주세요.
   props: {
+    popupParam: {
+      type: Object,
+      default: {
+        heaCheckupPlanNo: 0,
+        userId: ''
+      },
+    },
   },
   // TODO: 화살표 함수(=>)는 data에 사용하지 말 것
   //    data: () => { return { a: this.myProp }}) 화살표 함수가 부모 컨텍스트를 바인딩하기 때문에 this는 예상과 달리 Vue 인스턴스가 아니기 때문에 this.myProp는 undefined로 나옵니다.
   //    참고url: https://kr.vuejs.org/v2/api/index.html#data
   data () {
     return {
+      popupOptions: {
+        target: null,
+        title: '',
+        visible: false,
+        width: '80%',
+        top: '50px',
+        param: {}
+      },
       // Naming Rule : JAVA model class와 연동되는 vue model은 model class명을 Camel case로 변환해서 선언하시고 기본값은 {}로 초기화 시켜주세요.
       // 예) ExamData -> examData: {},
       checkupResultDiag: {
-        heaCheckupPlanNo: 1,
-        userId: 'dev',
+        heaCheckupPlanNo: 0,
+        userId: '',
         heaDiagnoseCd: '',
         heaDiagnoseNm: '',
         heaDiseaseClassCd: '',
@@ -176,6 +204,8 @@ export default {
 
       gridResultDiagData: [],
       gridResultDiagHeaderOptions: [],
+      gridResultDiagSelectedRows: [],
+      deleteResultDiagRows: [],
 
       heaDiagnoseCdItems: [],
       heaDiseaseClassCdItems: [],
@@ -214,6 +244,9 @@ export default {
   methods: {
     /** 초기화 관련 함수 **/
     init () {
+      this.checkupResultDiag.heaCheckupPlanNo = this.popupParam.heaCheckupPlanNo;
+      this.checkupResultDiag.userId = this.popupParam.userId;
+
       // TODO : 여기에 초기 설정용 함수를 호출하거나 로직을 입력하세요.
       // 선택항목 설정
       setTimeout(() => {
@@ -228,12 +261,12 @@ export default {
         { text: '판정', name: 'heaDiagnoseNm', width: '15%', align: 'center' },
         { text: '질환종류', name: 'heaDiseaseClassNm', width: '45%' },
         { text: '질환', name: 'heaDiseaseNm', width: '20%' },
-        { text: '유해인자', name: 'heaHazardNm', width: '20%' }
+        { text: '유해인자', name: 'heaHazardNmKo', width: '20%' }
       ];
 
       this.searchUrl = selectConfig.checkupResultDiag.list.url;      
       this.insertUrl = transactionConfig.checkupResultDiag.insert.url;
-      this.deleteUrl = transactionConfig.checkupResultDiag.delete.url;
+      this.deleteUrl = transactionConfig.checkupResultDiag.multiDelete.url;
       
       this.getResultDiagList();
     },
@@ -252,6 +285,7 @@ export default {
       this.$http.request((_result) => {
         this.gridResultDiagData = _result.data;
       }, (_error) => {
+        window.getApp.$emit('APP_REQUEST_ERROR', _error);
       });
     },
     getHeaDiagnoseCdItems () {
@@ -261,6 +295,7 @@ export default {
         _result.data.splice(0, 0, { 'code': '', 'codeNm': '선택하세요' });
         this.heaDiagnoseCdItems = _result.data;
       }, (_error) => {
+        window.getApp.$emit('APP_REQUEST_ERROR', _error);
       });
     },
     getHeaDiseaseClassCdItems () {
@@ -270,6 +305,7 @@ export default {
         _result.data.splice(0, 0, { 'code': '', 'codeNm': '선택하세요' });
         this.heaDiseaseClassCdItems = _result.data;
       }, (_error) => {
+        window.getApp.$emit('APP_REQUEST_ERROR', _error);
       });
     },
     getHeaDiseaseCdItems () {
@@ -283,33 +319,105 @@ export default {
         this.heaDiseaseCdItems = _result.data;
         this.checkupResultDiag.heaDiseaseCd = '';
       }, (_error) => {
+        window.getApp.$emit('APP_REQUEST_ERROR', _error);
       });
     },
     getHeaHazardCdItems () {
-      this.heaHazardCdItems.push({ 'code': '', 'codeNm': '선택하세요' });
+      this.$http.url = selectConfig.hazard.list.url;
+      this.$http.type = 'get';
+      this.$http.request((_result) => {
+        _result.data.splice(0, 0, { 'heaHazardCd': '', 'heaHazardNmKo': '선택하세요' });
+        this.heaHazardCdItems = _result.data;
+      }, (_error) => {
+        window.getApp.$emit('APP_REQUEST_ERROR', _error);
+      });
+      // this.heaHazardCdItems.push({ 'code': '', 'codeNm': '선택하세요' });
     },
     
     /** /Call API service **/
-    deleteResultDiag (data) {
-      this.$http.url = this.$format(this.deleteUrl, this.checkupResultDiag.heaCheckupPlanNo, this.checkupResultDiag.userId, data.heaDiseaseCd);
-      this.$http.type = 'delete';
-      this.$http.request((_result) => {        
-        this.getResultDiagList();
-      }, (_error) => {
-      });
-    },
+    // deleteResultDiag (data) {
+    //   if (confirm('판정항목을 삭제하시겠습니까?')) {
+    //     this.$http.url = this.$format(this.deleteUrl, this.checkupResultDiag.heaCheckupPlanNo, this.checkupResultDiag.userId, data.heaDiseaseCd);
+    //     this.$http.type = 'delete';
+    //     this.$http.request((_result) => {
+    //       this.getResultDiagList();
+    //       alert('판정항목을 정상적으로 삭제하였습니다.'); 
+    //     }, (_error) => {
+    //       alert('삭제 중 오류가 발생하였습니다. 지속적인 문제 발생시 관리자에게 문의하세요.'); 
+    //     });
+    //   }
+    // },
     
     /** validation checking(필요없으면 지워주세요) **/
+    beforeDeleteSubmit () {
+      if (this.gridResultDiagSelectedRows.length > 0) {
+        window.getApp.$emit('CONFIRM', {
+          title: '확인',
+          message: '선택된 판정정보를 삭제 하시겠습니까??',
+          type: 'info',  
+          confirmCallback: () => {
+            this.deleteResultDiagRows = {
+              'data': Object.values(this.$_.clone(this.gridResultDiagSelectedRows))
+            };
+            this.isDeleteSubmit = true;
+          }
+        });
+      }
+      else {
+        window.getApp.$emit('ALERT', {
+          title: '안내',
+          message: '선택된 판정정보가 없습니다. 목록 앞단에 선택박스를 확인하세요.',
+          type: 'info',
+        });
+      }
+    },
+
     beforeCreateSubmit () {
+      // (판정, 질환) 데이터가 그리드에 있는지 확인
+      var userHeaDiagnoseCds = this.$_.partition(this.gridResultDiagData, { 'heaDiagnoseCd': this.checkupResultDiag.heaDiagnoseCd })[0];
+      var heaDiseaseCds = this.$_.map(userHeaDiagnoseCds, 'heaDiseaseCd');
+      if (this.$_.indexOf(heaDiseaseCds, this.checkupResultDiag.heaDiseaseCd) > -1) {
+        window.getApp.$emit('ALERT', {
+          title: '안내',
+          message: '이미 같은 판정에 질환이 존재합니다.',
+          type: 'warning',  // success / info / warning / error
+        });
+        return;
+      }
+
       this.$validator.validateAll().then((_result) => {
-        this.isCreateSubmit = _result;
-      }).catch(() => { window.getApp.$emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.'); });
+        if (_result) {
+          window.getApp.$emit('CONFIRM', {
+            title: '확인',
+            message: '판정항목을 저장하시겠습니까?',
+            type: 'info',
+            // 확인 callback 함수
+            confirmCallback: () => {
+              this.isCreateSubmit = true;
+            }
+          });
+        }
+        else {
+          window.getApp.$emit('ALERT', {
+            title: '안내',
+            message: '필수입력값을 입력해주세요.',
+            type: 'warning',
+          });
+        }
+      }).catch(() => {
+        this.isCreateSubmit = false;
+        window.getApp.$emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
+      });
     },
     validateState (_ref) {
       if (this.veeBag[_ref] && (this.veeBag[_ref].dirty || this.veeBag[_ref].validated)) {
         return !this.errors.has(_ref);
       }
       return null;
+    },
+    closePopup (data) {
+      this.popupOptions.target = null;
+      this.popupOptions.visible = false;
     },
     /** /validation checking **/
     
@@ -318,12 +426,32 @@ export default {
     /** /Component, Callbacks (버튼 제외) **/
     
     /** Button Event **/
+    btnDeleteClickedCallback (_result) {
+      this.isDeleteSubmit = false;
+      this.getResultDiagList();
+      window.getApp.$emit('ALERT', {
+        title: '안내',
+        message: '판정항목을 정상적으로 삭제하였습니다.',
+        type: 'success',
+      });
+    },
     btnCreateClickedCallback (_result) {
       this.isCreateSubmit = false;
       this.getResultDiagList();
+      window.getApp.$emit('ALERT', {
+        title: '안내',
+        message: '판정항목을 정상적으로 추가하였습니다.',
+        type: 'success',
+      });
     },
     btnHistoryClickedCallback (_result) {
-      window.alert('과거판정데이터 화면 개발 중');
+      this.popupOptions.param = {
+        'heaCheckupPlanNo': this.checkupResultDiag.heaCheckupPlanNo,
+        'userId': this.checkupResultDiag.userId
+      };
+      this.popupOptions.target = () => import(`${'./diagnoseResultHistory.vue'}`);
+      this.popupOptions.title = '과거판정데이터';
+      this.popupOptions.visible = true;
     },
     /**
     * 버튼 에러 처리용 공통함수
@@ -331,8 +459,7 @@ export default {
     btnClickedErrorCallback (_result) {
       this.isCreateSubmit = false;
       this.isDeleteSubmit = false;
-      // TODO : 여기에 추가 로직 삽입(로직 삽입시 지워주세요)
-      window.getApp.emit('APP_REQUEST_ERROR', _result);
+      window.getApp.$emit('APP_REQUEST_ERROR', _result);
     },
     /** /Button Event **/
     

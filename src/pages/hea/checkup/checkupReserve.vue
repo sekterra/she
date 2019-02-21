@@ -1,5 +1,5 @@
 <!--
-  목적 : 건강검진 예약변경 및 일괄예약
+  목적 : 검진 예약변경 및 일괄예약
   작성자 : khk
   Detail : 
   *
@@ -16,20 +16,23 @@
             <!-- <div class="right" style="cursor:pointer">검색조건 열기/숨기기</div> -->
             <div class="float-right">
               <y-btn
+                :title="searchArea.title"
+                color="green"                
+                @btnClicked="btnSearchVisibleClicked" 
+              />
+              <y-btn
                 v-if="editable"
                 :action-url="searchUrl"
                 :param="searchParam"
-                type="search"
                 title="검색"
-                size="mini"
-                color="success"
+                color="green"
                 action-type="GET"
                 @btnClicked="btnSearchPlanClickedCallback" 
                 @btnClickedErrorCallback="btnClickedErrorCallback"
               />
             </div>
           </div>
-          <b-row>
+          <b-row v-if="searchArea.show" ref="searchBox">
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3"> 
               <y-datepicker
                 :width="10"
@@ -50,11 +53,12 @@
       <b-col sm="12" class="px-0">
         <b-col sm="12">
           <y-data-table 
-            label="건강검진계획 목록"
+            label="검진계획 목록"
             ref="dataTable"
             :rows="3"
             :headers="gridHeaderOptions"
             :items="gridData"
+            :height="gridHeight"
             :excel-down="true"
             :print="true" 
             @selectedRow="selectedRow"
@@ -109,11 +113,17 @@ export default {
       searchParam: {
         heaCheckupPlanPeriod: []
       },
+      searchArea: {
+        title: '검색박스숨기기',
+        show: true,
+        height: 0
+      },
       heaCheckupPlanNo: 0,
 
       editable: true,
       gridData: [],
       gridHeaderOptions: [],
+      gridHeight: 300,
 
       searchUrl: ''
     };
@@ -133,6 +143,7 @@ export default {
     this.init(); 
   },
   mounted () {
+    this.searchArea.height = this.$refs.searchBox.clientHeight;
     this.loadComponent();
   },
   beforeDestory () {
@@ -146,9 +157,9 @@ export default {
 
       // 그리드 헤더 설정
       this.gridHeaderOptions = [
-        { text: '건강검진종류', name: 'heaCheckupClassNm', width: '20%', align: 'center' },
-        { text: '건강검진계획명', name: 'heaCheckupPlanNm', width: '35%' },
-        { text: '건강검진일정', name: 'heaCheckupPlanPeriod', width: '20%', align: 'center' },
+        { text: '검진종류', name: 'heaCheckupClassNm', width: '20%', align: 'center' },
+        { text: '검진계획명', name: 'heaCheckupPlanNm', width: '35%' },
+        { text: '검진일정', name: 'heaCheckupPlanPeriod', width: '20%', align: 'center' },
         { text: '예약마감일', name: 'finishYmd', width: '15%', align: 'center' },
         { text: '대상자', name: 'checkupUserCount', width: '10%', align: 'center' }
       ];
@@ -167,20 +178,34 @@ export default {
       this.$http.request((_result) => {
         this.gridData = _result.data;
       }, (_error) => {
-        console.log(_error);
+        window.getApp.$emit('APP_REQUEST_ERROR', _error);
       });
     }, 
     selectedRow (data) {
       this.heaCheckupPlanNo = data.heaCheckupPlanNo;
+    },
+    setGridSize () {
+      window.getApp.$emit('LOADING_SHOW');
+      setTimeout(() => {
+        this.gridHeight = this.gridHeight + ((this.searchArea.show ? -1 : 1) * this.searchArea.height);
+        window.getApp.$emit('LOADING_HIDE');
+      }, 600);
     },
 
     /** button 관련 이벤트 **/
     btnSearchPlanClickedCallback (_result) {
       this.gridData = _result.data;
     },
+    btnSearchVisibleClicked () {      
+      this.searchArea.show = !this.searchArea.show;
+      if (this.searchArea.show) this.searchArea.title = '검색박스숨기기';
+      else this.searchArea.title = '검색박스보이기';
+      
+      window.getApp.$emit('LOADING_PASS_COUNT', 1);
+      this.setGridSize();
+    },
     btnClickedErrorCallback (_result) {
-      alert('작업진행 중 오류가 발생했습니다. 재시도 후 지속적으로 오류 발생시 관리자에게 문의하세요.');
-      // window.getApp.$emit('APP_REQUEST_ERROR', _result);
+      window.getApp.$emit('APP_REQUEST_ERROR', _result);
     },    
     /** end button 관련 이벤트 **/
   }

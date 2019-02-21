@@ -9,7 +9,7 @@
 <template>
   <b-container fluid>
     <!-- 검색 -->
-    <b-row>
+    <b-row ref="searchBox">
       <b-col sm="12">
         <b-card header-class="default-card" body-class="default-body-card" class="py-0">
           <div slot="header">
@@ -18,19 +18,19 @@
             </div>
             <div class="float-right">
               <y-btn
-                :action-url="searchUrl"
-                :param="searchParam"
-                type="search"
+                :title="searchArea.title"
+                color="green"                
+                @btnClicked="btnSearchVisibleClicked" 
+              />
+              <y-btn
+                v-if="editable"
                 title="검색"
-                size="mini"
-                color="success"
-                action-type="get"
-                @btnClicked="btnSearchCallback" 
-                @btnClickedErrorCallback="btnClickedErrorCallback"
+                color="green"
+                @btnClicked="btnSearchClicked" 
               />
             </div>
           </div>
-          <b-row>
+          <b-row v-if="searchArea.show">
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <y-select
                 :width="baseWidth"
@@ -52,9 +52,11 @@
                 :editable="editable"
                 ui="bootstrap"
                 type="edit"
-                label="사용자명"
+                label="직원명"
                 name="userNm"
                 v-model="searchParam.userNm"
+                :appendIcon="[{ 'icon': 'search', callbackName: 'searchUser' }]"
+                @searchUser="btnSearchUserClicked"
               >
               </y-text>
             </b-col>
@@ -69,30 +71,60 @@
         <b-col sm="12" class="px-0">
           <y-data-table
             label="검진이력 목록"
-            title="검진이력 목록"
             ref="dataTable"
-            :headers="gridHeaderOptions"
-            :items="gridData"
-            :editable="editable"
-            :excel-down="true"
-            :print="true">
-          </y-data-table>
+            :height="gridOptions.height"
+            :headers="gridOptions.header"
+            :items="gridOptions.data"
+          />
         </b-col>
       </b-col>
     </b-row>
+    <el-dialog
+      :title="popupOptions.title"
+      :visible.sync="popupOptions.visible"
+      :fullscreen="false"
+      :append-to-body="true"
+      :close-on-click-modal="false"
+      :close-on-press-escape="false"
+      :show-close="false"
+      :width="popupOptions.width"
+      :top="popupOptions.top">
+      <component :is="popupOptions.target" :popupParam="popupOptions.param" @closePopup="popupOptions.closeCallback" />
+    </el-dialog>
   </b-container>
 </template>
 
 <script>
 import selectConfig from '@/js/selectConfig';
-import transactionConfig from '@/js/transactionConfig';
 export default {
   /** attributes: name, components, props, data **/
   name: 'checkup-history',
   props: {
+    paneName: {
+      type: String,
+      default: ''
+    },
   },
   data () {
     return {
+      popupOptions: {
+        target: null,
+        title: '',
+        visible: false,
+        width: '90%',
+        top: '10px',
+        param: {},
+        closeCallback: null
+      },
+      searchArea: {
+        title: '검색박스숨기기',
+        show: true
+      },
+      gridOptions: {
+        header: [],
+        data: [],
+        height: '340'
+      },
       searchParam: {
         deptCd: '',
         userNm: '',
@@ -101,9 +133,12 @@ export default {
       editable: true,
       comboDeptItems: [],
       searchUrl: '',
-      gridData: [],
-      gridHeaderOptions: [],
     };
+  },
+  watch: {
+    paneName (val) {
+      this.setGridSize();      
+    }
   },
   /** Vue lifecycle: created, mounted, destroyed, etc **/
   beforeCreate () {
@@ -113,59 +148,92 @@ export default {
   beforeMount () {
     Object.assign(this.$data, this.$options.data());
     this.init();
-    this.getDeptItems();
-    this.getDataList();
   },
   mounted () {
+    window.addEventListener('resize', this.setGridSize);
   },
-  beforeDestory () {
-    this.init();
+  beforeDestroy () {
+    window.removeEventListener('resize', this.setGridSize);
   },
   /** methods **/
   methods: {
     /** 초기화 관련 함수 **/
     init () {
-      this.gridHeaderOptions = [
-        { text: '사번', name: 'userId', width: '10%', align: 'center' },
-        { text: '사용자명', name: 'userNm', width: '10%', align: 'center' },
+      this.gridOptions.header = [
         { text: '부서', name: 'deptNm', width: '10%', align: 'center' },
+        { text: '사번', name: 'userId', width: '10%', align: 'center' },
+        { text: '직원명', name: 'userNm', width: '10%', align: 'center' },
         { text: '검진일자', name: 'heaCheckedYmd', width: '10%', align: 'center' },
         { text: '검진기관', name: 'heaCheckupOrgNm', width: '15%', align: 'left' },
         { text: '판정', name: 'heaWorkableCd', width: '9%', align: 'center' },
         { text: '소견', name: 'overallOpinion', width: '15%', align: 'left' },
       ];
+
+      this.searchUrl = selectConfig.checkupHistory.list.url;
+
+      this.getDeptItems();
+      this.getDataList();
+      this.setGridSize();
     },
+    /** /초기화 관련 함수 **/
+    
     getDeptItems () {
-      this.$http.url = selectConfig.dept.list.url;
+      this.$http.url = selectConfig.manage.dept.list.url;
       this.$http.type = 'GET';
       this.$http.request((_result) => {
         _result.data.splice(0, 0, { 'deptCd': '', 'deptNm': '전체' });
         this.comboDeptItems = _result.data;
       }, (_error) => {
-        console.log(_error);
+        window.getApp.$emit('APP_REQUEST_ERROR', _error);
       });
     },
-    /** /초기화 관련 함수 **/
 
     getDataList () {
-      this.$http.url = selectConfig.checkupHistory.list.url;
+      this.$http.url = this.searchUrl;
       this.$http.type = 'GET';
       this.$http.param = this.searchParam;
       this.$http.request((Result) => {
-        //  console.log(JSON.parse(JSON.stringify(Result.data)));
-        this.gridData = Result.data;
+        this.gridOptions.data = Result.data;
       }, (_error) => {
-        console.log(_error);
+        window.getApp.$emit('APP_REQUEST_ERROR', _error);
       });
     },
-    
-    /** Button Event **/
-    btnClickedErrorCallback (Result) {
-      window.getApp.emit('APP_REQUEST_ERROR', Result);
+    /**
+     * 그리드 리사이징
+     */
+    setGridSize () {
+      window.getApp.$emit('LOADING_SHOW');
+      setTimeout(() => {
+        this.gridOptions.height = window.innerHeight - this.$refs.searchBox.clientHeight - 320;
+        window.getApp.$emit('LOADING_HIDE');
+      }, 600);
     },
-    btnSearchCallback () {
+    /** Button Event **/
+    btnSearchClicked () {
       this.getDataList();
-      window.getApp.$emit('APP_REQUEST_SUCCESS', '검색 버튼이 클릭 되었습니다.');
+    },
+    btnSearchVisibleClicked () {      
+      this.searchArea.show = !this.searchArea.show;
+      if (this.searchArea.show) this.searchArea.title = '검색박스숨기기';
+      else this.searchArea.title = '검색박스보이기';
+
+      window.getApp.$emit('LOADING_PASS_COUNT', 1);
+      this.setGridSize();
+    },
+    btnSearchUserClicked (_item) {
+      this.popupOptions.target = () => import(`${'../../manage/user/userSearch.vue'}`);
+      this.popupOptions.title = '사용자검색';
+      this.popupOptions.visible = true;
+      this.popupOptions.width = '60%';
+      this.popupOptions.top = '100px';
+      this.popupOptions.closeCallback = this.closePopupSearchUser;
+    }, 
+    closePopupSearchUser (data) {
+      this.popupOptions.target = null;
+      this.popupOptions.visible = false;
+      if (data.user) {
+        this.searchParam.userNm = data.user.userNm;
+      }
     },
     /** /Button Event **/
 

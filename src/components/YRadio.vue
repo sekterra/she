@@ -119,11 +119,11 @@ export default {
     },
     itemText: {
       type: String,
-      default: 'edit'
+      default: 'text'
     },
     itemValue: {
       type: String,
-      default: 'edit'
+      default: 'value'
     },
     // 부모로 부터 radio 항목들을 받아올 경우
     comboItems: {

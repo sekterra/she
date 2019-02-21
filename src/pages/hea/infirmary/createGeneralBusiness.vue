@@ -9,24 +9,16 @@
 <template>
   <b-container fluid>
     <b-row>
-      <b-col sm="12">  
-        <div class="float-right">
-          <y-btn
-            type="clear"
-            title="닫기"
-            size="small"
-            color="info"
-            @btnClicked="closePopup" 
-          />
-        </div>  
-      </b-col>
-    </b-row>
-
-    <b-row>
       <b-col sm="12">
         <b-row>
           <b-col sm="12">
-            <y-label label="일반업무 등록" icon="user-edit" color-class="cutstom-title-color" />
+            <y-label label="일반업무 등록" icon="user-edit" color-class="cutstom-title-color"/>
+            <div slot="buttonGroup" class="float-right mb-1">  
+              <y-btn
+                title="닫기"
+                @btnClicked="closePopupUsage" 
+              />
+            </div>
           </b-col>
         </b-row>
         <b-card>
@@ -36,31 +28,33 @@
                 :width="baseWidth"
                 :editable="editable"
                 label="방문일"
-                name="date"
+                name="visitYmd"
                 v-model="infirmaryUsage.visitYmd"
                 default="today"
+                :end="today"
+                :required="true"
                 v-validate="'required'"
-                :error-msg="errors.first('date')"
+                :error-msg="errors.first('visitYmd')"
+                :state="validateState('visitYmd')"
               >
               </y-datepicker>
             </b-col>
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
-              <y-select
+              <y-text
                 :width="baseWidth"
                 :editable="editable"
-                :comboItems="comboUserItems"
-                itemText="userNm"
-                itemValue="userId"
+                :clearable="true"
                 ui="bootstrap"
-                type="edit"
+                name="userNm"
                 label="방문자"
-                name="userId"
-                v-model="infirmaryUsage.userId"
+                disabled="disabled"
+                v-model="infirmaryUsage.userNm"
+                :appendIcon="[{ 'icon': 'search', callbackName: 'searchUser' }]"
+                @searchUser="btnSearchUserClicked"
                 :required="true"
                 v-validate="'required'"
-                :state="validateState('userId')"
-              >
-              </y-select>
+                :state="validateState('userNm')"
+                />
             </b-col>
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <y-select
@@ -88,6 +82,7 @@
                 label="주호소 및 증상"
                 name="symptom"
                 v-model="infirmaryUsage.symptom"
+                :rows="2"
               >
               </y-textarea>
             </b-col>
@@ -100,6 +95,7 @@
                 label="간호 및 상담내용"
                 name="consult"
                 v-model="infirmaryUsage.consult"
+                :rows="2"
               >
               </y-textarea>
             </b-col>
@@ -112,16 +108,20 @@
                 label="특이사항"
                 name="remark"
                 v-model="infirmaryUsage.remark"
+                :rows="2"
               >
               </y-textarea>
             </b-col>
           </b-row>
         </b-card>
-
-        <b-col sm="8" class="px-0">
+        <b-row class="mt-2">
+          <b-col sm="12">
+            <y-label label="약품 처방" icon="user-edit" color-class="cutstom-title-color"/>
+          </b-col>
+        </b-row>
+        <b-col sm="12" class="px-0">
           <y-data-table 
             title="약품 처방"
-            label="약품 처방"
             ref="dataTable"
             grid-type="edit"
             :headers="drugGridHeaderOptions"
@@ -135,10 +135,7 @@
         <div class="float-right mt-3">
           <y-btn
             v-if="editable"
-            type="clear"
             title="초기화"
-            size="small"
-            color="info"
             @btnClicked="btnClearClickedCallback" 
           />
           <y-btn
@@ -146,10 +143,8 @@
             :action-url="insertUrl"
             :param="infirmaryUsage"
             :is-submit="isInsertSubmit"
-            type="save"
             title="신규등록"
-            size="small"
-            color="warning"
+            color="orange"
             action-type="POST"
             beforeSubmit = "beforeInsert"
             @beforeInsert="beforeInsert"
@@ -161,10 +156,8 @@
             :action-url="editUrl"
             :param="infirmaryUsage"
             :is-submit="isEditSubmit"
-            type="save"
             title="수정"
-            size="small"
-            color="warning"
+            color="orange"
             action-type="PUT"
             beforeSubmit = "beforeEdit"
             @beforeEdit="beforeEdit"
@@ -174,20 +167,18 @@
         </div>
       </b-col>
     </b-row>
-
-    <b-row>
-      <b-col sm="12">  
-        <div class="float-right mt-3">
-          <y-btn
-            type="clear"
-            title="닫기"
-            size="small"
-            color="info"
-            @btnClicked="closePopup" 
-          />
-        </div>  
-      </b-col>
-    </b-row>
+    <el-dialog
+      :title="popupOptions.title"
+      :visible.sync="popupOptions.visible"
+      :fullscreen="false"
+      :append-to-body="true"
+      :close-on-click-modal="false"
+      :close-on-press-escape="false"
+      :show-close="false"
+      :width="popupOptions.width"
+      :top="popupOptions.top">
+      <component :is="popupOptions.target" :popupParam="popupOptions.param" @closePopup="popupOptions.closeCallback" />
+    </el-dialog>
   </b-container>
 </template>
 
@@ -202,11 +193,21 @@ export default {
       type: Object,
       default: {
         heaInfirmaryUsageNo: 0,
+        pageNm: '',
       },
     },
   },
   data () {
     return {
+      popupOptions: {
+        target: null,
+        title: '',
+        visible: false,
+        width: '90%',
+        top: '10px',
+        param: {},
+        closeCallback: null,
+      },
       infirmaryUsage: {
         heaInfirmaryUsageNo: 0,
         userId: null,
@@ -237,7 +238,24 @@ export default {
       insertUrl: '',
       editUrl: '',
       comboUserItems: [],
+      today: '',
     };
+  },
+  watch: {
+    'infirmaryUsage.visitYmd': function (newValue, oldValue) {
+      if (newValue < this.today && this.tempYmd !== newValue && newValue !== '')
+      {
+        window.getApp.$emit('ALERT', {
+          title: '안내',
+          message: '과거 날짜를 선택하였습니다.',
+          type: 'warning',  // success / info / warning / error
+        });
+        this.tempYmd = this.today;
+      }
+    },
+    'testItemResult.heaTestItemCd': function (newValue, oldValue) {
+      this.getTestItem();
+    }
   },
   /** Vue lifecycle: created, mounted, destroyed, etc **/
   beforeCreate () {
@@ -247,20 +265,10 @@ export default {
   beforeMount () {
     Object.assign(this.$data, this.$options.data());
     this.init();
-    this.getHeaTreatCdItems();
-    this.getUserItems();
-    this.getDrugList();
-    if (this.popupParam.heaInfirmaryUsageNo !== 0) {
-      this.getInfirmaryUsage();
-      this.updateMode = true;
-    } else {
-      this.insertMode = true;
-    }
   },
   mounted () {
   },
-  beforeDestory () {
-    this.init();
+  beforeDestroy () {
   },
   /** methods **/
   methods: {
@@ -273,37 +281,56 @@ export default {
         { text: '현재 재고량', name: 'amountCurr', width: '8%', align: 'center' },
       ];
 
+      // 수정 또는 신규등록 버튼 Mode
       this.infirmaryUsage.heaInfirmaryUsageNo = this.popupParam.heaInfirmaryUsageNo;
+      if (this.popupParam.heaInfirmaryUsageNo !== 0) {
+        this.getInfirmaryUsage();
+        this.updateMode = true;
+      } else {
+        this.getDrugList();
+        this.insertMode = true;
+      }
+      // 오늘 날짜 구하기
+      this.today = this.$comm.getToday();
+      
+      this.insertUrl = transactionConfig.infirmaryUsage.insert.url;
+      this.editUrl = transactionConfig.infirmaryUsage.edit.url;
+
+      this.getHeaTreatCdItems();
+      this.getUserItems();
     },
     /** /초기화 관련 함수 **/
     
     getUserItems () {
-      this.$http.url = selectConfig.user.list.url;
-      this.$http.type = 'GET';
+      this.$http.url = selectConfig.manage.user.list.url;
+      this.$http.type = 'get';
       this.$http.request((_result) => {
         _result.data.splice(0, 0, { 'userId': null, 'userNm': '선택하세요' });
         this.comboUserItems = _result.data;
       }, (_error) => {
-        console.log(_error);
+        window.getApp.$emit('APP_REQUEST_ERROR', _error);
       });
     },
     getHeaTreatCdItems () {
       this.$http.url = this.$format(selectConfig.codeMaster.getSelect.url, 'HEA_TREAT');
-      this.$http.type = 'GET';
+      this.$http.type = 'get';
       this.$http.request((_result) => {
         _result.data.splice(0, 0, { 'code': '', 'codeNm': '선택하세요' });
         this.heaTreatCdItems = _result.data;
       }, (_error) => {
-        console.log(_error);
+        window.getApp.$emit('APP_REQUEST_ERROR', _error);
       });
     },
     getDrugList () {
       this.$http.url = selectConfig.drugManage.list.url;
-      this.$http.type = 'GET';
+      this.$http.type = 'get';
+      this.$http.param = {
+        useYn: 'Y'
+      };
       this.$http.request((_result) => {
         this.drugGridData = _result.data;
       }, (_error) => {
-        console.log(_error);
+        window.getApp.$emit('APP_REQUEST_ERROR', _error);
       });
     },
     getInfirmaryUsage () {
@@ -312,43 +339,81 @@ export default {
       this.$http.request((_result) => {
         this.infirmaryUsage = _result.data;
         this.drugGridData = this.infirmaryUsage.prescribeList;
+        
+        this.tempYmd = this.infirmaryUsage.visitYmd;
       }, (_error) => {
-        console.log(_error);
+        window.getApp.$emit('APP_REQUEST_ERROR', _error);
       });
     },
     beforeInsert () {
-      if (window.confirm("등록하시겠습니까?"))
+      if (this.infirmaryUsage.userNm === '')
       {
-        this.checkValidationInsert();
-        this.infirmaryUsage.prescribeList = this.drugGridData;
-        this.insertUrl = transactionConfig.infirmaryUsage.insert.url;
+        window.getApp.$emit('ALERT', {
+          title: '안내',
+          message: '방문자를 선택해 주세요.',
+          type: 'warning',  // success / info / warning / error
+        });
+        return;
       }
+      this.$validator.validateAll().then((_result) => {
+        if (_result) {
+          window.getApp.$emit('CONFIRM', {
+            title: '확인',
+            message: '등록하시겠습니까?',
+            type: 'info',
+            // 확인 callback 함수
+            confirmCallback: () => {
+              this.infirmaryUsage.prescribeList = this.drugGridData;
+              this.isInsertSubmit = true;
+            }
+          });
+        }
+        else {
+          window.getApp.$emit('ALERT', {
+            title: '안내',
+            message: '필수입력값을 입력해주세요.',
+            type: 'warning',
+          });
+        }
+      }).catch(() => {
+        window.getApp.$emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
+      });
     },
     beforeEdit () {
-      if (window.confirm("수정하시겠습니까?"))
+      if (this.infirmaryUsage.userNm === '')
       {
-        this.checkValidationEdit();
-        this.infirmaryUsage.prescribeList = this.drugGridData;
-        this.editUrl = transactionConfig.infirmaryUsage.edit.url;
+        window.getApp.$emit('ALERT', {
+          title: '안내',
+          message: '방문자를 선택해 주세요.',
+          type: 'warning',
+        });
+        return;
       }
+      this.$validator.validateAll().then((_result) => {
+        if (_result) {
+          window.getApp.$emit('CONFIRM', {
+            title: '확인',
+            message: '수정하시겠습니까?',
+            type: 'info',
+            // 확인 callback 함수
+            confirmCallback: () => {
+              this.infirmaryUsage.prescribeList = this.drugGridData;
+              this.isEditSubmit = true;
+            }
+          });
+        }
+        else {
+          window.getApp.$emit('ALERT', {
+            title: '안내',
+            message: '필수입력값을 입력해주세요.',
+            type: 'warning',
+          });
+        }
+      }).catch(() => {
+        window.getApp.$emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
+      });
     },
     /** validation checking **/
-    checkValidationInsert () {
-      this.$validator.validateAll().then((_result) => {
-        this.isInsertSubmit = _result;
-        if (!this.isInsertSubmit) window.getApp.emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
-      }).catch(() => {
-        this.isInsertSubmit = false;
-      });
-    },
-    checkValidationEdit () {
-      this.$validator.validateAll().then((_result) => {
-        this.isEditSubmit = _result;
-        if (!this.isEditSubmit) window.getApp.emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
-      }).catch(() => {
-        this.isEditSubmit = false;
-      });
-    },
     validateState (_ref) {
       if (this.veeBag[_ref] && (this.veeBag[_ref].dirty || this.veeBag[_ref].validated)) {
         return !this.errors.has(_ref);
@@ -357,32 +422,63 @@ export default {
     },
 
     /** Button Event **/
-    searchUserCallback () {
-      console.log('::::::: searchUserCallback :::::::');
-    },
     btnInsertClickedCallback (_result) {
       this.heaInfirmaryUsageNo = _result.data;
       this.isInsertSubmit = false;
-      alert('등록되었습니다.');
-      this.closePopup();
+      window.getApp.$emit('ALERT', {
+        title: '안내',
+        message: '등록되었습니다.',
+        type: 'success',
+      });
+      this.closePopupUsage();
     },
     btnEditClickedCallback (_result) {
       this.isEditSubmit = false;
-      alert('수정되었습니다.');
-      this.closePopup();
+      window.getApp.$emit('ALERT', {
+        title: '안내',
+        message: '수정되었습니다.',
+        type: 'success',
+      });
+      this.closePopupUsage();
     },
     btnClickedErrorCallback (_result) {
       this.isInsertSubmit = false;
-      window.getApp.emit('APP_REQUEST_ERROR', _result);
+      this.isEditSubmit = false;
+      this.editable = false;
+      window.getApp.$emit('APP_REQUEST_ERROR', _result);
+      this.closePopupUsage();
     },
     btnClearClickedCallback () {
       Object.assign(this.$data.infirmaryUsage, this.$options.data().infirmaryUsage);
       this.$validator.reset();
       window.getApp.$emit('APP_REQUEST_SUCCESS', '초기화 버튼이 클릭 되었습니다.');
+      var rowVal = [];
+      this.$_.forEach(this.drugGridData, (row) => {
+        row.amount = 0;
+        rowVal.push(row);
+      });
+      this.drugGridData = this.$_.clone(rowVal);
     },
-    closePopup () {
+    closePopupUsage () {
       // 부모창에 값 전달
       this.$emit('closePopup', { 'success': true });
+    },
+    btnSearchUserClicked (_item) {
+      this.popupOptions.target = () => import(`${'../../manage/user/userSearch.vue'}`);
+      this.popupOptions.title = '사용자검색';
+      this.popupOptions.visible = true;
+      this.popupOptions.width = '60%';
+      this.popupOptions.top = '100px';
+      this.popupOptions.closeCallback = this.closePopupSearchUser;
+    }, 
+    closePopupSearchUser (data) {
+      this.popupOptions.target = null;
+      this.popupOptions.visible = false;
+      if (data.user) {
+        this.infirmaryUsage.userNm = data.user.userNm;
+        this.infirmaryUsage.userId = data.user.userId;
+        this.infirmaryUsage.deptCd = data.user.deptCd;
+      }
     },
     /** /Button Event **/
   }

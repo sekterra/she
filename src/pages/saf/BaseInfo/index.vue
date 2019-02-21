@@ -1,6 +1,6 @@
 <!--
-  목적 : 건강검진 기준정보 - 건강검진항목
-  Detail : 건강검진항목 등록/수정화면
+  목적 : 검진 기준정보 - 검진항목
+  Detail : 검진항목 등록/수정화면
   *
   examples:
   *
@@ -92,8 +92,8 @@ export default {
 
       // 그리드 헤더 설정
       this.gridHeaderItemOptions = [
-        { text: '건강검진검사', name: 'heaTestClassNm', width: '20%', align: 'left', link: 'test' },
-        { text: '건강검진항목', name: 'heaTestItemNm', width: '20%', align: 'left' },
+        { text: '검진검사', name: 'heaTestClassNm', width: '20%', align: 'left', link: 'test' },
+        { text: '검진항목', name: 'heaTestItemNm', width: '20%', align: 'left' },
         { text: '단위', name: 'unit', width: '10%', align: 'center' },
         { text: '결과타입', name: 'heaResultTypeNm', width: '10%', align: 'center' },
         { text: '출력순서', name: 'sortOrder', width: '10%', align: 'center' },

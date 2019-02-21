@@ -8,7 +8,7 @@
 <template>
   <b-container fluid>
     <!-- 검색 -->
-    <b-row>
+    <b-row ref="searchBox">
       <b-col sm="12">
         <b-card header-class="default-card" body-class="default-body-card" class="py-0">
           <div slot="header" >
@@ -17,20 +17,22 @@
             <!-- </div> -->
             <div class="float-right">
               <y-btn
+                :title="searchArea.title"
+                color="green"                
+                @btnClicked="btnSearchVisibleClicked" 
+              />
+              <y-btn
                 :action-url="searchUrl"
                 :param="searchParam"
-                type="search"
                 title="검색"
-                size="mini"
-                color="success"
-                icon="el-icon-search"
+                color="green"
                 action-type="get"
                 @btnClicked="btnSearchClickedCallback" 
                 @btnClickedErrorCallback="btnClickedErrorCallback"
               />
             </div>
           </div>
-          <b-row>
+          <b-row v-if="searchArea.show">
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <y-select
                 :width="8"
@@ -47,13 +49,13 @@
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <y-select
                 :width="8"
-                :comboItems="comboChkDeptTypeItems"
+                :comboItems="comboWkodDptyItems"
                 itemText="codeNm"
                 itemValue="code"
                 ui="bootstrap"
                 label="점검부서구분"
-                name="chkDeptType"
-                v-model="searchParam.chkDeptType"
+                name="wkodDptyCd"
+                v-model="searchParam.wkodDptyCd"
               >
               </y-select>
             </b-col>
@@ -77,8 +79,9 @@
       <b-col sm="12">
           <b-col sm="12" class="px-0">
             <y-data-table 
-              :headers="gridHeaderOptions"
-              :items="gridData"
+              :headers="gridOptions.header"
+              :items="gridOptions.data"
+              :height="gridOptions.height"
               :excel-down="true"
               :print="true"
               :rows="5"
@@ -91,7 +94,7 @@
           </b-col>
 
           <!-- 등록 -->
-          <b-row class="mt-3">
+          <b-row class="mt-3" ref="insertBox">
             <b-col sm="12">
               <b-row>
                 <b-col sm="12">
@@ -119,16 +122,16 @@
                   <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
                     <y-select
                     :width="8"
-                    :comboItems="comboDetailChkDeptTypeItems"
+                    :comboItems="comboDetailWkodDptyItems"
                     :required="true"
                     itemText="codeNm"
                     itemValue="code"
                     ui="bootstrap"
                     label="점검부서구분"
-                    name="chkDeptType"
-                    v-model="wkodChkItem.chkDeptType"
+                    name="wkodDptyCd"
+                    v-model="wkodChkItem.wkodDptyCd"
                     v-validate="'required'"
-                    :state="validateState('chkDeptType')"
+                    :state="validateState('wkodDptyCd')"
                     >
                     </y-select>
                   </b-col>
@@ -175,22 +178,15 @@
                 </b-row>
                 <div class="float-right mt-3">
                     <y-btn
-                      type="clear"
                       title="초기화"
-                      size="small"
-                      color="info"
-                      icon="el-icon-edit"
                       @btnClicked="btnClearClickedCallback" 
                       />
                     <y-btn
                       :action-url="insertUrl"
                       :param="wkodChkItem"
                       :is-submit="isInsert"
-                      type="save"
                       title="신규등록"
-                      size="small"
-                      color="warning"
-                      icon="el-icon-edit"
+                      color="blue"
                       action-type="POST"
                       beforeSubmit = "beforeInsert"
                       @beforeInsert="beforeInsert"
@@ -202,11 +198,8 @@
                       :action-url="editUrl"
                       :param="wkodChkItem"
                       :is-submit="isEdit"
-                      type="save"
                       title="수정"
-                      size="small"
-                      color="warning"
-                      icon="el-icon-edit-outline"
+                      color="orange"
                       action-type="PUT"
                       beforeSubmit = "beforeSubmit"
                       @beforeSubmit="beforeSubmit"
@@ -232,35 +225,44 @@ export default {
   name: 'wkod-chk-item',
   props: {
   },
-  data: () => ({
-    wkodChkItem: {
-      chkItemId: '',
-      wkodKindCd: '',
-      chkDeptType: '',
-      chkItemNm: '',
-      sortOrder: 0,
-      useYn: 'Y',
-    },
-    searchParam: {
-      wkodKindCd: '',
-      chkDeptType: '',
-      chkItemNm: '',
-    },
-    baseWidth: 9,
-    editable: false,
-    isInsert: false,
-    isEdit: false,
-    gridData: [],
-    gridHeaderOptions: [],
-    comboChkDeptTypeItems: [],
-    comboWkodKindItems: [],
-    comboDetailChkDeptTypeItems: [],
-    comboDetailWkodKindItems: [],
-    radioItems: null,
-    editUrl: '',
-    insertUrl: '',
-    searchUrl: '',
-  }),
+  data () {
+    return {
+      wkodChkItem: {
+        chkItemNo: '',
+        wkodKindCd: null,
+        wkodDptyCd: null,
+        chkItemNm: '',
+        sortOrder: 0,
+        useYn: 'Y',
+      },
+      searchParam: {
+        wkodKindCd: '',
+        wkodDptyCd: '',
+        chkItemNm: '',
+      },
+      searchArea: {
+        title: '검색박스숨기기',
+        show: true
+      },
+      gridOptions: {
+        header: [],
+        data: [],
+        height: 300
+      },
+      baseWidth: 9,
+      editable: false,
+      isInsert: false,
+      isEdit: false,
+      comboWkodDptyItems: [],
+      comboWkodKindItems: [],
+      comboDetailWkodDptyItems: [],
+      comboDetailWkodKindItems: [],
+      radioItems: null,
+      editUrl: '',
+      insertUrl: '',
+      searchUrl: '',
+    }
+  },
   //* Vue lifecycle: created, mounted, destroyed, etc */
   beforeCreate () {
   },
@@ -268,13 +270,14 @@ export default {
   },
   beforeMount () {
     Object.assign(this.$data, this.$options.data());
-    console.log("::::::::::::::::::::: beforeMount ::::::::::::::::::::  ");
     this.init();
-    this.getComboItems('WKOD_KIND'); // 작업종류
-    this.getComboItems('WKOD_DPTY'); // 점검부서구분
+    this.getComboItems('SAF_WKOD_KIND'); // 작업종류
+    this.getComboItems('SAF_WKOD_DPTY'); // 점검부서구분
+    this.setGridSize();
     this.getList();
   },
   mounted () {
+    this.setGridSize();
   },
   beforeDestory () {
   },
@@ -283,9 +286,9 @@ export default {
     init () {
       setTimeout(() => {
         // Url Setting
-        this.searchUrl = selectConfig.wkodChkItem.list.url;
-        this.editUrl = transactionConfig.wkodChkItem.edit.url;
-        this.insertUrl = transactionConfig.wkodChkItem.insert.url;
+        this.searchUrl = selectConfig.saf.wkodChkItem.list.url;
+        this.editUrl = transactionConfig.saf.wkodChkItem.edit.url;
+        this.insertUrl = transactionConfig.saf.wkodChkItem.insert.url;
         // radio 버튼 셋팅
         this.radioItems = [
           { useYn: 'Y', useName: '사용' },
@@ -294,9 +297,9 @@ export default {
       }, 1000);
       
       // 그리드 헤더 설정
-      this.gridHeaderOptions = [
+      this.gridOptions.header = [
         { text: '작업종류', name: 'wkodKindNm', width: '15%', align: 'center' },
-        { text: '점검부서구분', name: 'chkDeptTypeNm', width: '15%', align: 'center' },
+        { text: '점검부서구분', name: 'wkodDptyNm', width: '15%', align: 'center' },
         { text: '항목명', name: 'chkItemNm', width: '45%' },
         { text: '출력순서', name: 'sortOrder', width: '10%', align: 'center' },
         { text: '사용여부', name: 'useYnNm', width: '10%', align: 'center' }
@@ -307,47 +310,92 @@ export default {
       this.$http.url = this.$format(selectConfig.codeMaster.getSelect.url, codeGroupCd);
       this.$http.type = 'GET';
       this.$http.request((_result) => {
-        if (codeGroupCd === 'WKOD_KIND')
+        if (codeGroupCd === 'SAF_WKOD_KIND')
         {
           this.comboWkodKindItems = this.$_.clone(_result.data);
           this.comboDetailWkodKindItems = this.$_.clone(_result.data);
 
           this.comboWkodKindItems.splice(0, 0, { 'code': '', 'codeNm': '전체' });
+          this.comboDetailWkodKindItems.splice(0, 0, { 'code': '', 'codeNm': '선택하세요' });
+
+          this.wkodChkItem.wkodKindCd = '';
         }
         else
         {
-          this.comboChkDeptTypeItems = this.$_.clone(_result.data);
-          this.comboDetailChkDeptTypeItems = this.$_.clone(_result.data);
+          this.comboWkodDptyItems = this.$_.clone(_result.data);
+          this.comboDetailWkodDptyItems = this.$_.clone(_result.data);
 
-          this.comboChkDeptTypeItems.splice(0, 0, { 'code': '', 'codeNm': '전체' });
+          this.comboWkodDptyItems.splice(0, 0, { 'code': '', 'codeNm': '전체' });
+          this.comboDetailWkodDptyItems.splice(0, 0, { 'code': '', 'codeNm': '선택하세요' });
+          
+          this.wkodChkItem.wkodDptyCd = '';
         }
       }, (_error) => {
-        console.log(_error);
+        this.$emit('APP_REQUEST_ERROR', _error);
       });
     },
     selectedRow (data) {
       if (data === null) return;
-      this.$http.url = this.$format(selectConfig.wkodChkItem.get.url, data.chkItemId);
+      this.$http.url = this.$format(selectConfig.saf.wkodChkItem.get.url, data.chkItemNo);
       this.$http.type = 'GET';
       this.$http.request((_result) => {
         this.editable = true;
-        Object.assign(this.wkodChkItem, _result.data);
+        this.wkodChkItem = this.$_.clone(_result.data);
       }, (_error) => {
-        console.log(_error);
+        this.$emit('APP_REQUEST_ERROR', _error);
       });
+    },
+    setGridSize () {
+      window.getApp.$emit('LOADING_SHOW');
+      setTimeout(() => {
+        this.gridOptions.height = window.innerHeight - this.$refs.searchBox.clientHeight - this.$refs.insertBox.clientHeight - 270;
+        window.getApp.$emit('LOADING_HIDE');
+      }, 600);
+    },
+    /** button 관련 이벤트 **/
+    /**
+     * 검색박스 숨기기/보이기 처리 후 setGridSize 호출
+     */
+    btnSearchVisibleClicked () {      
+      this.searchArea.show = !this.searchArea.show;
+      if (this.searchArea.show) this.searchArea.title = '검색박스숨기기';
+      else this.searchArea.title = '검색박스보이기';
+
+      window.getApp.$emit('LOADING_PASS_COUNT', 1);
+      this.setGridSize();
     },
     /** 수정 하기전 UI단 유효성 검사 **/
     beforeSubmit () {
-      if (window.confirm("수정하시겠습니까?"))
-      {
-        this.checkValidationSave();
-      }
+      // if (window.confirm("수정하시겠습니까?"))
+      // {
+      //   this.checkValidationSave();
+      // }
+      window.getApp.$emit('CONFIRM', {
+        title: '확인',
+        message: '수정하시겠습니까?',
+        // TODO : 필요시 추가하세요.
+        type: 'info',  // success / info / warning / error
+        // 확인 callback 함수
+        confirmCallback: () => {
+          this.checkValidationSave();
+        }
+      });
     },
     beforeInsert () {
-      if (window.confirm("저장하시겠습니까?"))
-      {
-        this.checkValidationInsert();
-      }
+      // if (window.confirm("저장하시겠습니까?"))
+      // {
+      //   this.checkValidationInsert();
+      // }
+      window.getApp.$emit('CONFIRM', {
+        title: '확인',
+        message: '등록하시겠습니까?',
+        // TODO : 필요시 추가하세요.
+        type: 'info',  // success / info / warning / error
+        // 확인 callback 함수
+        confirmCallback: () => {
+          this.checkValidationInsert();
+        }
+      });
     },
     /**
      * 수정전 유효성 검사
@@ -379,13 +427,13 @@ export default {
       return null;
     },
     getList () {
-      this.$http.url = selectConfig.wkodChkItem.list.url;
+      this.$http.url = selectConfig.saf.wkodChkItem.list.url;
       this.$http.type = 'GET';
       this.$http.param = this.searchParam;
       this.$http.request((_result) => {
-        this.gridData = _result.data;
+        this.gridOptions.data = this.$_.clone(_result.data);
       }, (_error) => {
-        console.log(_error);
+        this.$emit('APP_REQUEST_ERROR', _error);
       });
     },
     /**
@@ -402,14 +450,24 @@ export default {
     },
     btnSaveClickedCallback (_result) {
       this.getList();
-      window.alert("수정되었습니다.");
+      // window.alert("수정되었습니다.");
+      window.getApp.$emit('ALERT', {
+        title: '안내',
+        message: '수정되었습니다.',
+        type: 'success',  // success / info / warning / error
+      });
       this.isEdit = false;
       // this.$emit('APP_REQUEST_SUCCESS', '수정 버튼이 클릭 되었습니다.');
     },
     btnInsertClickedCallback (_result) {
       this.getList();
-      window.alert("저장되었습니다.");
-      this.wkodChkItem.chkItemId = _result.data;
+      // window.alert("저장되었습니다.");
+      window.getApp.$emit('ALERT', {
+        title: '안내',
+        message: '저장되었습니다.',
+        type: 'success',  // success / info / warning / error
+      });
+      this.wkodChkItem.chkItemNo = this.$_.clone(_result.data);
       this.isInsert = false;
     },
     btnClearClickedCallback () {
@@ -423,7 +481,7 @@ export default {
       this.isInsert = false;
       this.isEdit = false;
       this.btnClearClickedCallback();
-      this.$emit('APP_REQUEST_ERROR', _result);
+      window.getApp.$emit('APP_REQUEST_ERROR', _result);
     },
     /** end button 관련 이벤트 **/
   }

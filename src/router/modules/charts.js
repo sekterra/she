@@ -10,7 +10,7 @@ const chartsRouter = {
   name: 'Charts',
   meta: {
     title: 'charts',
-    icon: 'chart'
+    // icon: 'chart'
   },
   children: [
     {

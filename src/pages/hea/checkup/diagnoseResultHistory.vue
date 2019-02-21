@@ -11,14 +11,18 @@
     <b-row>
       <b-col sm="12" class="px-0">
         <b-col sm="12">
+          <div slot="buttonGroup" class="float-right mb-1">
+            <y-btn
+              title="닫기"
+              @btnClicked="closePopup" 
+            />
+          </div>
           <y-data-table 
-            ref="dataTable"
-            label="건강검진 결과 이력"
-            :rows="5"
-            :headers="gridHeaderOptions"
-            :items="gridData" 
-            :excel-down="true"
-            :print="true" />
+            label="검진 결과 이력"
+            :headers="gridHistoryHeaderOptions"
+            :items="gridHistoryData"  
+            @selectedRow="selectedRow"
+            />
         </b-col>
       </b-col>
     </b-row>
@@ -27,30 +31,27 @@
       <b-col sm="12">   
         <b-row>
           <b-col sm="12">
-            <y-label label="종합소견" icon="user-edit" color-class="cutstom-title-color" />
+            <y-label label="소견" icon="user-edit" color-class="cutstom-title-color" />
           </b-col>
         </b-row>
         <b-card>
-          <div slot="header">
-            <strong>종합소견</strong>
-          </div>
           <b-row>
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <b-row>
               <b-col sm="4"><y-label label="업무수행적합"></y-label></b-col>
-              <b-col sm="8"><y-label :label="checkupResult.heaWorkableNm"></y-label></b-col>
+              <b-col sm="8"><y-label :label="checkupResult.heaWorkableNm" fieldable="true"></y-label></b-col>
               </b-row>
             </b-col>
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <b-row>
               <b-col sm="4"><y-label label="사후관리"></y-label></b-col>
-              <b-col sm="8"><y-label :label="checkupResult.heaWorkableNm"></y-label></b-col>
+              <b-col sm="8"><y-label :label="checkupResult.heaWorkableNm" fieldable="true"></y-label></b-col>
               </b-row>
             </b-col>
             <b-col sm="12" md="12" lg="12" xl="12" class="col-xxl-6">
               <b-row>
               <b-col sm="2"><y-label label="종합소견"></y-label></b-col>
-              <b-col sm="10"><y-label :label="checkupResult.overallOpinion"></y-label></b-col>
+              <b-col sm="10"><y-label :label="checkupResult.overallOpinion" fieldable="true"></y-label></b-col>
               </b-row>
             </b-col>
           </b-row>         
@@ -60,17 +61,15 @@
 
     <b-row class="mt-3">
       <b-col sm="12">
-        <b-col sm="9" class="px-0">
+        <b-col sm="11" class="px-0">
           <y-data-table 
-            ref="dataTable"
             label="판정목록"
-            :rows="3"
-            :headers="gridResultDiagHeaderOptions"
-            :items="gridResultDiagData" />
+            height="200"
+            :headers="gridResultDiagHistoryHeaderOptions"
+            :items="gridResultDiagHistoryData" />
           </b-col>
       </b-col>      
-    </b-row>
-    
+    </b-row>    
   </b-container>
 </template>
 
@@ -81,6 +80,13 @@ export default {
   /** attributes: name, components, props, data **/
   name: 'diagnose-result-history',  // 반드시 입력하세요(안 하면 warning 발생). 네이밍 룰은 현재 vue component의 파일명의 단어를 "-"로 구분(예:exam-data)하여 입력하시면 됩니다. 입력후 이 주석은 지워주세요.
   props: {
+    popupParam: {
+      type: Object,
+      default: {
+        heaCheckupPlanNo: 0,
+        userId: ''
+      },
+    },
   },
   // TODO: 화살표 함수(=>)는 data에 사용하지 말 것
   //    data: () => { return { a: this.myProp }}) 화살표 함수가 부모 컨텍스트를 바인딩하기 때문에 this는 예상과 달리 Vue 인스턴스가 아니기 때문에 this.myProp는 undefined로 나옵니다.
@@ -90,9 +96,9 @@ export default {
       // Naming Rule : JAVA model class와 연동되는 vue model은 model class명을 Camel case로 변환해서 선언하시고 기본값은 {}로 초기화 시켜주세요.
       // 예) ExamData -> examData: {},
       checkupResult: {
-        heaCheckupPlanNo: 1,
+        heaCheckupPlanNo: 0,
         heaCheckupPlanNm: '',
-        userId: 'dev',
+        userId: '',
         userNm: '',
         heaCheckupClassCd: '',
         heaCheckupClassNm: '',
@@ -103,16 +109,16 @@ export default {
         overallOpinion: ''
       },
       selectedData: {
-        heaCheckupPlanNo: 1,
-        userId: 'dev'
+        heaCheckupPlanNo: 0,
+        userId: ''
       },
       baseWidth: 9,
       editable: true,
 
-      gridData: [],
-      gridHeaderOptions: [],
-      gridResultDiagData: [],
-      gridResultDiagHeaderOptions: [],
+      gridHistoryData: [],
+      gridHistoryHeaderOptions: [],
+      gridResultDiagHistoryData: [],
+      gridResultDiagHistoryHeaderOptions: [],
 
       detailUrl: '',
       searchUrl: '',
@@ -140,24 +146,23 @@ export default {
     /** 초기화 관련 함수 **/
     init () {
       // TODO : 여기에 초기 설정용 함수를 호출하거나 로직을 입력하세요.
-      // 선택항목 설정
-      setTimeout(() => {
-      }, 200);
-
+      this.checkupResult.heaCheckupPlanNo = this.popupParam.heaCheckupPlanNo;
+      this.checkupResult.userId = this.popupParam.userId;
+      
       // 그리드 헤더 설정
-      this.gridHeaderOptions = [
-        { text: '검진계획', name: 'heaCheckupPlanNm', width: '25%' },
-        { text: '검진종류', name: 'heaCheckupClassNm', width: '10%', align: 'center' },
-        { text: '사번', name: 'userId', width: '10%', align: 'center' },
-        { text: '성명', name: 'userNm', width: '10%', align: 'center' },
-        { text: '검진일', name: 'heaCheckupYmd', width: '10%', align: 'center' },
-        { text: '검진기관', name: 'heaCheckupOrgNm', width: '15%', align: 'center' },
-        { text: '판정', name: 'heaDiagnoseNm', width: '10%', align: 'center' },
-        { text: '질환', name: 'heaDiseaseNm', width: '10%', align: 'center' }
+      this.gridHistoryHeaderOptions = [
+        { text: '검진계획', name: 'heaCheckupPlanNm', width: '200px' },
+        { text: '검진종류', name: 'heaCheckupClassNm', width: '120px', align: 'center' },
+        { text: '사번', name: 'userId', width: '80px', align: 'center' },
+        { text: '성명', name: 'userNm', width: '100px', align: 'center' },
+        { text: '검진일', name: 'heaCheckedYmd', width: '160px', align: 'center' },
+        { text: '검진기관', name: 'heaCheckupOrgNm', width: '160px', align: 'center' },
+        { text: '판정', name: 'heaDiagnoseNm', width: '120px', align: 'center' },
+        { text: '질환', name: 'heaDiseaseNm', width: '200px', align: 'center' }
       ];
-      this.gridResultDiagHeaderOptions = [
-        { text: '판정', name: 'heaDiagnoseNm', width: '20%', align: 'center' },
-        { text: '질환종류', name: 'heaDiseaseClassNm', width: '40%' },
+      this.gridResultDiagHistoryHeaderOptions = [
+        { text: '판정', name: 'heaDiagnoseNm', width: '15%', align: 'center' },
+        { text: '질환종류', name: 'heaDiseaseClassNm', width: '45%' },
         { text: '질환', name: 'heaDiseaseNm', width: '20%' },
         { text: '유해인자', name: 'heaHazardNm', width: '20%' }
       ];
@@ -167,8 +172,6 @@ export default {
       this.searchResultDiagUrl = selectConfig.checkupResultDiag.list.url;
 
       this.getList();
-      this.getDetail(1);
-      this.getResultDiagList(1);
     },
     /** /초기화 관련 함수 **/
     
@@ -180,66 +183,48 @@ export default {
     */
     getList () {
       this.$http.url = this.searchUrl;
-      this.$http.type = 'GET'; 
+      this.$http.type = 'get'; 
       this.$http.param = {
+        'heaCheckupPlanNo': this.checkupResult.heaCheckupPlanNo,
         'userId': this.checkupResult.userId
       };
       this.$http.request((_result) => {
-        this.gridData = _result.data;
+        this.gridHistoryData = _result.data;
       }, (_error) => {
-        console.log(_error);
+        window.getApp.$emit('APP_REQUEST_ERROR', _error);
       });
     },
     getDetail () {
       this.$http.url = this.$format(this.detailUrl, this.selectedData.heaCheckupPlanNo, this.selectedData.userId);
-      this.$http.type = 'GET'; 
+      this.$http.type = 'get'; 
       this.$http.request((_result) => {
         this.checkupResult = _result.data;
       }, (_error) => {         
+        window.getApp.$emit('APP_REQUEST_ERROR', _error);
       });            
     },
     getResultDiagList () {
       this.$http.url = this.searchResultDiagUrl;
-      this.$http.type = 'GET';
+      this.$http.type = 'get';
       this.$http.param = this.selectedData;
       this.$http.request((_result) => {
-        this.gridResultDiagData = _result.data;
+        this.gridResultDiagHistoryData = _result.data;
       }, (_error) => {
-        console.log(_error);
+        window.getApp.$emit('APP_REQUEST_ERROR', _error);
       });
+    },
+    selectedRow (data) {
+      this.selectedData.heaCheckupPlanNo = data.heaCheckupPlanNo;
+      this.selectedData.userId = data.userId;
+      this.getDetail();
+      this.getResultDiagList();
     },
     
     /** /Call API service **/
-    
-    /** validation checking(필요없으면 지워주세요) **/
-    validateState (_ref) {
-      if (this.veeBag[_ref] && (this.veeBag[_ref].dirty || this.veeBag[_ref].validated)) {
-        return !this.errors.has(_ref);
-      }
-      return null;
-    },
-    /** /validation checking **/
-    
-    /** Component Events, Callbacks (버튼 제외) **/
-    
-    /** /Component, Callbacks (버튼 제외) **/
-    
     /** Button Event **/
-    /**
-    * 저장 버튼 처리용 샘플함수
-    */
-    btnSaveClickedCallback (_result) {
-      this.isSubmit = false;  // 반드시 isSubmit을 false로 초기화 하세요. 그렇지 않으면 버튼을 다시 클릭해도 동작하지 않습니다.
-      // TODO : 여기에 추가 로직 삽입(로직 삽입시 지워주세요)
-      window.getApp.emit('APP_REQUEST_SUCCESS', "정상적으로 저장 되었습니다.");
-    },
-    /**
-    * 버튼 에러 처리용 공통함수
-    */
-    btnClickedErrorCallback (_result) {
-      this.isSubmit = false;  // 반드시 isSubmit을 false로 초기화 하세요. 그렇지 않으면 버튼을 다시 클릭해도 동작하지 않습니다.
-      // TODO : 여기에 추가 로직 삽입(로직 삽입시 지워주세요)
-      window.getApp.emit('APP_REQUEST_ERROR', _result);
+    closePopup () {
+      // 부모창에 값 전달
+      this.$emit('closePopup');
     },
     /** /Button Event **/
     

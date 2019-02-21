@@ -1,5 +1,5 @@
 <!--
-  목적 : 건강검진기관 일정
+  목적 : 검진기관 일정
   작성자 : kga
   Detail :
   *
@@ -13,13 +13,13 @@
         <b-card no-body class="px-3 py-2">
           <b-row class="mt-2">
             <b-col sm="4">
-              <y-label label="검진종류: " /><y-label :label="checkupPlan.heaCheckupClassNm" />
+              <y-label label="검진종류: " /><y-label :label="checkupPlan.heaCheckupClassNm" fieldable="true" />
             </b-col>
             <b-col sm="4">
-              <y-label label="검진계획: " /><y-label :label="checkupPlan.heaCheckupPlanNm" />
+              <y-label label="검진계획: " /><y-label :label="checkupPlan.heaCheckupPlanNm" fieldable="true" />
             </b-col>
             <b-col sm="4">
-              <y-label label="검진일자: " /><y-label :label="checkupPlan.heaCheckupPlanPeriod" />
+              <y-label label="검진일자: " /><y-label :label="checkupPlan.heaCheckupPlanPeriod" fieldable="true" />
             </b-col>
           </b-row>
         </b-card>
@@ -35,10 +35,8 @@
                 :action-url="editUrl"
                 :param="gridSelectedRows"
                 :is-submit="isEditSubmit"
-                type="save"
                 title="저장"
-                size="small"
-                color="primary"
+                color="blue"
                 action-type="put"
                 beforeSubmit = "beforeEditSubmit"
                 @beforeEditSubmit="beforeEditSubmit"
@@ -47,11 +45,11 @@
               />
           </div>
           <y-data-table
-            label="건강검진 기관 일정 목록"
+            label="검진 기관 일정 목록"
             ui="bootstrap"
             :headers="gridHeaderOptions"
             :items="gridData"
-            :rows="5"
+            height="400"
             v-model="gridSelectedRows"
           >
             <el-table-column
@@ -73,7 +71,8 @@ export default {
   /** attributes: name, components, props, data **/
   name: 'org-calendar',  
   props: {
-    selectedCheckupPlanNo: 0
+    selectedCheckupPlanNo: 0,
+    selectedTabIndex: 0
   },
   // TODO: 화살표 함수(=>)는 data에 사용하지 말 것
   //    data: () => { return { a: this.myProp }}) 화살표 함수가 부모 컨텍스트를 바인딩하기 때문에 this는 예상과 달리 Vue 인스턴스가 아니기 때문에 this.myProp는 undefined로 나옵니다.
@@ -100,10 +99,12 @@ export default {
     };
   },
   watch: {
-    selectedCheckupPlanNo: function (newValue, oldValue) {      
+    selectedCheckupPlanNo: function (newValue, oldValue) {
       this.checkupPlan.heaCheckupPlanNo = this.selectedCheckupPlanNo;
       this.getDetail();
       this.getList();
+    },
+    selectedTabIndex: function (newValue, oldValue) {
     }
   },
   /** Vue lifecycle: created, mounted, destroyed, etc **/
@@ -120,7 +121,6 @@ export default {
   mounted () {
   },
   beforeDestory () {
-    this.init();
   },
   /** methods **/
   methods: {
@@ -128,8 +128,8 @@ export default {
     init () {
       // 그리드 헤더 설정
       this.gridHeaderOptions = [
-        { text: '건강검진 기관', name: 'heaCheckupOrgNm', width: '25%' },
-        { text: '기간', name: 'heaCheckupPlanOrgPeriod', width: '45%', align: 'center', type: 'text' },
+        { text: '검진 기관', name: 'heaCheckupOrgNm', width: '25%' },
+        { text: '기간', name: 'startEndYmd', width: '45%', align: 'center', type: 'datepicker', range: true },
         { text: '일일 예약최대인원', child: 
           [
             { text: '평일', name: 'weekdayMax', width: '15%', type: 'number' },
@@ -161,18 +161,26 @@ export default {
       this.$http.type = 'get'; 
       this.$http.request((_result) => {
         this.checkupPlan = _result.data;
-      }, (_error) => {         
+      }, (_error) => {
+        window.getApp.$emit('APP_REQUEST_ERROR', _error);
       });
     },
-    getList () {
+    getList (recall) {
       this.$http.url = this.searchUrl;
       this.$http.type = 'get'; 
       this.$http.param = {
         'heaCheckupPlanNo': this.checkupPlan.heaCheckupPlanNo
       };
       this.$http.request((_result) => {
-        this.gridData = _result.data;
-      }, (_error) => {         
+        if (typeof recall === 'undefined') {
+          this.gridData = _result.data;
+          this.getList(false);
+        }
+        else {
+          this.gridData = _result.data;
+        }        
+      }, (_error) => {
+        window.getApp.$emit('APP_REQUEST_ERROR', _error);
       });
     },
     /** /Call API service **/
@@ -183,7 +191,26 @@ export default {
      **/
     beforeEditSubmit () {
       if (this.gridSelectedRows.length > 0) {
-        this.isEditSubmit = confirm('건강검진기관 일정을 수정하시겠습니까?');
+        window.getApp.$emit('CONFIRM', {
+          title: '확인',
+          message: '검진기관 일정을 수정하시겠습니까?',
+          type: 'info',
+          // 확인 callback 함수
+          confirmCallback: () => {
+            this.isEditSubmit = true;
+            this.gridSelectedRows.forEach(item => {
+              item.startYmd = item.startEndYmd[0];
+              item.endYmd = item.startEndYmd[1];
+            });
+          }
+        });
+      }
+      else {
+        window.getApp.$emit('ALERT', {
+          title: '안내',
+          message: '선택된 검강검진기관이 없습니다. 목록 앞단에 선택박스를 확인하세요.',
+          type: 'warning',
+        });
       }
     },
     /** /validation checking **/
@@ -199,16 +226,18 @@ export default {
     btnEditClickedCallback (_result) {
       this.isEditSubmit = false;
       this.getList();      
-      alert('건강검진기관 일정을 수정하였습니다.'); 
-      // window.getApp.emit('APP_REQUEST_SUCCESS', "정상적으로 저장 되었습니다.");
+      window.getApp.$emit('ALERT', {
+        title: '안내',
+        message: '검진기관 일정을 수정하였습니다.',
+        type: 'success',
+      });
     },
     /**
     * 버튼 에러 처리용 공통함수
     */
     btnClickedErrorCallback (_result) {
       this.isEditSubmit = false;       
-      alert('작업진행 중 오류가 발생했습니다. 재시도 후 지속적으로 오류 발생시 관리자에게 문의하세요.');
-      // window.getApp.emit('APP_REQUEST_ERROR', _result);
+      window.getApp.$emit('APP_REQUEST_ERROR', _result);
     },
     /** /Button Event **/
     

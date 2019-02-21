@@ -9,7 +9,7 @@
 <template>
   <div id="suspectHistoryDiv">
     <b-container fluid>
-      <b-row>
+      <b-row ref="searchBox">
         <b-col sm="12">
           <b-card header-class="default-card">
             <div slot="header">
@@ -18,27 +18,30 @@
               </div>
               <div class="float-right">
                 <y-btn
+                  :title="searchArea.title"
+                  color="green"                
+                  @btnClicked="btnSearchVisibleClicked" 
+                />
+                <y-btn
                     :action-url="searchUrl"
                     :param="searchParam"
-                    type="search"
                     title="검색"
-                    size="mini"
-                    color="success"
+                    color="green"
                     action-type="get"
                     @btnClicked="btnSearchClickedCallback" 
                     @btnClickedErrorCallback="btnClickedErrorCallback"
                   />
               </div>
             </div>
-            <b-row>
+            <b-row v-if="searchArea.show">
               <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
                 <y-datepicker
                   :width="baseWidth"
                   :editable="editable"
                   :range="true"
                   label="기간"
-                  name="period"
-                  v-model="searchParam.period"
+                  name="visitPeriod"
+                  v-model="searchParam.visitPeriod"
                 >
                 </y-datepicker>
               </b-col>
@@ -93,9 +96,21 @@
                       :editable="editable"
                       :disabled="disabled"
                       ui="bootstrap"
-                      label="상담자"
+                      label="유소견자"
                       name="userNm"
                       v-model="consult.userNm"
+                    >
+                    </y-text>
+                  </b-col>
+                  <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
+                    <y-text
+                      :width="baseWidth"
+                      :editable="editable"
+                      :disabled="disabled"
+                      ui="bootstrap"
+                      label="상담자"
+                      name="counselor"
+                      v-model="consult.counselor"
                     >
                     </y-text>
                   </b-col>
@@ -192,6 +207,7 @@ export default {
       consult: {
         visitYmd: '',
         userNm: '',
+        counselor: '',
         beManagedYmd: '',
         notManagedYmd: '',
         diseasePast: '',
@@ -199,8 +215,12 @@ export default {
         symptom: '',
         remark: '',
       },
+      searchArea: {
+        title: '검색박스숨기기',
+        show: true
+      },
       searchParam: {
-        period: null,
+        visitPeriod: null,
         userId: 'dev',
       },
       baseWidth: 8,
@@ -237,7 +257,6 @@ export default {
 
       // 유소견자 이력 그리드 헤더 설정
       this.suspectHistoryGridHeaderOptions = [
-        { text: 'NO', name: 'rowNum', width: '12%', align: 'center' },
         { text: '상담일', name: 'visitYmd', width: '25%', align: 'center' },
         { text: '유소견자 지정일', name: 'beManagedYmd', width: '30%', align: 'center' },
         { text: '유소견자 제외일', name: 'notManagedYmd', width: '30%', align: 'center' },
@@ -299,6 +318,12 @@ export default {
     btnSearchClickedCallback () {
       this.getDataList();
       window.getApp.$emit('APP_REQUEST_SUCCESS', '검색 버튼이 클릭 되었습니다.');
+    },
+    // 검색박스숨기기
+    btnSearchVisibleClicked () {      
+      this.searchArea.show = !this.searchArea.show;
+      if (this.searchArea.show) this.searchArea.title = '검색박스숨기기';
+      else this.searchArea.title = '검색박스보이기';
     },
     // 버튼 에러 처리
     btnClickedErrorCallback (_result) {

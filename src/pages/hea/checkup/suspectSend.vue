@@ -1,6 +1,6 @@
 <!--
-  목적 : 건강검진 - 유소견자 메일발송
-  Detail : 건강검진 결과에 유소견자 메일, 알림톡, SMS 발송하는 화면
+  목적 : 검진 - 유소견자 메일발송
+  Detail : 검진 결과에 유소견자 메일, 알림톡, SMS 발송하는 화면
   *
   examples:
   *
@@ -248,15 +248,30 @@ export default {
 
       if (_result.data === -1) 
       {
-        window.alert("입력한 질환 코드가 있습니다. 다시 입력해 주세요.");
+        // window.alert("입력한 질환 코드가 있습니다. 다시 입력해 주세요.");
+        window.getApp.$emit('ALERT', {
+          title: '안내',
+          message: '입력한 질환 코드가 있습니다. 다시 입력해 주세요.',
+          type: 'warning',  // success / info / warning / error
+        });
       }
       else if (_result.data === 0)
       {
-        window.alert("수정에 실패하였습니다.");
+        // window.alert("수정에 실패하였습니다.");
+        window.getApp.$emit('ALERT', {
+          title: '안내',
+          message: '수정에 실패하였습니다.',
+          type: 'warning',  // success / info / warning / error
+        });
       }
       else
       {
-        window.alert("수정하였습니다.");
+        // window.alert("수정하였습니다.");
+        window.getApp.$emit('ALERT', {
+          title: '안내',
+          message: '수정하였습니다.',
+          type: 'warning',  // success / info / warning / error
+        });
       }
     },
     btnClearClickedCallback () {

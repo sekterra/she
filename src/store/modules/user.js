@@ -1,5 +1,5 @@
 /* eslint-disable */
-import { loginByUsername, logout, getUserInfo } from '@/api/login'
+import { loginByUsername, logout, getUserInfo, loginByUserAccount, getUserMenus } from '@/api/login'
 import { getToken, setToken, removeToken } from '@/utils/auth'
 
 const user = {
@@ -41,11 +41,14 @@ const user = {
     },
     SET_ROLES: (state, roles) => {
       state.roles = roles
-    }
+    },
+    SET_USER: (state, user) => {
+      state.user = user
+    },
   },
 
   actions: {
-    // 用户名登录
+    // 사용자 이름 로그인
     LoginByUsername({ commit }, userInfo) {
       const username = userInfo.username.trim()
       return new Promise((resolve, reject) => {
@@ -60,29 +63,79 @@ const user = {
       })
     },
 
-    // 获取用户信息
+    // 사용자 계정 로그인
+    LoginByUserAccount({ commit }, userInfo) {
+      const userId = userInfo.username.trim()
+      return new Promise((resolve, reject) => {
+        loginByUserAccount(userId, userInfo.password).then(response => {
+          const data = response.data;
+          console.log('::::::::::::: login:' + data + ' :::::::::::::');
+          // 원본
+          // commit('SET_TOKEN', data.token)
+          // setToken(response.data.token)
+          commit('SET_TOKEN', data.token);
+          setToken(data.token);
+          resolve()
+        }).catch(error => {
+          // console.log(error);
+          console.log('::::::::::::: login error:' + error + ' :::::::::::::');
+          window.alert('Not login');
+          reject(error)
+        })
+      });
+    },
+
+    // 사용자 정보 얻기
     GetUserInfo({ commit, state }) {
       return new Promise((resolve, reject) => {
         getUserInfo(state.token).then(response => {
-          if (!response.data) { // 由于mockjs 不支持自定义状态码只能这样hack
+          if (!response.data) { // mockjs는 맞춤 상태 코드를 지원하지 않으므로 다음과 같이 Interupt 가능
             reject('error')
           }
           const data = response.data
 
-          if (data.roles && data.roles.length > 0) { // 验证返回的roles是否是一个非空数组
-            commit('SET_ROLES', data.roles)
+          if (data.auths && data.auths.length > 0) { // 사용자 roles 확인
+            commit('SET_ROLES', data.auths)
           } else {
             reject('getInfo: roles must be a non-null array !')
           }
 
-          commit('SET_NAME', data.name)
-          commit('SET_AVATAR', data.avatar)
-          commit('SET_INTRODUCTION', data.introduction)
+          commit('SET_NAME', data.user.userNm)
+          commit('SET_USER', data.user)
+          // commit('SET_AVATAR', data.avatar)
+          // commit('SET_INTRODUCTION', data.introduction)
+
+          // TODO : 원본 소스
+          // if (data.roles && data.roles.length > 0) { // 사용자 roles 확인
+          //   commit('SET_ROLES', data.roles)
+          // } else {
+          //   reject('getInfo: roles must be a non-null array !')
+          // }
+
+          // commit('SET_NAME', data.name)
+          // commit('SET_AVATAR', data.avatar)
+          // commit('SET_INTRODUCTION', data.introduction)
           resolve(response)
         }).catch(error => {
           reject(error)
         })
       })
+    },
+
+    // 사용자 계정 로그인
+    GetUserMenus({ commit }, state) {
+      const userId = this.state.user.user.userId.trim()
+      return new Promise((resolve, reject) => {
+        getUserMenus(userId).then(response => {
+          const data = response.data;
+          resolve(data)
+        }).catch(error => {
+          // console.log(error);
+          console.log('::::::::::::: login error:' + error + ' :::::::::::::');
+          window.alert('Not login');
+          reject(error)
+        })
+      });
     },
 
     // 第三方验证登录

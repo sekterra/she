@@ -24,14 +24,18 @@
         </b-col>
         <b-col 
           v-if="editable"
-          :sm="width">
-          <switches 
-            :name="name"
-            theme="bootstrap"
-            :color="color"
+          :sm="width"
+          class="control_area"
+          >
+          <el-switch 
             v-model="vValue"
-            @input="input">
-          </switches>
+            theme="bootstrap"
+            :active-value="trueValue"
+            :inactive-value="falseValue"
+            :color="color"
+            @change="input"
+            >
+          </el-switch>
           <span v-if="text">
             {{text}}
           </span>
@@ -48,13 +52,11 @@
 </template>
 
 <script>
-import Switches from 'vue-switches';
+// TODO : IE 연동 문제로 삭제
+// import Switches from 'vue-switches';
 export default {
   /** attributes: name, components, props, data **/
   name: 'y-switch',  // 반드시 입력하세요(안 하면 warning 발생). 네이밍 룰은 현재 vue component의 파일명의 단어를 "-"로 구분(예:exam-data)하여 입력하시면 됩니다. 입력후 이 주석은 지워주세요.
-  components: {
-    Switches
-  },
   props: {
     ui: {
       type: String,
@@ -98,12 +100,12 @@ export default {
     // 리턴 값이 Boolean 형태가 아닐 경우에 대한 true 대체값
     trueValue: {
       type: [String, Number],
-      default: null
+      default: 'Y'
     },
     // 리턴 값이 Boolean 형태가 아닐 경우에 대한 false 대체값
     falseValue: {
       type: [String, Number],
-      default: null
+      default: 'N'
     },
     // b-row에 추가할 클래스
     rowClass: {
@@ -142,7 +144,7 @@ export default {
     },
     // select box에서 선택되어진 text 값
     text () {
-      if (this.vValue) return this.selectText;
+      if (this.vValue === this.trueValue) return this.selectText;
       else return this.unselectText;
     }
   },
@@ -163,6 +165,7 @@ export default {
     this.init();
   },
   mounted () {
+    $('.control_area').find('span').css('font-size', '80%');
   },
   beforeDestory () {
     this.init();
@@ -172,7 +175,7 @@ export default {
     /** 초기화 관련 함수 **/
     init () {
       // TODO : 여기에 초기 설정용 함수를 호출하거나 로직을 입력하세요.
-      this.vValue = this.getValue(this.value);
+      this.vValue = this.value; // this.getValue(this.value);
     },
     /** /초기화 관련 함수 **/
     
@@ -190,18 +193,20 @@ export default {
     
     /** Component Events, Callbacks (버튼 제외) **/
     input () {
-      var value = null; 
-      if (this.trueValue && this.falseValue) value = this.vValue ? this.trueValue : this.falseValue;
-      else value = this.vValue;
-      return this.$emit('input', value);
+      // TODO : 불필요한 로직
+      // var value = null; 
+      // if (this.trueValue && this.falseValue) value = this.vValue ? this.trueValue : this.falseValue;
+      // else value = this.vValue;
+      return this.$emit('input', this.vValue);
     },
     /** /Component, Callbacks (버튼 제외) **/
         
     /** 기타 function **/
-    getValue (_value) {
-      if (this.trueValue && this.falseValue) return this.trueValue === _value;
-      else return _value;
-    }
+    // TODO : 불필요한 함수
+    // getValue (_value) {
+    //   if (this.trueValue && this.falseValue) return this.trueValue === _value;
+    //   else return _value;
+    // }
     /** /기타 function **/
   }
 };

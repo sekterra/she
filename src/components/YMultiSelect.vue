@@ -169,7 +169,7 @@ export default {
     // placeholder
     placeholder: {
       type: String,
-      default: ''
+      default: '선택하세요'
     },
     // 필수 입력 여부
     required: {

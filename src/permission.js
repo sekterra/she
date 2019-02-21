@@ -25,21 +25,33 @@ router.beforeEach((to, from, next) => {
       next({ path: '/' })
       NProgress.done() // if current page is dashboard will not trigger	afterEach hook, so manually handle it
     } else {
-      if (store.getters.roles.length === 0) { // 判断当前用户是否已拉取完user_info信息
-        store.dispatch('GetUserInfo').then(res => { // 拉取user_info
-          const roles = res.data.roles // note: roles must be a array! such as: ['editor','develop']
-          store.dispatch('GenerateRoutes', { roles }).then(() => { // 根据roles权限生成可访问的路由表
-            router.addRoutes(store.getters.addRouters) // 动态添加可访问路由表
-            next({ ...to, replace: true }) // hack方法 确保addRoutes已完成 ,set the replace: true so the navigation will not leave a history record
+      if (store.getters.roles.length === 0) { // 현재 사용자가 user_info 정보를 가져 왔는지 확인
+        store.dispatch('GetUserInfo').then(result => { // user_info 조회
+          console.log(':::::::::::::::: GetUserInfo ::::::::::::::::');
+          store.dispatch('GetUserMenus').then(_menus => {
+            // TODO : 원본 소스
+            // const roles = res.data.roles // note: roles must be a array! such as: ['editor','develop']
+            store.dispatch('GenerateRoutes', { _menus }).then(() => { // 역할을 기반으로 액세스 가능한 라우팅 테이블 생성
+              router.addRoutes(store.getters.addRouters) // 접근 가능한 라우팅 테이블을 동적으로 추가
+              next({ ...to, replace: true }) // addRoutes가 완료되었는지 확인하기위한 해킹 메소드 , set the replace: true so the navigation will not leave a history record
+            })
+            // next();
+          }).catch((err) => {
+            store.dispatch('FedLogOut').then(() => {
+              Message.error(err || 'Verification failed, please login again')
+              next({ path: '/' })
+            })
           })
+          // window.alert('로그인 성공');          
         }).catch((err) => {
           store.dispatch('FedLogOut').then(() => {
             Message.error(err || 'Verification failed, please login again')
             next({ path: '/' })
           })
         })
-      } else {
-        // 没有动态改变权限的需求可直接next() 删除下方权限判断 ↓
+      } 
+      else {
+        // 동적으로 권한을 변경할 필요가 없으며, next ()로 권한 판단 삭제
         if (hasPermission(store.getters.roles, to.meta.roles)) {
           next()
         } else {

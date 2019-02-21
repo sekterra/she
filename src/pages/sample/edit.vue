@@ -472,6 +472,16 @@
         <!-- 본문 영역 종료 -->
       </b-col>
     </b-row>
+
+    <b-row>
+      <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
+        <y-file-upload
+        @fileUploadComplete="fileUploadComplete"
+        >
+        </y-file-upload>
+      </b-col>
+    </b-row>
+
     <b-row class="mt-2">
       <b-col sm="12">
         <b-card no-body>
@@ -515,7 +525,6 @@
       </b-col>
     </b-row>
     
-    
   </b-container>
 </template>
 
@@ -550,7 +559,7 @@ export default {
       time: null,
       period: null,
       remark: '',
-      switch: 'Y',
+      switch: 'N',
       shuttlebox: [],
     },
     popupData: {},
@@ -570,8 +579,7 @@ export default {
       // { 'icon': 'times', callbackName: 'iconCallback' }
     ],
     preprenIcons: [
-      // { 'icon': 'search', callbackName: 'iconCallback' },
-      // { 'icon': 'times', callbackName: 'iconCallback' }
+      { 'icon': 'search', callbackName: 'iconCallback' },
     ],
     searchParam: {
       year: 2018,
@@ -601,6 +609,51 @@ export default {
 
     // TODO : 팝업에서 보내는 정보 수신
     window.getApp.$on('POPUP_SEND_DATA', this.popupSelectChanged);
+
+    // alert 사용 예시
+    window.getApp.$emit('ALERT', {
+      title: 'alert title',
+      message: 'alert message',
+      type: 'warning',  // success / info / warning / error
+      // TODO : 필요시 추가하세요.
+      // callback: () => {
+      //   window.alert('');
+      // }
+    });
+
+    // confirm 사용 예시
+    // window.getApp.$emit('CONFIRM', {
+    //   title: 'confirm title',
+    //   message: 'confirm message',
+    //   // TODO : 필요시 추가하세요.
+    //   // type: 'success',  // success / info / warning / error
+    //   // 확인 callback 함수
+    //   confirmCallback: () => {
+    //     window.alert('confirm');
+    //   },
+    //   // 취소 callback 함수
+    //   cancelCallback: () => {
+    //     window.alert('cancel');
+    //   }
+    // });
+
+    // // toast message 사용 예시
+    // window.getApp.$emit('MESSAGE', {
+    //   // TODO : 필요시 추가하세요.
+    //   // type: 'success',  // success / info / warning / error
+    //   message: 'this is toast message',
+    //   // TODO : 팝업 유지시간(기본 3초)
+    //   // duration: 5000
+    // });
+
+    // // 우측 안내 팝업 사용 예시
+    // window.getApp.$emit('NOTIFY', {
+    //   // TODO : 필요시 추가하세요.
+    //   // type: 'success',  // success / info / warning / error
+    //   message: 'this is notify message',
+    //   // TODO : 팝업 유지시간(기본 3초)
+    //   // duration: 5000
+    // });
   },
   mounted () {
     setTimeout(() => {
@@ -615,6 +668,9 @@ export default {
   /** methods **/
   methods: {
     init () {
+      var from = this.$comm.getToday();
+      var to = this.$comm.getCalculatedDate(from, '2m', 'YYYY-MM-DD', 'YYYY-MM-DD');
+      this.demo.date = to;
       // 그리드 멀티 헤더 설정(예시)
       this.gridMultiHeaderOptions = [
         { text: 'Date', name: 'date', width: '150', fixed: true },
@@ -658,7 +714,6 @@ export default {
         { text: '체크박스', name: 'checkbox', width: '100', type: 'checkbox', items: this.shuttleboxItems, itemText: 'text', itemValue: 'value' },
         { text: '버튼', name: 'button', width: '80', type: 'select', items: this.shuttleboxItems, itemText: 'text', itemValue: 'value' },
       ];
-
 
       this.getGridData();
       
@@ -758,6 +813,12 @@ export default {
     popupSelectChanged (_result) {
       this.popupData = _result;
       console.log('::::::::: edit popupData ::::::::::' + JSON.stringify(this.popupData));
+    },
+    /**
+     * 파일 업로드 완료 후 관련 테이블에 업데이트
+     */
+    fileUploadComplete (_result) {
+      // 추후 작업 예정
     },
     /** /Events, Callbacks (버튼 제외) **/
 

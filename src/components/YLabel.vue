@@ -9,11 +9,22 @@
 <template>
   <span :class="{'text-center': true,  'cutstom-title-color': colorSet}">
     <f-icon v-if="icon" :icon="icon" :size="size"/>
-    <small v-if="size === 'sm'">
-      <label :for="name" size="size" >{{label}}</label>
-    </small>
+
+    <span v-if="fieldable">   
+      <span v-if="size === 'sm'">
+        <small><label :for="name" style="color:#0174DF;">{{label}}</label></small>
+      </span>
+      <span v-else>
+        <label :for="name" style="color:#0174DF;">{{label}}</label>
+      </span>   
+    </span>
     <span v-else>
-      <label :for="name">{{label}}</label>
+      <span v-if="size === 'sm'">
+        <small><label :for="name">{{label}}</label></small>
+      </span>
+      <span v-else>
+        <label :for="name">{{label}}</label>
+      </span>
     </span>
     <span v-if="required"><label class="default-required">*</label></span>
   </span>
@@ -52,6 +63,10 @@ export default {
       default: '#545454'
     },
     required: {
+      type: Boolean,
+      default: false
+    },
+    fieldable: {
       type: Boolean,
       default: false
     }

@@ -179,9 +179,8 @@ examples:
         <div 
           v-if="label"
           class="float-left">
-          <y-label 
-            :label="label" icon="list-alt" color-class="cutstom-title-color"
-          />
+          <y-label :label="label" icon="list-alt" color-class="cutstom-title-color" />
+          <y-label  :label="'(' + (datatableItems ? datatableItems.length : 0) + '건)'" style="font-size:15px;" />
         </div>
         <div 
           class="float-right"
@@ -212,15 +211,27 @@ examples:
         :border="true"
         header-cell-class-name="default-th"
         cell-class-name="default-td"
-        style="width: 100%;"
+        style="width: 100%; min-height: 200px;"
         :height="height"
         :rows="rows"
+        :row-class-name="tableRowClassName"
+        :span-method="onSpanMethod"
         @selection-change="selectionChanged"
         @current-change="currentChanged"
         @row-click="selectedRow"
-        >
-        <!-- check box 등 컨트롤이 추가되는 영역 -->
-        <slot name="selection"></slot>
+        @row-dblclick="rowDoubleClicked"
+        @expand-change="expandChange"
+        >        
+        <!-- :highlight-current-row="true" 선택된 행 표시가 가능하나. 좀 더 명확하도록 변경함 -->
+        <!-- check box 등 컨트롤이 추가되는 영역 -->        
+        <slot name="selection"></slot>   
+        <!-- <el-table-column type="index" label="No" width="55" align="center"></el-table-column> -->
+        <el-table-column v-if="useRownum" label="No" width="55" align="center">
+          <template slot-scope="scope">
+            <div>{{datatableItems.length - datatableItems.indexOf(scope.row)}}</div>
+          </template>
+        </el-table-column>
+        <slot name="expand"></slot>
         <el-table-column
           v-for="(header, index) in headers"
           :key="header.name + '_' + index"
@@ -232,10 +243,8 @@ examples:
           :fixed="header.fixed"
           :header-align	="header.hasOwnProperty('headerAlign') ? header.headerAlign : headerAlign"
           class-name="default-td"
-        >
-          <template 
-            slot-scope="scope"
-            >
+        >        
+          <template slot-scope="scope">
               <el-button 
                 v-if="header.url"
                 type="text" 
@@ -260,6 +269,13 @@ examples:
                 ui="bootstrap"
                 v-model="scope.row[header.name]"
                 />
+              <y-textarea
+                v-else-if="header.type && header.type.toLowerCase() === 'textarea'"
+                :editable="editable"
+                rowClass=""
+                ui="bootstrap"
+                v-model="scope.row[header.name]"
+              />
               <y-number
                 v-else-if="header.type && header.type.toLowerCase() === 'number'"
                 :editable="editable"
@@ -308,6 +324,7 @@ examples:
                 :itemText="header.itemText ? header.itemText : ''"
                 :itemValue="header.itemValue ? header.itemValue : ''"
                 :hasBottomMargin="false"
+                :use-default="header.useDefault ? header.useDefault : false"
                 rowClass=""
                 ui="bootstrap"
                 v-model="scope.row[header.name]"
@@ -322,10 +339,10 @@ examples:
               :prop="_header.name"
               :label="_header.text"
               :min-width="_header.width"
-              :align="header.align"
+              :align="_header.align"
               :sortable="!_header.hasOwnProperty('sortable') || _header.sortable"
               show-overflow-tooltip
-              :header-align	="header.hasOwnProperty('headerAlign') ? header.headerAlign : headerAlign"
+              :header-align	="_header.hasOwnProperty('headerAlign') ? _header.headerAlign : headerAlign"
               >
               <template  slot-scope="scope">
                 <el-button 
@@ -354,6 +371,7 @@ examples:
                 <y-number
                   v-else-if="_header.type && _header.type.toLowerCase() === 'number'"
                   :editable="editable"
+                  rowClass=""
                   ui="bootstrap"
                   v-model="scope.row[_header.name]"
                   />
@@ -391,6 +409,7 @@ examples:
                   :items="_header.items ? _header.items : []"
                   :itemText="_header.itemText ? _header.itemText : ''"
                   :itemValue="_header.itemValue ? _header.itemValue : ''"
+                  :use-default="_header.useDefault ? _header.useDefault : false"
                   ui="bootstrap"
                   v-model="scope.row[_header.name]"
                   />
@@ -415,6 +434,7 @@ examples:
       </el-table>
       <y-pagination
         v-if="usePaging"
+        ref="pagination"
         :page-size="rows"
         :page.sync="listQuery.page" 
         :limit.sync="listQuery.limit" 
@@ -429,6 +449,7 @@ examples:
 
 <script>
 import YPagination from '@/components/YPagination'; // Secondary package based on el-pagination
+import { spanRow } from 'element-ui-table-span-method'
 
 export default {
   /* attributes: name, components, props, data, computed */
@@ -493,7 +514,7 @@ export default {
     // 행 색상 구분 여부
     rowStripe: {
       type: Boolean,
-      default: true
+      default: false
     },
     // header text align 속성
     headerAlign: {
@@ -512,6 +533,11 @@ export default {
       type: Boolean,
       default: true
     },
+    // 그리드 높이
+    height: {
+      type: [String, Number],
+      default: '200'
+    },
     // 표시 되는 행 개수
     rows: {
       type: Number,
@@ -522,6 +548,21 @@ export default {
       type: Boolean,
       default: false
     },
+    useRownum: {
+      type: Boolean,
+      default: true
+    },
+    // el-table-column selection 관련 데이터 체크
+    checkItemData: {
+      type: Array
+    },
+    checkKey: {
+      type: String,
+      default: ''
+    },
+    spanOptions: {
+      type: Array
+    }
     // TODO : 페이징 사이즈를 설정할 필요가 있을지 몰라서 일단 주석처리
     // pageSizes: {
     //   type: Array,
@@ -567,12 +608,12 @@ export default {
       var width = 12 - this.width;
       return width <= 0 ? 12 : width;
     },
-    height () {
-      var headerHeight = 55;
-      var rowHeight = 44;
-      var border = 1;
-      return headerHeight + (rowHeight * this.rows) + border;
-    },
+    // height () {
+    //   var headerHeight = 55;
+    //   var rowHeight = 44;
+    //   var border = 1;
+    //   return headerHeight + (rowHeight * this.rows) + border;
+    // },
     itemsString () {
       return JSON.stringify(this.items);
     },
@@ -582,7 +623,7 @@ export default {
     }
   },
   watch: {
-    items () {
+    items (val, oldval) {
       // TODO : totalItems가 업데이트 되지 않는데 bug인지 이유는 잘 모르겠음
       // [bug fix] : 페이지가 처음 로딩시 그리드 데이터가 바인딩되었는데도, pagination이 표현 안되는 현상 발생했으나
       //                  우연히 totalItems를 강제로 할당해주니 표시가 됨(이유는 모름)
@@ -591,21 +632,42 @@ export default {
       // this.itemData = [this.items.length];
       // this.hideLoading();
       this.getList();
+    },
+    checkItemData () {
+      if (this.checkItemData !== undefined){
+        this.datatableItems.forEach(row => {
+          this.checkItemData.forEach(selectRow => {
+            if (row[this.checkKey] === selectRow[this.checkKey]) {
+              this.$refs.datatable.toggleRowSelection(row);
+            }
+          })
+        });
+      }
     }
   },
   /* Vue lifecycle: created, mounted, destroyed, etc */
   beforeMount () {
     // 이유 : vue.js는 SPA기반으로 동작하기 때문에 페이지를 이동하더라도 기존 입력된 정보가 그대로 남아 있는 문제가 있음
     Object.assign(this.$data, this.$options.data());
-    // TODO : 팝업이 닫힐때 선택 초기화
-    window.getApp.$on('POPUP_CLOSED', () => {
-      this.$refs.datatable.clearSelection();
-    });
+    // TODO : 팝업이 닫힐때 선택 초기화: 버그로 사용 안함
+    // window.getApp.$on('POPUP_CLOSED', () => {
+    //   if (typeof this.$refs.datatable === 'undefined') return;
+    //   this.$refs.datatable.clearSelection();
+    // });
 
     this.getList();
   },
   mounted () {
-    console.log(':::::::::::::::: mounted ');
+    // Selection - 초기 데이터가 셋팅 되어 있는 상황에서 화면 띄워줄시 체크 박스 셋팅
+    if (this.checkItemData !== undefined){
+      this.datatableItems.forEach(row => {
+        this.checkItemData.forEach(selectRow => {
+          if (row[this.checkKey] === selectRow[this.checkKey]) {
+            this.$refs.datatable.toggleRowSelection(row);
+          }
+        })
+      });
+    }
   },
   beforeDestroy () {
   },
@@ -618,11 +680,6 @@ export default {
     },
     deleteItem (_prop) {
       // this.$emit('APP_ON_READY');
-    },
-    hideLoading () {
-      var self = this;
-      // TODO : 1초 후 로딩표시 제거
-      setTimeout(() => { self.loading = false }, 1000);
     },
     moveCreatePage () {
       if (this.createUrl) this.$comm.movePageReplace(this.$router, this.createUrl);
@@ -660,8 +717,53 @@ export default {
     clearSelected () {
       this.selected = [];
     },
-    selectedRow () {
+    selectedRow (row, event, column) {
+      var clickTarget = event.target;
+      var table = null;
+      var tr = null;
+      var elements = [];
+      if (clickTarget.tagName === 'DIV')
+      {
+        table = clickTarget.parentElement.parentElement.parentElement.parentElement;
+        tr = clickTarget.parentElement.parentElement.parentElement;
+        if (tr.nodeName !== 'TR') return;
+
+
+        elements = table.getElementsByClassName("selected-row");
+        this.$_.forEach(elements, (element) => {
+          element.classList.remove("selected-row");
+        });
+
+        tr.classList.add("selected-row");
+      }
+      else if (clickTarget.tagName === 'TD') // 간혹 td로 잡히는 경우가 발생
+      {
+        table = clickTarget.parentElement.parentElement;
+        tr = clickTarget.parentElement;
+        if (tr.nodeName !== 'TR') return;
+
+        elements = table.getElementsByClassName("selected-row");
+        this.$_.forEach(elements, (element) => {
+          element.classList.remove("selected-row");
+        });
+
+        tr.classList.add("selected-row");
+      }
       this.$emit('selectedRow', this.singleSelection); 
+    },
+    rowDoubleClicked () {
+      this.$emit('rowDoubleClicked', this.singleSelection); 
+    },
+    expandChange (row, expandedRows) {
+      this.$emit('expandChange', row, expandedRows);
+    },
+    tableRowClassName ({row, rowIndex}) {
+      if (rowIndex%2 === 1) { 
+        return 'odd-row';
+      } else if (rowIndex%2 === 0) {
+        return 'even-row';
+      }
+      return '';
     },
     selectionChanged (val) {
       this.multipleSelection = val;
@@ -711,13 +813,20 @@ export default {
     },
     getList () {
       if (this.usePaging) {
-        var page = this.listQuery.page || 1;
-        var perPage = this.listQuery.limit;
-        var offset = (page - 1) * perPage;
-        this.datatableItems = this.$_.drop(this.items, offset).slice(0, perPage);
+        setTimeout(() => {
+          var page = this.listQuery.page || 1;
+          var perPage = this.listQuery.limit;
+          var offset = (page - 1) * perPage;
+          this.datatableItems = this.$_.drop(this.items, offset).slice(0, perPage);
+        }, 100);
       }
       else this.datatableItems = this.items;
     },
+    onSpanMethod ({ row, column, rowIndex, columnIndex }) {
+      // console.log(':::::::::::::::::: onSpanMethod :::::::::::::::::::::');
+      if (!this.spanOptions) return;
+      return spanRow({ row, column, rowIndex, columnIndex }, this.datatableItems, this.spanOptions)
+    }
   }
 };
 </script>
@@ -734,5 +843,17 @@ export default {
 }
 .default-td .cell {
   max-height:40px !important;overflow-y: auto; overflow-x: hidden;
+}
+.even-row {
+  background-color: #FAFAFA !important;
+}
+.odd-row {
+  background-color: white !important;
+}
+.selected-row {
+  background-color: #a5cca5 !important;
+}
+.selected-row:hover  td {
+  background-color: #a5cca5 !important;
 }
 </style>

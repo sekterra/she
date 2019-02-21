@@ -1,12 +1,12 @@
 <!--
-  목적 : 기준정보 건강검진
+  목적 : 기준정보 검진
   Detail : 
   *
   examples:
   *
   -->
 <template>
-  <el-tabs type="border-card" v-model="tabIndex">
+  <el-tabs type="border-card" v-model="tabIndex" @tab-click="tabClick">
     <el-tab-pane
       v-for="(item, i) in tabItems"
       :key="i"
@@ -18,7 +18,7 @@
         {{ item.title }}
       </span>
       <keep-alive>
-        <component :is="component" v-if="component" />
+        <component :is="component" v-if="component" :paneName="paneName" />
       </keep-alive>
     </el-tab-pane>
   </el-tabs>
@@ -44,7 +44,8 @@ export default {
         { title: '검진종류-검진항목', url: './checkupTestItem' },
       ],
       component: null,
-      tabIndex: 0
+      tabIndex: 0,
+      paneName: '',
     };
   },
   watch: {
@@ -62,13 +63,22 @@ export default {
   mounted () {
     this.loadComponent();
   },
-  beforeDestory () {
+  beforeDestroy () {
   },
   //* methods */
   methods: {
     loadComponent () {
       var path = this.tabItems[this.tabIndex].url;
       this.component = () => import(`${path}`);
+    },
+    /**
+     * 자식 페이지에 넘길 paneName 정보 업데이트
+     * tab 클릭시 마다
+     * tab : 클릭한 tab 정보
+     */
+    tabClick (tab) {
+      var nowDate = new Date();
+      this.paneName = tab.paneName + nowDate.getMilliseconds();
     }
   }
 };

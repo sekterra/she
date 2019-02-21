@@ -37,7 +37,7 @@
         </el-menu-item>
         <el-menu-item index="1-1" class="sub-menu">
           <b-row align-h="center" class="text-center">
-            <b-col sm="3" @click.stop="route('/hea/checkup/checkupPlan')">건강검진</b-col>
+            <b-col sm="3" @click.stop="route('/hea/checkup/checkupPlan')">검진</b-col>
             <b-col sm="3"></b-col>
             <b-col sm="3"></b-col>
             <b-col sm="3"></b-col>
@@ -67,7 +67,7 @@
         <b-navbar-nav>
           <b-nav-item-dropdown text="보건" class="mx-5" left>
             <b-dropdown-item href="#"  @click.stop="route('/hea/baseInfo/baseInfoTest')">기준정보</b-dropdown-item>
-            <b-dropdown-item href="#" @click.stop="route('/hea/checkup/checkupPlan')">건강검진</b-dropdown-item>
+            <b-dropdown-item href="#" @click.stop="route('/hea/checkup/checkupPlan')">검진</b-dropdown-item>
             <b-dropdown-item href="#" @click.stop="route('/hea/infirmary/generalBusiness')">건강관리실</b-dropdown-item>
             <b-dropdown-item href="#" @click.stop="route('hea/user/checkupReserve')">보건홈</b-dropdown-item>
             <b-dropdown-item href="#" @click.stop="route('/hea/workingEnvManage/hazard')">유해인자</b-dropdown-item>

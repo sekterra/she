@@ -2,6 +2,11 @@
 
 import Layout from '@/views/layout/Layout'
 
+/* Router Modules */
+import componentsRouter from './components'
+import chartsRouter from './charts'
+import tableRouter from './table'
+
 const sampleRouter = {
   // TODO : 1 Level
   path: '/sample',
@@ -9,18 +14,27 @@ const sampleRouter = {
   redirect: 'noredirect',
   name: 'sample',
   meta: {
-    title: 'sample',
+    title: '샘플소스',
     icon: 'component'
   },
   // TODO : 2 Level
   children: [
     // 기초 정보 메뉴
     {
+      path: 'autogenerator',
+      component: () => import('@/pages/autogenerator/AutoGenerator'),
+      name: 'AutoGenerator',          
+      meta: { title: '코드생성기', noCache: true }
+    },
+    {
       path: 'edit',
       component: () => import('@/pages/sample/edit'),
       name: 'edit',
-      meta: { title: 'editSample' }
+      meta: { title: 'y-Components' }
     },
+    componentsRouter,
+    chartsRouter,
+    tableRouter
   ]
 }
 

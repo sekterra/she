@@ -12,17 +12,14 @@
     <b-row>
       <b-col sm="12">
         <b-col sm="12" class="px-0">
-          <div class="float-right">
+          <div class="float-right mb-1">
             <y-btn
               v-if="editable"
-              type="save"
               title="관리대상 지정 및 해제"
-              size="small"
-              color="primary"
+              color="blue"
               @btnClicked="btnPopupClickedCallback" 
             />
           </div>
-          <b-row class="mb-3"></b-row>
           <y-data-table
             title="관리대상 유소견자 목록"
             label="관리대상 유소견자 목록"
@@ -39,16 +36,14 @@
         </b-col>
         <!-- 건강상담 목록 -->
         <b-col sm="12" class="px-0 mt-3">
-          <div class="float-right">
+          <div class="float-right mb-1">
             <y-btn
               v-if="editable&&deleteMode"
               :action-url="deleteUrl"
               :param="deleteValue"
               :is-submit="isDeleteSubmit"
-              type="delete"
               title="삭제"
-              size="small"
-              color="danger"
+              color="red"
               action-type="delete"
               beforeSubmit = "beforeDelete"
               @beforeDelete="beforeDelete"
@@ -56,7 +51,6 @@
               @btnClickedErrorCallback="btnClickedErrorCallback"
             />
           </div>
-          <b-row class="mb-3"></b-row>
           <y-data-table
             title="건강상담 목록"
             label="건강상담 목록"
@@ -89,18 +83,32 @@
             <b-card>
               <b-row>
                 <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
+                  <y-text
+                    :width="baseWidth"
+                    :editable="editable"
+                    ui="bootstrap"
+                    disabled="disabled"
+                    label="유소견자"
+                    name="userNm"
+                    v-model="consult.userNm"
+                    :required="true"
+                  >
+                  </y-text>
+                </b-col>
+                <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
                   <y-datepicker 
                     :width="baseWidth"
                     :editable="editable"
                     label="상담일"
-                    name="date"
+                    name="visitYmd"
                     v-model="consult.visitYmd"
                     default="today"
                     v-validate="'required'"
                     data-vv-name="date"
+                    :end="today"
                     :error-msg="errors.first('visitYmd')"
                     :required="true"
-                    :state="validateState('heaDrugNm')"
+                    :state="validateState('visitYmd')"
                   >
                   </y-datepicker>
                 </b-col>
@@ -109,13 +117,9 @@
                     :width="baseWidth"
                     :editable="editable"
                     ui="bootstrap"
-                    :disabled="true"
                     label="상담자"
-                    name="userNm"
-                    v-model="consult.userNm"
-                    :required="true"
-                    v-validate="'required'"
-                    :state="validateState('userNm')"
+                    name="counselor"
+                    v-model="consult.counselor"
                   >
                   </y-text>
                 </b-col>
@@ -173,10 +177,7 @@
               <div class="float-right mt-3">
                 <y-btn
                   v-if="editable"
-                  type="clear"
                   title="초기화"
-                  size="small"
-                  color="info"
                   @btnClicked="btnClearClickedCallback" 
                 />
                 <y-btn
@@ -184,10 +185,8 @@
                   :action-url="insertUrl"
                   :param="consult"
                   :is-submit="isInsertSubmit"
-                  type="save"
                   title="신규등록"
-                  size="small"
-                  color="warning"
+                  color="orange"
                   action-type="POST"
                   beforeSubmit = "beforeInsert"
                   @beforeInsert="beforeInsert"
@@ -199,10 +198,8 @@
                   :action-url="editUrl"
                   :param="consult"
                   :is-submit="isEditSubmit"
-                  type="save"
                   title="수정"
-                  size="small"
-                  color="warning"
+                  color="orange"
                   action-type="PUT"
                   beforeSubmit = "beforeEdit"
                   @beforeEdit="beforeEdit"
@@ -249,6 +246,7 @@ export default {
         deptCd: '',
         userNm: '',
         heaConsultNo: '',
+        counselor: '',
       },
       static: {
         userId: '',
@@ -259,7 +257,7 @@ export default {
         target: null,
         title: '',
         visible: false,
-        width: '90%',
+        width: '80%',
         top: '10px',
         param: {}
       },
@@ -279,7 +277,25 @@ export default {
       consultGridHeaderOptions: [],
       selectedValue: [],
       deleteValue: null,
+      today: '',
+      tempYmd: '',
     };
+  },
+  watch: {
+    'consult.visitYmd': function (newValue, oldValue) {
+      if (newValue < this.today && this.tempYmd !== newValue && newValue !== '')
+      {
+        window.getApp.$emit('ALERT', {
+          title: '안내',
+          message: '과거 날짜를 선택하였습니다.',
+          type: 'warning',
+        });
+        this.tempYmd = this.today;
+      }
+    },
+    'testItemResult.heaTestItemCd': function (newValue, oldValue) {
+      this.getTestItem();
+    }
   },
   /** Vue lifecycle: created, mounted, destroyed, etc **/
   beforeCreate () {
@@ -289,7 +305,6 @@ export default {
   beforeMount () {
     Object.assign(this.$data, this.$options.data());
     this.init();
-    this.getSuspectUsers();
   },
   mounted () {
   },
@@ -303,7 +318,7 @@ export default {
       // 그리드 헤더 설정
       this.suspectUserGridHeaderOptions = [
         { text: '사번', name: 'userId', width: '10%', align: 'center' },
-        { text: '사용자명', name: 'userNm', width: '15%', align: 'center' },
+        { text: '직원명', name: 'userNm', width: '15%', align: 'center' },
         { text: '부서', name: 'deptNm', width: '15%', align: 'center' },
         { text: '관리대상 지정일', name: 'beManagedYmd', width: '15%', align: 'center' },
         { text: '비고', name: 'remark', width: '40%', align: 'left' },
@@ -315,6 +330,15 @@ export default {
         { text: '증상', name: 'symptom', width: '15%', align: 'left' },
         { text: '상담내용', name: 'remark', width: '15%', align: 'left' },
       ];
+
+      // 오늘 날짜 구하기
+      this.today = this.$comm.getToday();
+
+      this.deleteUrl = transactionConfig.consult.delete.url;
+      this.editUrl = transactionConfig.consult.edit.url;
+      this.insertUrl = transactionConfig.consult.insert.url;
+
+      this.getSuspectUsers();
     },
     /** /초기화 관련 함수 **/
 
@@ -324,7 +348,6 @@ export default {
       this.$http.request((_result) => {
         this.suspectUserGridData = _result.data;
       }, (_error) => {
-        console.log(_error);
       });
     },
     getConsults (data) {
@@ -336,7 +359,6 @@ export default {
       this.$http.request((_result) => {
         this.consultGridData = _result.data;
       }, (_error) => {
-        console.log(_error);
       });
 
       this.consult.userId = data.userId;
@@ -346,63 +368,92 @@ export default {
       this.static.userNm = data.userNm;
       this.static.deptCd = data.deptCd;
 
+      this.consult.visitYmd = this.$comm.getToday();
       this.deleteMode = true;
+
+      this.tempYmd = this.today;
     },
     getConsult (data) {
       Object.assign(this.consult, data);
       this.updateMode = true;
+
+      this.tempYmd = data.visitYmd;
     },
     beforeInsert () {
-      if (window.confirm("등록하시겠습니까?"))
+      if (this.consult.userNm === '')
       {
-        this.checkValidationInsert();
-        this.insertUrl = transactionConfig.consult.insert.url;
-      }
-    },
-    beforeEdit () {
-      if (window.confirm("수정하시겠습니까?"))
-      {
-        this.checkValidationEdit();
-        this.editUrl = transactionConfig.consult.edit.url;
-      }
-    },
-    beforeDelete () {
-      console.log(this.selectedValue.length);
-      if (this.selectedValue.length === 0) 
-      {
-        window.alert("항목을 선택해주세요.");
+        window.getApp.$emit('ALERT', {
+          title: '안내',
+          message: '유소견자목록에서 직원을 선택해 주세요.',
+          type: 'warning',
+        });
         return;
       }
-      this.deleteUrl = transactionConfig.consult.delete.url;
-      this.deleteValue = {
-        'data': Object.values(this.$_.clone(this.selectedValue))
-      };
-      this.isDeleteSubmit = true;
+      this.$validator.validateAll().then((_result) => {
+        if (_result) {
+          window.getApp.$emit('CONFIRM', {
+            title: '확인',
+            message: '등록하시겠습니까?',
+            type: 'info',
+            // 확인 callback 함수
+            confirmCallback: () => {
+              this.isInsertSubmit = true;
+            }
+          });
+        }
+      }).catch(() => {
+        window.getApp.$emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
+      });
     },
+    beforeEdit () {
+      this.$validator.validateAll().then((_result) => {
+        if (_result) {
+          window.getApp.$emit('CONFIRM', {
+            title: '확인',
+            message: '수정하시겠습니까?',
+            type: 'info',
+            // 확인 callback 함수
+            confirmCallback: () => {
+              this.isEditSubmit = true;
+            }
+          });
+        }
+      }).catch(() => {
+        window.getApp.$emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
+      });
+    },
+    beforeDelete () {
+      if (this.selectedValue.length === 0) 
+      {
+        window.getApp.$emit('ALERT', {
+          title: '안내',
+          message: '항목을 선택해주세요.',
+          type: 'warning',
+        });
+        return;
+      }
+
+      window.getApp.$emit('CONFIRM', {
+        title: '확인',
+        message: '삭제하시겠습니까?',
+        type: 'info',
+        // 확인 callback 함수
+        confirmCallback: () => {
+          this.deleteValue = {
+            'data': Object.values(this.$_.clone(this.selectedValue))
+          };
+          this.isDeleteSubmit = true;
+        }
+      });
+    },
+
     /** validation checking **/
-    checkValidationInsert () {
-      this.$validator.validateAll().then((_result) => {
-        this.isInsertSubmit = _result;
-        if (!this.isInsertSubmit) window.getApp.emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
-      }).catch(() => {
-        this.isInsertSubmit = false;
-      });
-    },
-    checkValidationEdit () {
-      this.$validator.validateAll().then((_result) => {
-        this.isEditSubmit = _result;
-        if (!this.isEditSubmit) window.getApp.emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
-      }).catch(() => {
-        this.isEditSubmit = false;
-      });
-    },
     validateState (_ref) {
       if (this.veeBag[_ref] && (this.veeBag[_ref].dirty || this.veeBag[_ref].validated)) {
         return !this.errors.has(_ref);
       }
       return null;
     },
-    /** /validation checking **/
 
     /** Button Event **/
     btnSearchConsults (_result) {
@@ -414,24 +465,36 @@ export default {
       this.getConsults(this.static);
       this.isInsertSubmit = false;
       this.updateMode = true;
-      alert('등록되었습니다.');
+      window.getApp.$emit('ALERT', {
+        title: '안내',
+        message: '등록되었습니다.',
+        type: 'success',
+      });
     },
     btnEditClickedCallback (_result) {
       this.getConsults(this.static);
       this.isEditSubmit = false;
-      alert('수정되었습니다.');
+      window.getApp.$emit('ALERT', {
+        title: '안내',
+        message: '수정되었습니다.',
+        type: 'success',
+      });
     },
     btnDeleteClickedCallback (_result) {
       this.getConsults(this.static);
       this.btnClearClickedCallback();
       this.isDeleteSubmit = false;
-      alert('삭제되었습니다.');
+      window.getApp.$emit('ALERT', {
+        title: '안내',
+        message: '삭제되었습니다.',
+        type: 'success',
+      });
     },
     btnClearClickedCallback () {
       Object.assign(this.$data.consult, this.$options.data().consult);
       this.$validator.reset();
       this.updateMode = false;
-      window.getApp.$emit('APP_REQUEST_SUCCESS', '초기화 버튼이 클릭 되었습니다.');
+
       this.consult.userId = this.static.userId;
       this.consult.userNm = this.static.userNm;
       this.consult.deptCd = this.static.deptCd;
@@ -439,8 +502,7 @@ export default {
     btnClickedErrorCallback (_result) {
       this.isInsertSubmit = false;
       this.isEditSubmit = false;
-      window.alert("ERROR.. 담당자에게 연락바랍니다.");
-      this.$emit('APP_REQUEST_ERROR', _result);
+      window.getApp.$emit('APP_REQUEST_ERROR', _result);
     },
     btnPopupClickedCallback () {
       this.popupOptions.target = () => import(`${'./suspectUserPopup.vue'}`);
@@ -451,6 +513,9 @@ export default {
       this.popupOptions.target = null;
       this.popupOptions.visible = false;
       this.getSuspectUsers();
+      Object.assign(this.$data.consult, this.$options.data().consult);
+      this.$validator.reset();
+      this.consultGridData = [];
     },
     suspectSelectedRow (row) {
       this.btnSearchConsults(row);

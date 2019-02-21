@@ -28,6 +28,7 @@ var http = {
   getErrorMessage: null,
   isLogin: null,
   isFileRequestPost: false,
+  isLoading: true
 };
 
 var orgHttp = {
@@ -41,7 +42,8 @@ var orgHttp = {
   processData: true,
   dataType: 'json',
   contentType: 'application/json;charset=utf-8',
-  ajaxPid: null
+  ajaxPid: null,
+  isLoading: true
 };
 
 
@@ -60,8 +62,7 @@ http.request = function (_callbackSuccess, _callbackFail) {
   // console.log("param : ");
   // console.log(JSON.stringify(http.url));
   // console.log(JSON.stringify(http.param));
-  
-  
+
   var param = {};
   var query = '';
   var paramKey = '';
@@ -92,19 +93,44 @@ http.request = function (_callbackSuccess, _callbackFail) {
     }
   }
 
-  axios[method](url, param).then((_result) => {
-    for (key in orgHttp) {
-      if (http.hasOwnProperty(key)) http[key] = orgHttp[key];
-    }
-    if (typeof _callbackSuccess === 'function') _callbackSuccess(_result);
-  }).catch((_error) => {
-    for (key in orgHttp) {
-      if (http.hasOwnProperty(key)) http[key] = orgHttp[key];
-    }
-    if (typeof _callbackFail === 'function') _callbackFail(_error);
-  });
-  // param 초기화
-  // http.param = null;
+  var errorMessage = '';
+  /**
+   * 서버통시시 공용 로딩바 사용
+   */
+  if (http.isLoading) window.getApp.$emit('LOADING_SHOW');
+  setTimeout(() => {
+    axios[method](url, param).then((_result) => {
+      for (key in orgHttp) {
+        if (http.hasOwnProperty(key)) http[key] = orgHttp[key];
+      }
+      if (typeof _callbackSuccess === 'function') _callbackSuccess(_result);
+      if (http.isLoading) window.getApp.$emit('LOADING_HIDE');
+      http.isLoading = true;
+    }).catch((_error) => {
+      // console.log(JSON.stringify(_error));
+      try {
+        errorMessage = _error.response.data;
+      } catch (e) {
+        // errorMessage = '원인을 알 수 없는 에러가 발생하였습니다.';
+        errorMessage = _error;
+      }
+      
+      // 개발자 에러 메시지
+      window.getApp.$emit('NOTIFY', {
+        title: '[개발자 안내]',
+        message: errorMessage,
+        type: 'error',
+        duration: 0 // 자동으로 닫히지 않음
+      });
+
+      for (key in orgHttp) {
+        if (http.hasOwnProperty(key)) http[key] = orgHttp[key];
+      }
+      if (typeof _callbackFail === 'function') _callbackFail(_error);
+      if (http.isLoading) window.getApp.$emit('LOADING_HIDE');
+      http.isLoading = true;
+    });
+  }, 200);
 };
 
 http.requestGet = function (_callbackSuccess, _callbackFail) {

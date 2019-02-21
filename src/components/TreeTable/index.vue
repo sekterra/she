@@ -1,25 +1,57 @@
 <template>
-  <el-table :data="formatData" :row-style="showRow" v-bind="$attrs">
+  <el-table 
+    :data="dataList" 
+    :row-style="showRow"
+    :header-cell-class-name="headerCellClassName"
+    :cell-class-name="cellClassName"
+    @row-click="rowClicked"
+    @row-dblclick="rowDoubleClicked"
+    style="width: 100%; min-height: 200px;"
+    v-bind="$attrs">
     <el-table-column v-if="columns.length===0" width="150">
       <template slot-scope="scope">
         <span v-for="space in scope.row._level" :key="space" class="ms-tree-space"/>
-        <span v-if="iconShow(0,scope.row)" class="tree-ctrl" @click="toggleExpanded(scope.$index)">
-          <i v-if="!scope.row._expanded" class="el-icon-plus"/>
-          <i v-else class="el-icon-minus"/>
+        <span @click="toggleExpanded(scope.$index)">
+          <span v-if="iconShow(0,scope.row)" class="tree-ctrl">
+            <f-icon 
+              v-if="!scope.row._expanded" 
+              icon="caret-down" />
+            <f-icon v-else icon="caret-up" />
+            <!-- 
+              <i v-if="!scope.row._expanded" class="el-icon-plus"/>
+              <i v-else class="el-icon-minus"/> 
+            -->
+          </span>
+          <span v-if="expandColumnName">{{scope.row[expandColumnName]}}</span>
+          <span v-else>{{ scope.$index }}</span>
         </span>
-        {{ scope.$index }}
       </template>
     </el-table-column>
-    <el-table-column v-for="(column, index) in columns" v-else :key="column.value" :label="column.text" :width="column.width">
+    <el-table-column 
+      v-for="(column, index) in columns" 
+      v-else :key="column.value" 
+      :label="column.text" 
+      :width="column.width">
       <template slot-scope="scope">
         <!-- Todo -->
         <!-- eslint-disable-next-line vue/no-confusing-v-for-v-if -->
-        <span v-for="space in scope.row._level" v-if="index === 0" :key="space" class="ms-tree-space"/>
-        <span v-if="iconShow(index,scope.row)" class="tree-ctrl" @click="toggleExpanded(scope.$index)">
-          <i v-if="!scope.row._expanded" class="el-icon-plus"/>
-          <i v-else class="el-icon-minus"/>
+        <span 
+          v-for="space in scope.row._level" 
+          v-if="index === 0" 
+          :key="space" 
+          class="ms-tree-space"/>
+        <span
+          v-if="iconShow(index,scope.row)" 
+          class="tree-ctrl"
+          @click="toggleExpanded(scope.$index)">
+          <f-icon v-if="!scope.row._expanded" icon="caret-down" />
+          <f-icon v-else icon="caret-up" />
+          <!-- 
+            <i v-if="!scope.row._expanded" class="el-icon-plus"/>
+            <i v-else class="el-icon-minus"/> 
+          -->
         </span>
-        {{ scope.row[column.value] }}
+        <!-- {{ scope.row[column.value] }} -->
       </template>
     </el-table-column>
     <slot/>
@@ -50,11 +82,21 @@ export default {
     expandAll: {
       type: Boolean,
       default: false
+    },
+    expandColumnName: {
+      type: String,
+      default: null
+    },
+    headerCellClassName: {
+      type: String
+    },
+    cellClassName: {
+      type: String
     }
   },
   computed: {
-    // 格式化数据源
-    formatData: function() {
+    // 서식이 지정된 데이터 테이블 소스
+    dataList () {
       let tmp
       if (!Array.isArray(this.data)) {
         tmp = [this.data]
@@ -66,21 +108,30 @@ export default {
       return func.apply(null, args)
     }
   },
+  beforeMount () {
+    // Object.assign(this.$data, this.$options.data());
+  },
   methods: {
     showRow: function(row) {
       const show = (row.row.parent ? (row.row.parent._expanded && row.row.parent._show) : true)
       row.row._show = show
       return show ? 'animation:treeTableShow 1s;-webkit-animation:treeTableShow 1s;' : 'display:none;'
     },
-    // 切换下级是否展开
+    // 자식 노드 표시
     toggleExpanded: function(trIndex) {
-      const record = this.formatData[trIndex]
+      const record = this.dataList[trIndex]
       record._expanded = !record._expanded
     },
-    // 图标显示
+    // 아이콘 표시
     iconShow(index, record) {
       return (index === 0 && record.children && record.children.length > 0)
-    }
+    },
+    rowClicked(row, event, column) {
+      this.$emit('rowClicked', row); 
+    },
+    rowDoubleClicked(row, event, column) {
+      this.$emit('rowDoubleClicked', row); 
+    },
   }
 }
 </script>

@@ -29,7 +29,7 @@ import format from 'string-format'; // string-format is a small JavaScript libra
 import numeral from 'numeral';
 import VeeValidate from 'vee-validate';
 import { library } from '@fortawesome/fontawesome-svg-core'
-import { faAngleRight, faAngleLeft, faGenderless, faAddressCard, faListAlt, faUserEdit, faCircle, faSearch, faTimes } from '@fortawesome/free-solid-svg-icons'
+import { faAngleRight, faAngleLeft, faGenderless, faAddressCard, faListAlt, faUserEdit, faCircle, faSearch, faTimes, faAngleDown, faAngleUp, faCaretDown, faCaretUp } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 import 'jquery';
 /** /import npm module **/
@@ -44,6 +44,10 @@ library.add(faUserEdit);
 library.add(faCircle);
 library.add(faSearch);
 library.add(faTimes);
+library.add(faAngleDown);
+library.add(faAngleUp);
+library.add(faCaretDown);
+library.add(faCaretUp);
 /** font awesome setting **/
 
 /** import vue bootstrap **/
@@ -67,7 +71,7 @@ import YBtn from '@/components/YBtn';
 import YDatepicker from '@/components/YDatepicker';
 import YRadio from '@/components/YRadio';
 import YTextarea from '@/components/YTextarea';
-import YDurationpicker from '@/components/YDurationpicker';
+// import YDurationpicker from '@/components/YDurationpicker';
 import YMultiSelect from '@/components/YMultiSelect';
 import YNumber from '@/components/YNumber';
 import YCheckbox from '@/components/YCheckbox';
@@ -78,6 +82,7 @@ import YLabel from '@/components/YLabel';
 import YSuttleBox from '@/components/YSuttleBox';
 import YLoader from '@/components/YLoader';
 import YPopup from '@/components/YPopup';
+import YFileUpload from '@/components/YFileUpload';
 /** /import custom vue component **/
 
 import * as filters from './filters' // global filters
@@ -103,7 +108,7 @@ Vue.component(YText.name, YText);
 Vue.component(YSelect.name, YSelect);
 Vue.component(YDatepicker.name, YDatepicker);
 Vue.component(YRadio.name, YRadio);
-Vue.component(YDurationpicker.name, YDurationpicker);
+// Vue.component(YDurationpicker.name, YDurationpicker);
 Vue.component(YTextarea.name, YTextarea);
 // Vue.component(YPopup.name, YPopup);
 Vue.component(YMultiSelect.name, YMultiSelect);
@@ -117,6 +122,7 @@ Vue.component(YLabel.name, YLabel);
 Vue.component(YSuttleBox.name, YSuttleBox);
 Vue.component(YLoader.name, YLoader);
 Vue.component(YPopup.name, YPopup);
+Vue.component(YFileUpload.name, YFileUpload);
 
 /** Global Custom Component **/
 

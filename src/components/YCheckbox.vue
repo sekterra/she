@@ -37,32 +37,44 @@
           v-if="editable"
           :sm="width">
           <!-- loading spinner -->
-          <div 
-            v-if="items.length <= 0"
-            class="text-right mb-4">
-            <div class="align-items-center text-info" role="status">
-              <span>Loading...</span>
-              <div class="spinner-grow spinner-grow-sm ml-auto" role="status" aria-hidden="true"></div>
-            </div>
-          </div>
-          <!-- /loading spinner -->
-          <b-form-group label-size="sm">
-            <b-form-checkbox-group
-              v-model="vValue" 
-              :options="items"
-              :name="name"
-              :state="state"
-              :size="size"
-              @input="input">
-            </b-form-checkbox-group>
-          </b-form-group>
-        </b-col>
-        <b-col v-else>
-          <span v-if="text">
-            {{text}}
-          </span>
-          <small v-else class="text-muted"><em>데이터가 없거나 조회중 입니다.</em></small>
-        </b-col>
+          <template v-if="useDefault">
+            <b-form-checkbox
+              v-model="vValue"
+              :value="checkedValue"
+              :unchecked-value="uncheckedValue"
+              @input="input"
+              >
+            </b-form-checkbox>
+          </template>
+          <template v-else>
+            <div 
+              v-if="items.length <= 0"
+              class="text-right mb-4">
+                <div class="align-items-center text-info" role="status">
+                  <span>Loading...</span>
+                  <div class="spinner-grow spinner-grow-sm ml-auto" role="status" aria-hidden="true"></div>
+                </div>
+              </div>
+              <!-- /loading spinner -->
+              <b-form-group label-size="sm">
+                <b-form-checkbox-group
+                  v-model="vValue" 
+                  :options="items"
+                  :name="name"
+                  :state="state"
+                  :size="size"
+                  :disabled="disabled"
+                  @input="input">
+                </b-form-checkbox-group>
+              </b-form-group>
+            </template>
+          </b-col>
+          <b-col v-else>
+            <span v-if="text">
+              {{text}}
+            </span>
+            <small v-else class="text-muted"><em>데이터가 없거나 조회중 입니다.</em></small>
+          </b-col>
       </b-row>
     </template>
   </div>
@@ -96,7 +108,7 @@ export default {
     },
     // TODO : 부모의 v-model의 값을 받아오는 속성
     value: {
-      type: [Array, Number],
+      type: [Array, Number, String],
       default: null
     },
     // 중복 방지를 위해 선택된 값을 숨겨야 할 경우
@@ -118,11 +130,11 @@ export default {
     },
     itemText: {
       type: String,
-      default: 'edit'
+      default: 'text'
     },
     itemValue: {
       type: String,
-      default: 'edit'
+      default: 'value'
     },
     // 부모로 부터 radio 항목들을 받아올 경우
     comboItems: {
@@ -151,6 +163,24 @@ export default {
     required: {
       type: Boolean,
       default: false
+    },
+    // 체크박스 사용여부
+    disabled: {
+      type: Boolean,
+      default: false
+    },
+    // checkbox 그룹이 아닌 일반 체크박스를 사용하고 싶을 경우
+    useDefault: {
+      type: Boolean,
+      default: false
+    },
+    checkedValue: {
+      type: String,
+      default: 'Y'
+    },
+    uncheckedValue: {
+      type: String,
+      default: 'N'
     }
   },
   data: () => ({
@@ -186,6 +216,7 @@ export default {
     // 부모로 부터 값을 비동기로 가져올 경우 처리
     comboItems () {
       this.makeSelectOptions();
+      this.vValue = this.value;
     },
     // TODO : 부모로 부터 값을 받아오는 경우, 상황에 따라 value 속성 값이 먼저 들어오고 comboItems의 값이 늦게 들어올 수 있으므로,
     // 실제 항목인 items가 변경되면 vValue값을 value값으로 재 설정 해줌
@@ -204,12 +235,16 @@ export default {
     else if (this.comboItems && this.comboItems.length > 0) {
       this.makeSelectOptions();
     }
+    this.vValue = this.value;
   },
   mounted () {
   },
   beforeDestroy () {
   },
   destroyed () {
+  },
+  beforeUpdate () {
+    this.vValue = this.value;
   },
   updated () {
   },

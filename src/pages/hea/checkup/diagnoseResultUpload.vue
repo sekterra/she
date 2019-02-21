@@ -12,39 +12,27 @@
       <b-col sm="12"> 
         <b-row>
           <b-col sm="12">
-            <y-label label="종합소견" icon="user-edit" color-class="cutstom-title-color" />
+            <y-label label="업로드정보" icon="user-edit" color-class="cutstom-title-color" />            
             <div slot="buttonGroup" class="float-right mb-1">
-              <y-btn
-                type="search"
-                title="업로드양식 다운로드"
-                size="small"
-                color="primary"
-                icon="el-icon-edit"
-                action-type="POST"
-                @btnClicked="btnDownloadFormClickedCallback" 
-                @btnClickedErrorCallback="btnClickedErrorCallback"
-              />
               <y-btn
                 v-if="editable"
                 :action-url="uploadUrl"
                 :param="uploadFile"
                 :is-submit="isUploadSubmit"
-                type="save"
                 title="업로드및저장"
-                size="small"
-                color="primary"
-                icon="el-icon-edit"
-                action-type="POST"
+                color="blue"
+                action-type="post"
                 beforeSubmit = "beforeUploadSubmit"
                 @beforeUploadSubmit="beforeUploadSubmit"
                 @btnClicked="btnUploadClickedCallback" 
                 @btnClickedErrorCallback="btnClickedErrorCallback"
               />
               <y-btn
-                type="clear"
+                title="업로드양식 다운로드"
+                @btnClicked="btnDownloadFormClicked" 
+              />              
+              <y-btn
                 title="닫기"
-                size="small"
-                color="info"
                 @btnClicked="closePopup" 
               />
             </div>
@@ -62,7 +50,7 @@
                 ui="bootstrap"
                 type="search"
                 name="checkupYear"
-                label="건강검진년도"
+                label="검진년도"
                 v-model="uploadFile.checkupYear"
                 />
             </b-col>
@@ -76,18 +64,19 @@
                 ui="bootstrap"
                 type="search"
                 name="heaCheckupPlanNo"
-                label="건강검진계획"
+                label="검진계획"
                 v-model="uploadFile.heaCheckupPlanNo"                
                 />
             </b-col>
-            <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
+            <b-col sm="12" md="12" lg="12" xl="12" class="col-xxl-6">
               <b-row>
-              <b-col sm="4"><y-label label="업로드파일"></y-label></b-col>
-              <b-col sm="8">
+              <b-col sm="2"><y-label label="업로드파일"></y-label></b-col>
+              <b-col sm="10">
                 <input 
                   type="file" 
                   id="file" 
                   ref="file" 
+                  style="width:100%;"
                   v-on:change="changeFile()"
                   />
                 </b-col>
@@ -253,6 +242,7 @@ export default {
         this.heaCheckupPlanNoItems = _result.data;
         this.uploadFile.heaCheckupPlanNo = 0;
       }, (_error) => {
+        window.getApp.$emit('APP_REQUEST_ERROR', _error);
       });
     },
     changeFile () {
@@ -270,12 +260,32 @@ export default {
         this.isUploadSubmit = !(this.uploadFile.file == null);
         this.$http.isFileRequestPost = true;
         if (!this.isUploadSubmit) {
-          window.alert('선택된 파일이 없습니다.');
+          window.getApp.$emit('ALERT', {
+            title: '안내',
+            message: '선택된 파일이 없습니다.',
+            type: 'warning',  // success / info / warning / error
+          });
+          return false;
         }
       }
       else {
-        alert('선택된 건강검진계획이 없습니다.');
+        window.getApp.$emit('ALERT', {
+          title: '안내',
+          message: '선택된 검진계획이 없습니다.',
+          type: 'warning',
+        });
+        return false;
       }
+
+      window.getApp.$emit('CONFIRM', {
+        title: '확인',
+        message: '검진결과를 업로드 하시겠습니까?',
+        type: 'info',
+        // 확인 callback 함수
+        confirmCallback: () => {
+          this.isUploadSubmit = true;
+        }
+      });
     }, 
     /** /validation checking **/
     
@@ -287,22 +297,42 @@ export default {
     /**
     * 저장 버튼 처리용 샘플함수
     */
-    btnDownloadFormClickedCallback (_result) {
-      // window.open('업로드양식 다운로드!!');
-      window.alert('업로드양식 다운로드!!');
+    btnDownloadFormClicked (_result) {
+      // axios({
+      //   url: 'http://api.dev/file-download',
+      //   method: 'get',
+      //   responseType: 'blob',
+      // }).then((response) => {
+      //   const url = window.URL.createObjectURL(new Blob([response.data]));
+      //   const link = document.createElement('a');
+      //   link.href = url;
+      //   link.setAttribute('download', '/src/assets/files/검강검진_엑셀_업로드_양식.xlsx'); //or any other extension
+      //   document.body.appendChild(link);
+      //   link.click();
+      // });
+      // window.open('../../assets/files/검강검진_엑셀_업로드_양식.xlsx');
+      window.getApp.$emit('ALERT', {
+        title: '안내',
+        message: '업로드양식 다운로드!!',
+        type: 'success',
+      });
     },
     btnUploadClickedCallback (_result) {
       this.isUploadSubmit = false;
       this.gridUploadData = _result.data['uploadResult'];
       this.gridErrorData = _result.data['errorInfo'];
+      window.getApp.$emit('ALERT', {
+        title: '안내',
+        message: '업로드 및 저장결과, 오류정보를 확인하시기 바랍니다.',
+        type: 'info',
+      });
     },
     /**
     * 버튼 에러 처리용 공통함수
     */
     btnClickedErrorCallback (_result) {
-      this.isSubmit = false;  // 반드시 isSubmit을 false로 초기화 하세요. 그렇지 않으면 버튼을 다시 클릭해도 동작하지 않습니다.
-      // TODO : 여기에 추가 로직 삽입(로직 삽입시 지워주세요)
-      window.getApp.emit('APP_REQUEST_ERROR', _result);
+      this.isUploadSubmit = false;  // 반드시 isSubmit을 false로 초기화 하세요. 그렇지 않으면 버튼을 다시 클릭해도 동작하지 않습니다.
+      window.getApp.$emit('APP_REQUEST_ERROR', _result);
     },
     /** /Button Event **/
     

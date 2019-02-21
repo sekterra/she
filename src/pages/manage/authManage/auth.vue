@@ -11,8 +11,25 @@
     <b-container fluid>
       <b-row>
         <!-- TODO : 아래에 본문을 넣으세요 -->
-        <b-col sm="6">
-           보건 관리자 홈
+        <b-col sm="12">
+          <b-card no-body>
+            <b-card-header>
+              <el-steps :active="active" finish-status="success" simple>
+                <el-step 
+                v-for="(item, i) in steps"
+                :key="item.label"
+                :title="item.label"
+                @click.native="e => nextStep(e, i)"
+                >
+                </el-step>
+              </el-steps>
+            </b-card-header>
+            <b-card-body>
+              <keep-alive>
+                <component :is="component" v-if="component" :paneName="paneName" />
+              </keep-alive>
+            </b-card-body>
+          </b-card>
         </b-col>
       </b-row>
     </b-container>
@@ -30,9 +47,10 @@ export default {
   //    참고url: https://kr.vuejs.org/v2/api/index.html#data
   data () {
     return {
-      // Naming Rule : JAVA model class와 연동되는 vue model은 model class명을 Camel case로 변환해서 선언하시고 기본값은 {}로 초기화 시켜주세요.
-      // 예) ExamData -> examData: {},
-      isSubmit: false,  // 버튼을 submit 할 것인지 판단하는 변수로써 버튼의 개수만큼 필요합니다.
+      steps: [],
+      active: 0,
+      component: null,
+      paneName: '',
     };
   },
   /** Vue lifecycle: created, mounted, destroyed, etc **/
@@ -47,6 +65,7 @@ export default {
     this.init();
   },
   mounted () {
+    this.loadComponent();
   },
   beforeDestory () {
     this.init();
@@ -55,7 +74,11 @@ export default {
   methods: {
     /** 초기화 관련 함수 **/
     init () {
-      // TODO : 여기에 초기 설정용 함수를 호출하거나 로직을 입력하세요.
+      this.steps = [
+        { label: '권한그룹 설정', url: './authGrp' },
+        { label: '권한그룹별 메뉴 설정', url: './authGrpMenu' },
+        { label: '사용자별 권한 설정 / 메뉴조정', url: './userAuthMenu' }
+      ];
     },
     /** /초기화 관련 함수 **/
     
@@ -68,50 +91,22 @@ export default {
     
     /** /Call API service **/
     
-    /** validation checking(필요없으면 지워주세요) **/
-    checkValidation () {
-      this.validator.validateAll().then((_result) => {
-        this.isSubmit = _result;
-        // TODO : 전역 성공 메시지 처리
-        // 이벤트는 ./event.js 파일에 선언되어 있음
-        if (!this.isSubmit) window.getApp.emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
-      }).catch(() => {
-        this.isSubmit = false;
-      });
-    },
-    validateState (_ref) {
-      if (this.veeBag[_ref] && (this.veeBag[_ref].dirty || this.veeBag[_ref].validated)) {
-        return !this.errors.has(_ref);
-      }
-      return null;
-    },
-    /** /validation checking **/
-    
     /** Component Events, Callbacks (버튼 제외) **/
     
     /** /Component, Callbacks (버튼 제외) **/
     
-    /** Button Event **/
-    /**
-    * 저장 버튼 처리용 샘플함수
-    */
-    btnSaveClickedCallback (_result) {
-      this.isSubmit = false;  // 반드시 isSubmit을 false로 초기화 하세요. 그렇지 않으면 버튼을 다시 클릭해도 동작하지 않습니다.
-      // TODO : 여기에 추가 로직 삽입(로직 삽입시 지워주세요)
-      window.getApp.emit('APP_REQUEST_SUCCESS', "정상적으로 저장 되었습니다.");
-    },
-    /**
-    * 버튼 에러 처리용 공통함수
-    */
-    btnClickedErrorCallback (_result) {
-      this.isSubmit = false;  // 반드시 isSubmit을 false로 초기화 하세요. 그렇지 않으면 버튼을 다시 클릭해도 동작하지 않습니다.
-      // TODO : 여기에 추가 로직 삽입(로직 삽입시 지워주세요)
-      window.getApp.emit('APP_REQUEST_ERROR', _result);
-    },
-    /** /Button Event **/
-    
+        
     /** 기타 function **/
-    
+    nextStep (_event, _index) {
+      this.active = _index;
+      var nowDate = new Date();
+      this.paneName = this.steps[this.active].title + nowDate.getMilliseconds();
+      this.loadComponent();
+    },
+    loadComponent () {
+      var path = this.steps[this.active].url;
+      this.component = () => import(`${path}`);
+    },
     /** /기타 function **/
   }
 };

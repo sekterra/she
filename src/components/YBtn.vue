@@ -7,7 +7,7 @@
       <v-btn
           :loading="loading"
           :disabled="loading"
-          :color="color"
+          :color="getColor"
           @click.prevent="btnClicked"
         >
         <span v-if="!hasButtonError" class="white--text">{{title}}</span>
@@ -19,8 +19,8 @@
         plain
         :loading="loading"
         :disabled="loading"
-        :type="color"
-        :size="size"
+        :type="getColor"
+        :size="getSize"
         :icon="icon"
         :circle="isIcon"
         class="default-buntton"
@@ -40,14 +40,6 @@ export default {
     ui: {
       type: String,
       default: 'bootstrap',
-    },
-    type: { // 버튼의 종류 : save, delete, cancel, close, clear, select
-      type: String,
-      required: true,
-      validator: function (_value) {
-        // The value must match one of these strings
-        return ['search', 'save', 'delete', 'cancel', 'close', 'clear', 'select', 'add', 'test'].indexOf(_value) !== -1;
-      }
     },
     title: {
       type: String,
@@ -92,7 +84,7 @@ export default {
     icon: {
       type: String,
       default: ''
-    }
+    },
   },
   data () {
     return {
@@ -107,6 +99,40 @@ export default {
     },
     isIcon () {
       return this.title === "" && this.icon !== ""
+    },
+    getColor () {
+      if (this.color === 'blue') {
+        return 'primary';
+      }
+      else if (this.color ==='orange') {
+        return 'warning';
+      }
+      else if (this.color === 'red') {
+        return 'danger';
+      }
+      else if (this.color === 'gray') {
+        return 'info';
+      }
+      else if (this.color === 'green') {
+        return 'success';
+      }
+      else {
+        return 'info';
+      }
+    },
+    getSize () {
+      if (this.size === 'sm') {
+        return 'small';
+      }
+      else if (this.size === 'md') {
+        return '';
+      }
+      else if (this.size === 'lg') {
+        return 'large';
+      }
+      else {
+        return 'mini';
+      }
     }
   },
   watch: {
@@ -121,9 +147,6 @@ export default {
         return this.$emit('btnClickedError', this.param);
       }
     },
-    actionType () {
-      this.initButtonType();
-    }
   },
   /* Vue lifecycle: created, mounted, destroyed, etc */
   mounted () {
@@ -131,115 +154,46 @@ export default {
   },
   /* methods */
   methods: {
-    initButtonType () {
-      // var type = this.type.toLowerCase();
-      // if (type === 'search') {
-      //   this.color = 'indigo lighten-1';
-      //   this.actionMethod = 'requestGet';
-      // }
-      // else if (type === 'save') {
-      //   this.color = 'success lighten-1';
-      //   if (this.actionType.toUpperCase() === 'POST') this.actionMethod = 'requestPost';
-      //   else if (this.actionType.toUpperCase() === 'PUT') this.actionMethod = 'requestPut';
-      // }
-      // else if (type === 'select') {
-      //   this.color = 'success lighten-1';
-      // }
-      // else if (type === 'delete') {
-      //   this.color = 'error lighten-1';
-      //   if (this.actionType.toUpperCase() === 'POST') this.actionMethod = 'requestPost';
-      //   else if (this.actionType.toUpperCase() === 'PUT') this.actionMethod = 'requestPut';
-      // }
-      // else if (type === 'cancel') {
-      //   this.color = 'grey lighten-1';
-      // } 
-      // else if (type === 'close') this.color = 'primary';
-      // else if (type === 'clear') {
-      //   this.color = 'info lighten-1';
-      // }
-      // else if (type === 'test') this.color = 'success lighten-3';
-      // else {
-      //   this.color = 'error lighten-1';
-      //   this.hasButtonError = true;
-      // }
-    },
     /**
      * 버튼 클릭 처리
      *  - 저장 버튼 클릭시 저장전 유효성 검사
      */
     btnClicked () {
       let self = this;
-      this.loading = !this.loading;
-      // 부모vue에서 주어진 속성값이 잘못 되었으면 리턴 처리함
-      if (this.hasButtonError) {
+        this.loading = !this.loading;
+        // 부모vue에서 주어진 속성값이 잘못 되었으면 리턴 처리함
+        if (this.hasButtonError) {
+          self.closeLoading();
+          window.getApp.$emit('APP_VALID_ERROR', this.$t('error.validError'));
+          return false;
+        }
+        // 저장일 경우 유효성 검사
+        if (this.beforeSubmit) {
+          self.closeLoading();
+          this.$emit(this.beforeSubmit);
+          return;
+        }
         self.closeLoading();
-        window.getApp.$emit('APP_VALID_ERROR', this.$t('error.validError'));
-        return false;
-      }
-      // 저장일 경우 유효성 검사
-      if (this.beforeSubmit) {
-        self.closeLoading();
-        this.$emit(this.beforeSubmit);
-        return;
-      }
-      this.callButtonAction();
+        this.callButtonAction();
     },
     /**
      * 버튼 행위 정의
      */
     callButtonAction () {
       let self = this;
-
-      if (this.type === 'test') {
-        self.closeLoading();
-        self.$emit('btnClicked', this.param);
-        return;
-      }
-
       // ajax action
       if (this.actionUrl) {
         this.$http.url = this.actionUrl;
         this.$http.param = this.param;
         this.$http.type = this.actionType;
+        this.$http.isLoading = true;
 
         this.$http.request((_result) => {
-          self.closeLoading();
           self.$emit('btnClicked', _result);
         }, (_error) => {
-          self.closeLoading();
-          console.log(_error);
+          this.$emit('btnClickedErrorCallback');
         });
-
-        // if (this.actionType === 'POST'){
-        //   this.$http.requestPost((_result) => {
-        //     console.log(JSON.parse(JSON.stringify(_result.data)));
-        //     this.gridData = _result.data;
-        //   }, (_error) => {
-        //     console.log(_error);
-        //   });
-        // } else if (this.actionType === 'PUT') {
-        //   this.$http.requestPut((_result) => {
-        //     console.log(JSON.parse(JSON.stringify(_result.data)));
-        //     this.gridData = _result.data;
-        //   }, (_error) => {
-        //     console.log(_error);
-        //   });
-        // }
-        
-        // this.$ajax.url = this.actionUrl;
-        // this.$ajax.type = this.actionType;
-        // this.$ajax.param = this.param;
-        
-        // this.$ajax[this.actionMethod]((_result) => {
-        //   self.closeLoading()
-        //   self.$emit('btnClicked', _result)
-        // }, (_error) => {
-        //   self.closeLoading()
-        //   self.$emit('btnClickedError', _error) 
-        // })
-        // self.$emit('btnClicked', null);
       } else {
-        this.closeLoading();
         this.$emit('btnClicked');
       }
     },
@@ -247,7 +201,7 @@ export default {
      * 버튼 로딩바 1초 후 제거
      */
     closeLoading () {
-      setTimeout(() => (this.loading = false), 1000);
+      setTimeout(() => (this.loading = false), 600);
     }
   }
 };

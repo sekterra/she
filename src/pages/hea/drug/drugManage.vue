@@ -12,23 +12,18 @@
       <b-col sm="12">
         <b-col sm="12" class="px-0">
           <y-data-table
-            label="약품 목록"
             title="약품 목록"
+            label="약품 목록"
             ref="dataTable"
-            gridType="edit"
-            :headers="drugGridHeaderOptions"
-            :items="drugGridData"
-            :editable="editable"
-            :rows="5"
-            :excel-down="true"
-            :print="true"
+            :height="gridOptions.height"
+            :headers="gridOptions.header"
+            :items="gridOptions.data"
             @selectedRow="selectedRow"
-          >
-          </y-data-table>
+          />
         </b-col>
 
         <!-- 등록 -->
-        <b-row class="mt-3">
+        <b-row class="mt-3" ref="insertBox">
           <b-col sm="12">
             <b-row>
               <b-col sm="12">
@@ -120,10 +115,7 @@
               <div class="float-right mt-3">
                   <y-btn
                     v-if="editable"
-                    type="clear"
                     title="초기화"
-                    size="small"
-                    color="info"
                     @btnClicked="btnClearClickedCallback" 
                   />
                   <y-btn
@@ -131,10 +123,8 @@
                     :action-url="insertUrl"
                     :param="heaDrug"
                     :is-submit="isInsertSubmit"
-                    type="save"
                     title="신규등록"
-                    size="small"
-                    color="warning"
+                    color="orange"
                     action-type="POST"
                     beforeSubmit = "beforeInsert"
                     @beforeInsert="beforeInsert"
@@ -146,10 +136,8 @@
                     :action-url="editUrl"
                     :param="heaDrug"
                     :is-submit="isEditSubmit"
-                    type="save"
                     title="수정"
-                    size="small"
-                    color="warning"
+                    color="orange"
                     action-type="PUT"
                     beforeSubmit = "beforeEdit"
                     @beforeEdit="beforeEdit"
@@ -175,6 +163,11 @@ export default {
   },
   data () {
     return {
+      gridOptions: {
+        header: [],
+        data: [],
+        height: '300'
+      },
       heaDrug: {
         heaDrugNo: 0,
         heaDrugNm: '',
@@ -197,8 +190,6 @@ export default {
       isEditSubmit: false,
       editUrl: '',
       insertUrl: '',
-      drugGridData: [],
-      drugGridHeaderOptions: [],
     };
   },
   /** Vue lifecycle: created, mounted, destroyed, etc **/
@@ -209,19 +200,18 @@ export default {
   beforeMount () {
     Object.assign(this.$data, this.$options.data());
     this.init();
-    this.getUseYnItems();
-    this.getDrugManages();
   },
   mounted () {
+    window.addEventListener('resize', this.setGridSize);
   },
-  beforeDestory () {
-    this.init();
+  beforeDestroy () {
+    window.removeEventListener('resize', this.setGridSize);
   },
   /** methods **/
   methods: {
     /** 초기화 관련 함수 **/
     init () {
-      this.drugGridHeaderOptions = [
+      this.gridOptions.header = [
         { text: '약품', name: 'heaDrugNm', width: '20%', align: 'left' },
         { text: '단위', name: 'unit', width: '10%', align: 'center' },
         { text: '적정 재고량', name: 'amountLimit', width: '10%', align: 'center' },
@@ -229,6 +219,14 @@ export default {
         { text: '사용여부', name: 'useYnNm', width: '10%', align: 'center' },
         { text: '출력순서', name: 'sortOrder', width: '10%', align: 'center' },
       ];
+
+      this.searchUrl = selectConfig.drugManage.list.url;
+      this.insertUrl = transactionConfig.drugManage.insert.url;
+      this.editUrl = transactionConfig.drugManage.edit.url;
+
+      this.getUseYnItems();
+      this.getDrugManages();
+      this.setGridSize();
     },
     /** /초기화 관련 함수 **/
     getUseYnItems () {
@@ -237,16 +235,16 @@ export default {
           { useYn: 'Y', useYnNm: '사용' },
           { useYn: 'N', useYnNm: '미사용' },
         ];
-      }, 3000);
+      }, 200);
     },
     // 약품관리 조회
     getDrugManages () {
-      this.$http.url = selectConfig.drugManage.list.url;
-      this.$http.type = 'GET';
+      this.$http.url = this.searchUrl;
+      this.$http.type = 'get';
       this.$http.request((_result) => {
-        this.drugGridData = _result.data;
+        this.gridOptions.data = _result.data;
       }, (_error) => {
-        console.log(_error);
+        window.getApp.$emit('APP_REQUEST_ERROR', _error);
       });
     },
     getDrugManage (data) {
@@ -254,68 +252,114 @@ export default {
       this.updateMode = true;
     },
     beforeInsert () {
-      if (window.confirm("등록하시겠습니까?"))
-      {
-        this.checkValidationInsert();
-        this.insertUrl = transactionConfig.drugManage.insert.url;
-      }
+      this.heaDrug.heaDrugNo = '';
+      this.updateMode = false;      
+      if (this.checkDuplicate()) return;
+      this.$validator.validateAll().then((_result) => {
+        if (_result) {
+          window.getApp.$emit('CONFIRM', {
+            title: '확인',
+            message: '등록하시겠습니까?',
+            type: 'info',
+            // 확인 callback 함수
+            confirmCallback: () => {
+              this.isInsertSubmit = true;
+            }
+          });
+        }
+      }).catch(() => {
+        window.getApp.$emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
+      });
     },
     beforeEdit () {
-      if (window.confirm("수정하시겠습니까?"))
-      {
-        this.checkValidationEdit();
-        this.editUrl = transactionConfig.drugManage.edit.url;
+      if (this.checkDuplicate()) return;
+      this.$validator.validateAll().then((_result) => {
+        if (_result) {
+          window.getApp.$emit('CONFIRM', {
+            title: '확인',
+            message: '수정하시겠습니까?',
+            type: 'info',
+            // 확인 callback 함수
+            confirmCallback: () => {
+              this.isEditSubmit = true;
+            }
+          });
+        }
+      }).catch(() => {
+        window.getApp.$emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
+      });
+    },
+
+    checkDuplicate () {
+      var test = {
+        'heaDrugNm': this.heaDrug.heaDrugNm
+      };
+      var item = this.$_.find(this.gridOptions.data, test);
+      if (item != null) {
+        if (this.updateMode
+          && this.heaDrug.heaDrugNo === item.heaDrugNo) {
+          return false;
+        }
+          
+        window.getApp.$emit('ALERT', {
+          title: '안내',
+          message: '이미 같은 이름의 약품명이 존재합니다.',
+          type: 'warning',
+        });
+        return true;
       }
+      return false;
     },
+
     /** validation checking **/
-    checkValidationInsert () {
-      this.$validator.validateAll().then((_result) => {
-        this.isInsertSubmit = _result;
-        if (!this.isInsertSubmit) window.getApp.emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
-      }).catch(() => {
-        this.isInsertSubmit = false;
-      });
-    },
-    checkValidationEdit () {
-      this.$validator.validateAll().then((_result) => {
-        this.isEditSubmit = _result;
-        if (!this.isEditSubmit) window.getApp.emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
-      }).catch(() => {
-        this.isEditSubmit = false;
-      });
-    },
     validateState (_ref) {
       if (this.veeBag[_ref] && (this.veeBag[_ref].dirty || this.veeBag[_ref].validated)) {
         return !this.errors.has(_ref);
       }
       return null;
     },
-    /** /validation checking **/
     
+    /**
+     * 그리드 리사이징
+     */
+    setGridSize () {
+      window.getApp.$emit('LOADING_SHOW');
+      setTimeout(() => {
+        this.gridOptions.height = window.innerHeight - this.$refs.insertBox.clientHeight - 160;
+        window.getApp.$emit('LOADING_HIDE');
+      }, 600);
+    },
+
     /** Button Event **/
     btnInsertClickedCallback (_result) {
       this.heaDrug.heaDrugNo = _result.data;
       this.getDrugManages();
       this.isInsertSubmit = false;
       this.updateMode = true;
-      alert('등록되었습니다.');
+      window.getApp.$emit('ALERT', {
+        title: '안내',
+        message: '등록되었습니다.',
+        type: 'success',
+      });
     },
     btnEditClickedCallback (_result) {
       this.getDrugManages();
       this.isEditSubmit = false;
-      alert('수정되었습니다.');
+      window.getApp.$emit('ALERT', {
+        title: '안내',
+        message: '수정되었습니다.',
+        type: 'success',
+      });
     },
     btnClickedErrorCallback (_result) {
       this.isInsertSubmit = false;
       this.isEditSubmit = false;
-      window.alert("ERROR.. 담당자에게 연락바랍니다.");
-      this.$emit('APP_REQUEST_ERROR', _result);
+      window.getApp.$emit('APP_REQUEST_ERROR', _result);
     },
     btnClearClickedCallback () {
       Object.assign(this.$data.heaDrug, this.$options.data().heaDrug);
       this.$validator.reset();
       this.updateMode = false;
-      window.getApp.$emit('APP_REQUEST_SUCCESS', '초기화 버튼이 클릭 되었습니다.');
     },
     selectedRow (row) {
       this.getDrugManage(row);

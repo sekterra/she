@@ -1,5 +1,5 @@
 <!--
-  목적 : 건강검진 일괄예약
+  목적 : 검진 일괄예약
   작성자 : khk
   Detail :
   *
@@ -13,13 +13,13 @@
         <b-card no-body class="px-3 py-2">
           <b-row class="mt-2">
             <b-col sm="4">
-              <y-label label="검진종류: " /><y-label :label="checkupPlan.heaCheckupClassNm" />
+              <y-label label="검진종류: " /><y-label :label="checkupPlan.heaCheckupClassNm" fieldable="true" />
             </b-col>
             <b-col sm="4">
-              <y-label label="검진계획: " /><y-label :label="checkupPlan.heaCheckupPlanNm" />
+              <y-label label="검진계획: " /><y-label :label="checkupPlan.heaCheckupPlanNm" fieldable="true" />
             </b-col>
             <b-col sm="4">
-              <y-label label="검진일자: " /><y-label :label="checkupPlan.heaCheckupPlanPeriod" />
+              <y-label label="검진일자: " /><y-label :label="checkupPlan.heaCheckupPlanPeriod" fieldable="true" />
             </b-col>
           </b-row>
         </b-card>
@@ -27,35 +27,7 @@
     </b-row> 
 
     <b-row class="mt-3">
-      <b-col sm="9">
-        <b-row>
-          <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-6">
-            <y-datepicker
-            :width="8"
-            :editable="editable"
-            label="예약일"
-            name="reserveYmd"
-            placeholder=""
-            v-model="editParam.reserveYmd"
-          />
-          </b-col>
-          <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-6">
-            <y-select
-            :width="8"
-            :editable="editable"
-            :comboItems="heaCheckupOrgNoReserveItems"
-            itemText="heaCheckupOrgNm"
-            itemValue="heaCheckupOrgNo"
-            ui="bootstrap"
-            type="search"
-            label="건강검진기관"
-            name="heaCheckupOrgNo"
-            v-model="editParam.heaCheckupOrgNo"
-          />
-          </b-col>
-        </b-row>
-      </b-col>
-      <b-col sm="3">
+      <b-col sm="4" md="4" lg="4" xl="4" class="col-xxl-4">
         <y-datepicker
           :width="8"
           :editable="editable"
@@ -66,10 +38,41 @@
           v-model="searchReserveParam.yearMonth"
           />
       </b-col>
+      <b-col sm="4" md="4" lg="4" xl="4" class="col-xxl-4">
+        <y-select
+        :width="8"
+        :editable="editable"
+        :comboItems="heaCheckupOrgNoReserveItems"
+        itemText="heaCheckupOrgNm"
+        itemValue="heaCheckupOrgNo"
+        ui="bootstrap"
+        type="search"
+        label="검진기관"
+        name="heaCheckupOrgNo"
+        v-model="searchReserveParam.heaCheckupOrgNo"
+      />
+      </b-col>    
+      <b-col sm="4" md="4" lg="4" xl="4" class="col-xxl-4">
+      <y-label label="예약일: " /><y-label :label="editParam.reserveYmd" fieldable="true" />
+      </b-col>        
     </b-row>
 
     <b-row class="mt-1">
-      <b-col sm="9">
+      <b-col sm="5">
+        <b-col sm="12" class="px-0">
+          <y-data-table 
+            label="월별 예약인원"
+            :headers="reserveGridHeaderOptions"
+            :items="reserveGridData"
+            :editable="editable"
+            :excel-down="true"
+            :print="true"
+            :useRownum="false"
+            @selectedRow="reserveSelectedRow"
+            />
+        </b-col>
+      </b-col>
+      <b-col sm="7">
         <b-col sm="12" class="px-0">
           <div slot="buttonGroup" class="float-right mb-1">
             <y-btn
@@ -77,10 +80,8 @@
                 :action-url="editUrl"
                 :param="gridSelectedRows"
                 :is-submit="isEditSubmit"
-                type="save"
                 title="일괄예약"
-                size="small"
-                color="primary"
+                color="blue"
                 action-type="post"
                 beforeSubmit = "beforeEditSubmit"
                 @beforeEditSubmit="beforeEditSubmit"
@@ -95,7 +96,6 @@
             :editable="editable"
             :excel-down="true"
             :print="true"
-            :rows="5"
             v-model="gridSelectedRows"
             >
             <el-table-column
@@ -105,20 +105,7 @@
             </el-table-column>
           </y-data-table>
         </b-col>
-      </b-col>
-      <b-col sm="3">
-        <b-col sm="12" class="px-0">
-          <y-data-table 
-            label="월별 예약인원"
-            :headers="reserveGridHeaderOptions"
-            :items="reserveGridData"
-            :editable="editable"
-            :excel-down="true"
-            :print="true"
-            :rows="5"
-            />
-        </b-col>
-      </b-col>
+      </b-col>      
     </b-row>
   </b-container>
 </template>
@@ -145,7 +132,7 @@ export default {
         reserveYn: 'N'
       },
       editParam: {
-        reserveYmd: '',
+        reserveYmd: '월별 예약인원 항목을 선택하세요.',
         heaCheckupOrgNo: 0
       },
       searchReserveParam: {
@@ -177,15 +164,20 @@ export default {
       this.checkupPlan.heaCheckupPlanNo = this.selectedCheckupPlanNo;
       this.searchParam.heaCheckupPlanNo = this.selectedCheckupPlanNo;
       this.searchReserveParam.heaCheckupPlanNo = this.selectedCheckupPlanNo;
+      this.searchReserveParam.yearMonth = '';
+      this.searchReserveParam.heaCheckupOrgNo = 0;
       this.getDetail();
-      this.getList();
+      this.getHeaCheckupOrgNoReserveItems();
+      this.getList();      
       this.getReserveList();
     },
-    'editParam.heaCheckupOrgNo': function (newValue, oldValue) {
-      this.searchReserveParam.heaCheckupOrgNo = this.editParam.heaCheckupOrgNo;
+    'searchReserveParam.heaCheckupOrgNo': function (newValue, oldValue) {
+      this.editParam.heaCheckupOrgNo = this.searchReserveParam.heaCheckupOrgNo;
+      this.editParam.reserveYmd = '월별 예약인원 항목을 선택하세요.';
       this.getReserveList();
     },
     'searchReserveParam.yearMonth': function (newValue, oldValue) {
+      this.editParam.reserveYmd = '월별 예약인원 항목을 선택하세요.';
       this.getReserveList();
     }
   },
@@ -206,27 +198,27 @@ export default {
   methods: {
     init () {
       setTimeout(() => {
-        this.getHeaCheckupOrgNoReserveItems();
+        this.heaCheckupOrgNoReserveItems.push({ 'heaCheckupOrgNo': 0, 'heaCheckupOrgNm': '선택하세요' });
       }, 200);
       
       // 예약자목록
       this.gridHeaderOptions = [
-        { text: '검진기관', name: 'heaCheckupOrgNm', width: '200px', align: 'center' },
+        { text: '검진기관', name: 'heaCheckupOrgNm', width: '160px', align: 'center' },
         { text: '예약일', name: 'reserveYmd', width: '120px', align: 'center' },
-        { text: '공정', name: 'processNm', width: '160px', align: 'center' },
-        { text: '부서', name: 'deptNm', width: '160px', align: 'center' },
-        { text: '사번', name: 'userId', width: '120px', align: 'center' },
-        { text: '성명', name: 'userNm', width: '120px', align: 'center' },
-        { text: '입사일', name: 'entryYmd', width: '120px', align: 'center' },
+        { text: '공정', name: 'processNm', width: '120px', align: 'center' },
+        { text: '부서', name: 'deptNm', width: '120px', align: 'center' },
+        { text: '사번', name: 'userId', width: '100px', align: 'center' },
+        { text: '성명', name: 'userNm', width: '100px', align: 'center' },
+        { text: '입사일', name: 'entryYmd', width: '100px', align: 'center' },
         { text: '휴대전환', name: 'phoneNo', width: '120px', align: 'center' },
         { text: '사내전화', name: 'officeTel', width: '120px', align: 'center' }
       ];
 
       // 월별예약인원
       this.reserveGridHeaderOptions = [
-        { text: '일자', name: 'reserveStatusYmd', width: '120px', align: 'center' },
-        { text: '병원', name: 'heaCheckupOrgNm', width: '200px', align: 'center' },
-        { text: '예약인원', name: 'reserveUserCount', width: '100px', align: 'center' }
+        { text: '일자', name: 'reserveStatusYmd', width: '35%', align: 'center' },
+        { text: '병원', name: 'heaCheckupOrgNm', width: '40%', align: 'center' },
+        { text: '인원', name: 'reserveUserStatus', width: '25%', align: 'center' }
       ];
 
       this.detailUrl = selectConfig.checkupPlan.get.url;
@@ -239,6 +231,7 @@ export default {
       this.searchReserveParam.heaCheckupPlanNo = this.selectedCheckupPlanNo;
       if (this.checkupPlan.heaCheckupPlanNo > 0) {
         this.getDetail();
+        this.getHeaCheckupOrgNoReserveItems();
         this.getList();
         this.getReserveList();
       }
@@ -248,7 +241,8 @@ export default {
       this.$http.type = 'get'; 
       this.$http.request((_result) => {
         this.checkupPlan = _result.data;
-      }, (_error) => {         
+      }, (_error) => {
+        window.getApp.$emit('APP_REQUEST_ERROR', _error);
       });
     },
     getList () {
@@ -257,46 +251,75 @@ export default {
       this.$http.param = this.searchParam;
       this.$http.request((_result) => {
         this.gridData = _result.data;
-      }, (_error) => {         
+      }, (_error) => {
+        window.getApp.$emit('APP_REQUEST_ERROR', _error);
       });
     },
     getReserveList () {
       if (this.searchReserveParam.heaCheckupPlanNo > 0 
         && this.searchReserveParam.heaCheckupOrgNo > 0
         && this.searchReserveParam.yearMonth !== '') {
-        this.searchReserveParam.yearMonth = '2019-01';
         this.$http.url = this.searchReserveUrl;
         this.$http.type = 'get'; 
         this.$http.param = this.searchReserveParam;
         this.$http.request((_result) => {
           this.reserveGridData = _result.data;
-        }, (_error) => {         
+        }, (_error) => {
+          window.getApp.$emit('APP_REQUEST_ERROR', _error);
         });        
+      }
+      else {
+        this.reserveGridData = [];
       }
     },
     getHeaCheckupOrgNoReserveItems () {
-      this.$http.url = selectConfig.checkupOrg.list.url;
+      this.$http.url = selectConfig.checkupPlanOrg.list.url;
       this.$http.type = 'get';
       this.$http.param = {
-        'useYn': 'Y'
+        'heaCheckupPlanNo': this.checkupPlan.heaCheckupPlanNo
       };
       this.$http.request((_result) => {
         _result.data.splice(0, 0, { 'heaCheckupOrgNo': 0, 'heaCheckupOrgNm': '선택하세요' });
         this.heaCheckupOrgNoReserveItems = _result.data;
         this.searchReserveParam.heaCheckupOrgNo = 0;
       }, (_error) => {
+        window.getApp.$emit('APP_REQUEST_ERROR', _error);
       });
+    },
+    reserveSelectedRow (data) {
+      this.editParam.reserveYmd = data.reserveStatusYmd;
     },
 
     beforeEditSubmit () {
-      if (this.gridSelectedRows.length > 0 && confirm('선택된 대상자의 건강검진 일괄예약을 진행 하시겠습니까?')) {
-        this.gridSelectedRows.forEach(item => {
-          item.heaCheckupOrgNo = this.editParam.heaCheckupOrgNo;
-          item.consentYn = 'Y';
-          item.reserveYmd = '2019-01-25';          
-          // item.reserveYmd = this.editParam.reserveYmd;            
+      if (!this.$comm.isDateType(this.editParam.reserveYmd)) {
+        window.getApp.$emit('ALERT', {
+          title: '안내',
+          message: '월별 예약인원에서 예약가능 인원을 확인하세요.',
+          type: 'warning',
         });
-        this.isEditSubmit = true;
+      }
+      else if (this.gridSelectedRows.length > 0) {
+        window.getApp.$emit('CONFIRM', {
+          title: '확인',
+          message: '선택된 대상자의 검진 일괄예약을 진행 하시겠습니까?',
+          type: 'info',
+          // 확인 callback 함수
+          confirmCallback: () => {
+            this.gridSelectedRows.forEach(item => {
+              item.heaCheckupOrgNo = this.editParam.heaCheckupOrgNo;
+              item.consentYn = 'Y';
+              item.reserveYmd = this.editParam.reserveYmd;            
+            });
+            this.isEditSubmit = true;
+          }
+        });
+      }
+      else {
+        window.getApp.$emit('ALERT', {
+          title: '안내',
+          message: '선택된 검진 대상자가 없습니다. 목록 앞단에 선택박스를 확인하세요.',
+          type: 'warning',
+        });
       }
     },
 
@@ -308,11 +331,15 @@ export default {
       this.isEditSubmit = false;
       this.getList();
       this.getReserveList();
-      alert('선택된 대상자의 건강검진 일괄예약을 진행 하였습니다.'); 
+      window.getApp.$emit('ALERT', {
+        title: '안내',
+        message: '선택된 대상자의 검진 일괄예약을 진행 하였습니다.',
+        type: 'success',
+      });
     },
     btnClickedErrorCallback (_result) {
       this.isEditSubmit = false;       
-      alert('작업진행 중 오류가 발생했습니다. 재시도 후 지속적으로 오류 발생시 관리자에게 문의하세요.');
+      window.getApp.$emit('APP_REQUEST_ERROR', _result);
     },
     /** end button 관련 이벤트 **/
   }

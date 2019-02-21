@@ -20,7 +20,8 @@
 export default {
   computed: {
     pageTitle () {
-      return this.$t('route.' + this.$route.meta.title);
+      // return this.$t('route.' + this.$route.meta.title);
+      return this.$route.meta.navi + ' ' + this.$route.meta.title; 
     }
   },
 }

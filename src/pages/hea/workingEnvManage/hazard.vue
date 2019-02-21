@@ -9,7 +9,7 @@
   -->
 <template>
   <b-container fluid>
-    <b-row>
+    <b-row ref="searchBox">
       <b-col sm="12">
         <b-card header-class="default-card">
           <div slot="header">
@@ -18,23 +18,26 @@
             </div>
             <div class="float-right">
               <y-btn
+                :title="searchArea.title"
+                color="green"                
+                @btnClicked="btnSearchVisibleClicked" 
+              />
+              <y-btn
                   v-if="editable"
                   :action-url="searchUrl"
                   :param="searchParam"
-                  type="search"
                   title="검색"
-                  size="mini"
-                  color="success"
+                  color="green"
                   action-type="GET"
                   @btnClicked="btnSearchClickedCallback" 
                   @btnClickedErrorCallback="btnClickedErrorCallback"
                 />
             </div>
           </div>
-          <b-row>
+          <b-row v-if="searchArea.show">
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <y-select
-                :width="baseWidth"
+                :width="7"
                 :editable="editable"
                 :comboItems="hazardClassSelItems"
                 itemText="codeNm"
@@ -49,7 +52,7 @@
             </b-col>
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <y-text
-                :width="baseWidth"
+                :width="7"
                 :editable="editable"
                 ui="bootstrap"
                 type="search"
@@ -61,7 +64,7 @@
             </b-col>
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <y-select
-                :width="baseWidth"
+                :width="7"
                 :editable="editable"
                 :comboItems="comboSpecialYnItems"
                 itemText="codeNm"
@@ -76,7 +79,7 @@
             </b-col>
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <y-select
-                :width="baseWidth"
+                :width="7"
                 :editable="editable"
                 :comboItems="comboWorkEnvYnItems"
                 itemText="codeNm"
@@ -101,20 +104,22 @@
           <y-data-table 
             label="유해인자 목록"
             gridType="edit"
-            :headers="hazardGridHeaderOptions"
-            :items="hazardGridData"
             :excel-down="true"
             :print="true"
             :rows="3"
             :cellClick="true"
             v-model="hazard"
             ref="dataTable"
+            :height="gridOptions.height"
+            :headers="gridOptions.header"
+            :items="gridOptions.data"
             @selectedRow="selectedRow"
             >
           </y-data-table>
         </b-col>
         
-        <b-row class="mt-3">
+        <!-- 유해인자 상세 -->
+        <b-row class="mt-3" ref="detailBox">
           <b-col sm="12">
             <b-row>
               <b-col sm="12">
@@ -125,7 +130,7 @@
               <b-row>
                 <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
                   <y-select
-                    :width="baseWidth"
+                    :width="8"
                     :editable="editable"
                     :comboItems="hazardClassInsItems"
                     :required="true"
@@ -142,7 +147,7 @@
                 </b-col>
                 <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
                   <y-text
-                    :width="baseWidth"
+                    :width="8"
                     :editable="editable"
                     :maxlength="5"
                     :disabled="true"
@@ -155,7 +160,7 @@
                 </b-col>
                 <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
                   <y-text
-                    :width="baseWidth"
+                    :width="8"
                     :editable="editable"
                     :maxlength="30"
                     :required="true"
@@ -170,7 +175,7 @@
                 </b-col>
                 <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
                   <y-text
-                    :width="baseWidth"
+                    :width="8"
                     :editable="editable"
                     :maxlength="30"
                     ui="bootstrap"
@@ -180,15 +185,30 @@
                   >
                   </y-text>
                 </b-col>
-                <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
+                <b-col sm="12" md="12" lg="12" xl="12" class="col-xxl-6">
+                  <y-multi-select
+                    :width="10"
+                    :editable="editable"
+                    :comboItems="processItems"
+                    type="edit"
+                    itemText="processNm"
+                    itemValue="processNo"
+                    ui="bootstrap"
+                    label="공정"
+                    name="processNo"
+                    v-model="processNos"
+                  >
+                  </y-multi-select> 
+                </b-col>
+                <b-col sm="4" md="4" lg="4" xl="4" class="col-xxl-2">
                   <y-switch
-                    :width="baseWidth"
+                    :width="6"
                     :editable="editable"
                     :required="true"
                     true-value="Y"
                     false-value="N"
                     ui="bootstrap"
-                    label="특수검진 관련 여부"
+                    label="특수검진 여부"
                     name="specialYn"
                     selectText="관련"
                     unselectText="미관련"
@@ -198,15 +218,15 @@
                     >
                   </y-switch>
                 </b-col>
-                <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
+                <b-col sm="4" md="4" lg="4" xl="4" class="col-xxl-2">
                   <y-switch
-                    :width="baseWidth"
+                    :width="6"
                     :editable="editable"
                     :required="true"
                     true-value="Y"
                     false-value="N"
                     ui="bootstrap"
-                    label="작업환경 관련 여부"
+                    label="작업환경 여부"
                     name="workEnvYn"
                     selectText="관련"
                     unselectText="미관련"
@@ -216,9 +236,9 @@
                     >
                   </y-switch>
                 </b-col>
-                <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
+                <b-col sm="4" md="4" lg="4" xl="4" class="col-xxl-2">
                   <y-switch
-                    :width="baseWidth"
+                    :width="6"
                     :editable="editable"
                     :required="true"
                     true-value="Y"
@@ -235,13 +255,10 @@
                   </y-switch>
                 </b-col>
               </b-row>
-              <div class="float-right mt-3">
+              <div class="float-right">
                 <y-btn
                     v-if="editable"
-                    type="clear"
                     title="초기화"
-                    size="small"
-                    color="info"
                     @btnClicked="btnClearClickedCallback" 
                   />
                   <y-btn
@@ -249,10 +266,8 @@
                     :action-url="insertUrl"
                     :param="hazard"
                     :is-submit="isInsert"
-                    type="save"
                     title="신규등록"
-                    size="small"
-                    color="warning"
+                    color="orange"
                     action-type="POST"
                     beforeSubmit = "beforeInsert"
                     @beforeInsert="beforeInsert"
@@ -264,10 +279,8 @@
                     :action-url="editUrl"
                     :param="hazard"
                     :is-submit="isEdit"
-                    type="save"
                     title="수정"
-                    size="small"
-                    color="warning"
+                    color="orange"
                     action-type="PUT"
                     beforeSubmit = "beforeEdit"
                     @beforeEdit="beforeEdit"
@@ -300,13 +313,22 @@ export default {
         specialYn: '',
         workEnvYn: '',
         useYn: 'Y',
-        createUserId: '',
+        processNos: [],
+      },
+      searchArea: {
+        title: '검색박스숨기기',
+        show: true
       },
       searchParam: {
         heaHazardClassCd: '',
         heaHazardNmKo: null,
         specialYn: '',
         workEnvYn: '',
+      },
+      gridOptions: {
+        header: [],
+        data: [],
+        height: '210'
       },
       baseWidth: 8,
       editable: true,
@@ -318,30 +340,31 @@ export default {
       hazardClassInsItems: [],
       comboSpecialYnItems: [],
       comboWorkEnvYnItems: [],
+      processItems: [],
+      processNos: [],
       isInsert: false,
       isEdit: false,  
-      hazardGridData: [],
-      hazardGridHeaderOptions: [],
     };
   },
-  beforeCreate () {
-  },
-  created () {
+  watch: {
+    // 공정 콤보박스
+    processNos () {
+      this.hazard.processNos = this.$_.map(this.processNos, 'code');
+    }
   },
   beforeMount () {
     Object.assign(this.$data, this.$options.data());
     this.init();
-    // this.getComboItems();  // 유해인자 분류
-    // this.getDataList();
   },
   mounted () {
+    // 윈도우 resize event
+    window.addEventListener('resize', this.setGridSize);
   },
-  beforeDestory () {
-    this.init();
+  beforeDestroy () {
+    // 윈도우 resize event 제거-SPA 기반이므로 제거하지 않으면 다른페이지에서 해당 이벤트가 호출됨
+    window.removeEventListener('resize', this.setGridSize);
   },
-  /** methods **/
   methods: {
-    /** 초기화 관련 함수 **/
     init () {
       // URL 셋팅
       this.searchUrl = selectConfig.hazard.list.url;
@@ -357,12 +380,13 @@ export default {
         this.comboWorkEnvYnItems.push({ 'code': 'Y', 'codeNm': '관련' });
         this.comboWorkEnvYnItems.push({ 'code': 'N', 'codeNm': '미관련' });
 
-        this.getComboItems();  // 유해인자 분류
+        this.getComboItems();
+        this.getProcessItems();
         this.getDataList();
       }, 200);
 
       // 유해인자 그리드 헤더 설정
-      this.hazardGridHeaderOptions = [
+      this.gridOptions.header = [
         { text: 'NO', name: 'rowNum', width: '15%', align: 'center' },
         { text: '유해인자 분류', name: 'heaHazardClassNm', width: '25%', align: 'center' },
         { text: '유해인자명(한글)', name: 'heaHazardNmKo', width: '30%', align: 'center' },
@@ -372,9 +396,7 @@ export default {
         { text: '사용 여부', name: 'useYn', width: '20%', align: 'center' },
       ];
     },
-    /** /초기화 관련 함수 **/
-    
-    /** Call API service **/
+
     // 유해인자 분류
     getComboItems () {
       this.$http.url = this.$format(selectConfig.codeMaster.getSelect.url, 'HEA_HAZARD_CLASS');
@@ -388,16 +410,28 @@ export default {
       }, (_error) => {
       });
     },
+    // 공정
+    getProcessItems () {
+      this.$http.url = selectConfig.manage.process.list.url;
+      this.$http.type = 'GET';
+      this.$http.request((_result) => {
+        this.processItems = _result.data;
+      }, (_error) => {
+        window.getApp.$emit('APP_REQUEST_ERROR', _error);
+      });
+    },
+    // 유해인자 그리드
     getDataList () {
       this.$http.url = this.searchUrl;
       this.$http.type = 'GET';
       this.$http.param = this.searchParam;
       this.$http.request((_result) => {
-        this.hazardGridData = _result.data;
+        this.gridOptions.data = _result.data;
       }, (_error) => {
-        console.log(_error);
+        window.getApp.$emit('APP_REQUEST_ERROR', _error);
       });
     },
+    // 그리드 row click 이벤트
     selectedRow (data) {
       if (data === null) return;
 
@@ -405,25 +439,73 @@ export default {
       this.$http.type = 'GET';
       this.$http.request((_result) => {
         this.updateMode = true;
-        Object.assign(this.hazard, _result.data);
+        this.hazard = this.$_.clone(_result.data);
+
+        // 공정
+        this.$http.url = selectConfig.manage.process.list.url;
+        this.$http.type = 'GET';
+        this.$http.param = {
+          'heaHazardCd': this.hazard.heaHazardCd
+        };
+        this.$http.request((_result) => {
+          var options = [];
+          this.$_.forEach(_result.data, (_item) => {
+            options.push({
+              name: _item['processNm'],
+              code: _item['processNo']
+            });
+          });
+          this.processNos = options;
+        }, (_error) => {
+          window.getApp.$emit('APP_REQUEST_ERROR', _error);
+        });
       }, (_error) => {
-        console.log(_error);
+        window.getApp.$emit('APP_REQUEST_ERROR', _error);
       });
     },
-    /** /Call API service **/
+    /**
+     * 그리드 리사이징
+     */
+    setGridSize () {
+      window.getApp.$emit('LOADING_SHOW');
+      setTimeout(() => {
+        this.gridOptions.height = window.innerHeight - this.$refs.searchBox.clientHeight - this.$refs.detailBox.clientHeight - 260;
+        window.getApp.$emit('LOADING_HIDE');
+      }, 600);
+    },
     
     /** validation checking **/
     beforeInsert () {
-      if (window.confirm("저장하시겠습니까?"))
-      {
-        this.checkValidationInsert();
+      var heaHazardNmKos = this.$_.map(this.gridOptions.data, 'heaHazardNmKo');
+      if (this.$_.indexOf(heaHazardNmKos, this.hazard.heaHazardNmKo) > -1) {
+        window.getApp.$emit('ALERT', {
+          title: '안내',
+          message: '이미 같은 이름의 유해인자명(한글)이 존재합니다.',
+          type: 'warning',
+        });
+        return;
       }
+      // if (window.confirm("저장하시겠습니까?")) {
+      //   this.checkValidationInsert();
+      // }
+      window.getApp.$emit('CONFIRM', {
+        title: '확인',
+        message: '저장하시겠습니까?',
+        type: 'info',  
+        confirmCallback: () => {
+          this.checkValidationInsert();
+        }
+      });
     },
     beforeEdit () {
-      if (window.confirm("수정하시겠습니까?"))
-      {
-        this.checkValidationEdit();
-      }
+      window.getApp.$emit('CONFIRM', {
+        title: '확인',
+        message: '수정하시겠습니까?',
+        type: 'info',
+        confirmCallback: () => {
+          this.checkValidationEdit();
+        }
+      });
     },
     checkValidationInsert () {
       this.$validator.validateAll().then((_result) => {
@@ -448,16 +530,21 @@ export default {
       return null;
     },
     /** /validation checking **/
-
-    /** Component Events, Callbacks (버튼 제외) **/
-    
-    /** /Component, Callbacks (버튼 제외) **/
     
     /** Button Event **/
     // 검색
     btnSearchClickedCallback (_result) {
       this.getDataList();
       window.getApp.$emit('APP_REQUEST_SUCCESS', '검색 버튼이 클릭되었습니다.');
+    },
+    // 검색박스숨기기
+    btnSearchVisibleClicked () {      
+      this.searchArea.show = !this.searchArea.show;
+      if (this.searchArea.show) this.searchArea.title = '검색박스숨기기';
+      else this.searchArea.title = '검색박스보이기';
+      
+      window.getApp.$emit('LOADING_PASS_COUNT', 1);
+      this.setGridSize();
     },
     // 초기화
     btnClearClickedCallback () {
@@ -472,26 +559,30 @@ export default {
       this.getDataList();
       this.updateMode = true;
       this.isInsert = false;
-      window.getApp.$emit('APP_REQUEST_SUCCESS', "정상적으로 저장 되었습니다.");
+      window.getApp.$emit('ALERT', {
+        title: '안내',
+        message: '저장되었습니다.',
+        type: 'success',
+      });
     },
     // 수정
     btnEditClickedCallback (_result) {
       this.getDataList();
       this.isEdit = false;
-      window.getApp.$emit('APP_REQUEST_SUCCESS', "정상적으로 저장 되었습니다.");
+      // window.alert("수정되었습니다.");
+      window.getApp.$emit('ALERT', {
+        title: '안내',
+        message: '수정되었습니다.',
+        type: 'success',
+      });
     },
     // 버튼 에러 처리
     btnClickedErrorCallback (_result) {
-      this.isInsert = false;  // 반드시 isSubmit을 false로 초기화 하세요. 그렇지 않으면 버튼을 다시 클릭해도 동작하지 않습니다.
+      this.isInsert = false;
       this.isEdit = false;
-      // TODO : 여기에 추가 로직 삽입(로직 삽입시 지워주세요)
       window.getApp.emit('APP_REQUEST_ERROR', _result);
     },
     /** /Button Event **/
-    
-    /** 기타 function **/
-    
-    /** /기타 function **/
   }
 };
 </script>
