@@ -70,6 +70,7 @@
             :items="gridOptions.data"
             :excel-down="true"
             :print="true"
+            :useRownum="false"
             @selectedRow="selectedRow"
             label="질환 목록"
             >
@@ -136,7 +137,7 @@
                 :maxlength="5"
                 :hasSeperator="false"
                 ui="bootstrap"
-                label="출력순서"
+                label="정렬순서"
                 name="sortOrder"
                 v-model="disease.sortOrder"
                 >
@@ -287,8 +288,8 @@ export default {
         { text: '질환명', name: 'heaDiseaseNm', width: '210px', },
         { text: '질환코드', name: 'heaDiseaseCd', width: '100px', align: 'center' },
         { text: '비고', name: 'remark', width: '450px' },
-        { text: '출력순서', name: 'sortOrder', width: '100px', align: 'center' },
-        { text: '사용여부', name: 'useYnNm', width: '100px', align: 'center' }
+        { text: '사용여부', name: 'useYnNm', width: '100px', align: 'center' },
+        { text: '정렬순서', name: 'sortOrder', width: '100px', align: 'center' },
       ];
       this.getComboItems('HEA_DISEASE_CLASS'); // 질환종류
       this.setGridSize(); // 그리드 사이즈 조절
@@ -319,8 +320,7 @@ export default {
       this.$http.type = 'GET';
       this.$http.request((_result) => {
         this.comboDisaseTypeItems = this.$_.clone(_result.data);
-        this.comboDisaseTypeItems.splice(0, 0, { 'code': '', 'codeNm': '선택하세요' });
-        this.disease.heaDiseaseClassCd = '';
+        this.comboDisaseTypeItems.splice(0, 0, { 'code': null, 'codeNm': '선택하세요' });
         this.comboDisaseTypeSelectItems = this.$_.clone(_result.data);
         this.comboDisaseTypeSelectItems.splice(0, 0, { 'code': '', 'codeNm': '전체' });
         this.searchParam.heaDiseaseClassCd = '';
@@ -499,7 +499,6 @@ export default {
       this.editable = false;
       Object.assign(this.$data.disease, this.$options.data().disease);
       this.$validator.reset();
-      this.disease.heaDiseaseClassCd = '';
     },
     /**
      * 수정 버튼 안보여지도록 처리 및 isSubmit false 처리

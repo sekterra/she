@@ -43,7 +43,7 @@ export default {
   },
   mounted () {
   },
-  beforeDestory () {
+  beforeDestroy () {
   },
   //* methods */
   methods: {

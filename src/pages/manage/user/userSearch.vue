@@ -42,6 +42,7 @@
               <y-select
                 :width="8"
                 :comboItems="deptCdItems"
+                :disabled="disabled"
                 itemText="deptNm"
                 itemValue="deptCd"
                 ui="bootstrap"
@@ -122,10 +123,11 @@ export default {
       type: Object,
       default: {
         multiple: false,
+        disabled: false,
         processNo: 0,
         deptCd: '',
         userId: '',
-        userNm: ''
+        userNm: '',
       },
     },
   },
@@ -148,6 +150,7 @@ export default {
         selectedValue: []
       },
       multiple: false,
+      disabled: false,
       processNoItems: [],
       deptCdItems: [],
       searchUrl: ''
@@ -184,6 +187,7 @@ export default {
       this.searchParam.deptCd = this.popupParam.deptCd;
       this.searchParam.userId = this.popupParam.userId;
       this.searchParam.userNm = this.popupParam.userNm;
+      this.disabled = this.popupParam.disabled;
 
       // 선택항목 설정
       setTimeout(() => {
@@ -236,7 +240,9 @@ export default {
       this.$http.request((_result) => {
         _result.data.splice(0, 0, { 'deptCd': '', 'deptNm': '전체' });
         this.deptCdItems = _result.data;
-        this.searchParam.deptCd = '';
+        if (this.popupParam.deptCd !== '' && this.popupParam.deptCd !== undefined) this.searchParam.deptCd = this.popupParam.deptCd;
+        else this.searchParam.deptCd = '';
+        
       }, (_error) => {
         window.getApp.$emit('APP_REQUEST_ERROR', _error);
       });

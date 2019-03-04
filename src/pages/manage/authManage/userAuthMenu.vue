@@ -24,7 +24,7 @@
             label="사용자 목록"
             ref="userGrid"
             v-model="userGridOptions.selectedItems"
-            @rowDoubleClicked="userGridSelectedRow"
+            @selectedRow="userGridSelectedRow"
             @selectionChanged="userCheckedChanged"
           >
             <el-table-column
@@ -340,6 +340,7 @@ export default {
     },
     btnUserMenuSaveClicked (_result) {
       this.isUserMenuSave = false;
+      window.getApp.$emit('APP_REQUEST_SUCCESS', "정상적으로 저장 되었습니다.");
     },
     /**
     * 버튼 에러 처리용 공통함수

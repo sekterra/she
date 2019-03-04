@@ -39,14 +39,14 @@
               <y-select
                 :width="7"
                 :editable="editable"
-                :comboItems="hazardClassSelItems"
+                :comboItems="hazardGradSelItems"
                 itemText="codeNm"
                 itemValue="code"
                 ui="bootstrap"
                 type="search"
                 label="유해인자 분류"
-                name="heaHazardClassCd"
-                v-model="searchParam.heaHazardClassCd"
+                name="hazardGradCd"
+                v-model="searchParam.hazardGradCd"
               >
               </y-select>
             </b-col>
@@ -57,8 +57,8 @@
                 ui="bootstrap"
                 type="search"
                 label="유해인자명(한글)"
-                name="heaHazardNmKo"
-                v-model="searchParam.heaHazardNmKo"
+                name="hazardNmKo"
+                v-model="searchParam.hazardNmKo"
               >
               </y-text>
             </b-col>
@@ -71,24 +71,9 @@
                 itemValue="code"
                 ui="bootstrap"
                 type="search"
-                label="특수검진 관련 여부"
+                label="특수검진 여부"
                 name="specialYn"
                 v-model="searchParam.specialYn"
-              >
-              </y-select>
-            </b-col>
-            <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
-              <y-select
-                :width="7"
-                :editable="editable"
-                :comboItems="comboWorkEnvYnItems"
-                itemText="codeNm"
-                itemValue="code"
-                ui="bootstrap"
-                type="search"
-                label="작업환경 관련 여부"
-                name="workEnvYn"
-                v-model="searchParam.workEnvYn"
               >
               </y-select>
             </b-col>
@@ -132,16 +117,16 @@
                   <y-select
                     :width="8"
                     :editable="editable"
-                    :comboItems="hazardClassInsItems"
+                    :comboItems="hazardGradInsItems"
                     :required="true"
                     itemText="codeNm"
                     itemValue="code"
                     ui="bootstrap"
                     label="유해인자 분류"
-                    name="heaHazardClassCd"
-                    v-model="hazard.heaHazardClassCd"
+                    name="hazardGradCd"
+                    v-model="hazard.hazardGradCd"
                     v-validate="'required'"
-                    :state="validateState('heaHazardClassCd')"
+                    :state="validateState('hazardGradCd')"
                   >
                   </y-select>
                 </b-col>
@@ -153,8 +138,8 @@
                     :disabled="true"
                     ui="bootstrap"
                     label="유해인자 코드"
-                    name="heaHazardCd"
-                    v-model="hazard.heaHazardCd"
+                    name="hazardCd"
+                    v-model="hazard.hazardCd"
                   >
                   </y-text>
                 </b-col>
@@ -166,10 +151,10 @@
                     :required="true"
                     ui="bootstrap"
                     label="유해인자명(한글)"
-                    name="heaHazardNmKo"
-                    v-model="hazard.heaHazardNmKo"
+                    name="hazardNmKo"
+                    v-model="hazard.hazardNmKo"
                     v-validate="'required'"
-                    :state="validateState('heaHazardNmKo')"
+                    :state="validateState('hazardNmKo')"
                   >
                   </y-text>
                 </b-col>
@@ -180,29 +165,14 @@
                     :maxlength="30"
                     ui="bootstrap"
                     label="유해인자명(영문)"
-                    name="heaHazardNmEn"
-                    v-model="hazard.heaHazardNmEn"
+                    name="hazardNmEn"
+                    v-model="hazard.hazardNmEn"
                   >
                   </y-text>
                 </b-col>
-                <b-col sm="12" md="12" lg="12" xl="12" class="col-xxl-6">
-                  <y-multi-select
-                    :width="10"
-                    :editable="editable"
-                    :comboItems="processItems"
-                    type="edit"
-                    itemText="processNm"
-                    itemValue="processNo"
-                    ui="bootstrap"
-                    label="공정"
-                    name="processNo"
-                    v-model="processNos"
-                  >
-                  </y-multi-select> 
-                </b-col>
-                <b-col sm="4" md="4" lg="4" xl="4" class="col-xxl-2">
+                <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
                   <y-switch
-                    :width="6"
+                    :width="baseWidth"
                     :editable="editable"
                     :required="true"
                     true-value="Y"
@@ -218,27 +188,9 @@
                     >
                   </y-switch>
                 </b-col>
-                <b-col sm="4" md="4" lg="4" xl="4" class="col-xxl-2">
+                <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
                   <y-switch
-                    :width="6"
-                    :editable="editable"
-                    :required="true"
-                    true-value="Y"
-                    false-value="N"
-                    ui="bootstrap"
-                    label="작업환경 여부"
-                    name="workEnvYn"
-                    selectText="관련"
-                    unselectText="미관련"
-                    v-model="hazard.workEnvYn"
-                    v-validate="'required'"
-                    :state="validateState('workEnvYn')"
-                    >
-                  </y-switch>
-                </b-col>
-                <b-col sm="4" md="4" lg="4" xl="4" class="col-xxl-2">
-                  <y-switch
-                    :width="6"
+                    :width="baseWidth"
                     :editable="editable"
                     :required="true"
                     true-value="Y"
@@ -306,12 +258,11 @@ export default {
   data () {
     return {
       hazard: {
-        heaHazardCd: null,
-        heaHazardClassCd: null,
-        heaHazardNmKo: '',
-        heaHazardNmEn: '',
+        hazardCd: null,
+        hazardGradCd: null,
+        hazardNmKo: '',
+        hazardNmEn: '',
         specialYn: '',
-        workEnvYn: '',
         useYn: 'Y',
         processNos: [],
       },
@@ -320,10 +271,9 @@ export default {
         show: true
       },
       searchParam: {
-        heaHazardClassCd: '',
-        heaHazardNmKo: null,
+        hazardGradCd: '',
+        hazardNmKo: null,
         specialYn: '',
-        workEnvYn: '',
       },
       gridOptions: {
         header: [],
@@ -336,21 +286,13 @@ export default {
       searchUrl: '',
       insertUrl: '',
       editUrl: '',
-      hazardClassSelItems: [],
-      hazardClassInsItems: [],
+      hazardGradSelItems: [],
+      hazardGradInsItems: [],
       comboSpecialYnItems: [],
-      comboWorkEnvYnItems: [],
       processItems: [],
-      processNos: [],
       isInsert: false,
       isEdit: false,  
     };
-  },
-  watch: {
-    // 공정 콤보박스
-    processNos () {
-      this.hazard.processNos = this.$_.map(this.processNos, 'code');
-    }
   },
   beforeMount () {
     Object.assign(this.$data, this.$options.data());
@@ -376,24 +318,17 @@ export default {
         this.comboSpecialYnItems.push({ 'code': 'Y', 'codeNm': '관련' });
         this.comboSpecialYnItems.push({ 'code': 'N', 'codeNm': '미관련' });
 
-        this.comboWorkEnvYnItems.push({ 'code': '', 'codeNm': '전체' });
-        this.comboWorkEnvYnItems.push({ 'code': 'Y', 'codeNm': '관련' });
-        this.comboWorkEnvYnItems.push({ 'code': 'N', 'codeNm': '미관련' });
-
         this.getComboItems();
-        this.getProcessItems();
         this.getDataList();
       }, 200);
 
       // 유해인자 그리드 헤더 설정
       this.gridOptions.header = [
-        { text: 'NO', name: 'rowNum', width: '15%', align: 'center' },
-        { text: '유해인자 분류', name: 'heaHazardClassNm', width: '25%', align: 'center' },
-        { text: '유해인자명(한글)', name: 'heaHazardNmKo', width: '30%', align: 'center' },
-        { text: '유해인자명(영문)', name: 'heaHazardNmEn', width: '30%', align: 'center' },
-        { text: '특수검진 관련 여부', name: 'specialYn', width: '30%', align: 'center' },
-        { text: '작업환경 관련 여부', name: 'workEnvYn', width: '30%', align: 'center' },
-        { text: '사용 여부', name: 'useYn', width: '20%', align: 'center' },
+        { text: '유해인자 분류', name: 'hazardGradNm', width: '25%', align: 'center' },
+        { text: '유해인자명(한글)', name: 'hazardNmKo', width: '30%', align: 'center' },
+        { text: '유해인자명(영문)', name: 'hazardNmEn', width: '30%', align: 'center' },
+        { text: '특수검진 관련 여부', name: 'specialYnNm', width: '30%', align: 'center' },
+        { text: '사용 여부', name: 'useYnNm', width: '20%', align: 'center' },
       ];
     },
 
@@ -402,22 +337,11 @@ export default {
       this.$http.url = this.$format(selectConfig.codeMaster.getSelect.url, 'HEA_HAZARD_CLASS');
       this.$http.type = 'get';
       this.$http.request((_result) => {
-        this.hazardClassSelItems = this.$_.clone(_result.data);
-        this.hazardClassSelItems.splice(0, 0, { 'code': '', 'codeNm': '전체' });
-        this.hazardClassInsItems = this.$_.clone(_result.data);
-        this.hazardClassInsItems.splice(0, 0, { 'code': '', 'codeNm': '선택하세요' });
-        this.hazard.heaHazardClassCd = '';
+        this.hazardGradSelItems = this.$_.clone(_result.data);
+        this.hazardGradSelItems.splice(0, 0, { 'code': '', 'codeNm': '전체' });
+        this.hazardGradInsItems = this.$_.clone(_result.data);
+        this.hazardGradInsItems.splice(0, 0, { 'code': null, 'codeNm': '선택하세요' });
       }, (_error) => {
-      });
-    },
-    // 공정
-    getProcessItems () {
-      this.$http.url = selectConfig.manage.process.list.url;
-      this.$http.type = 'GET';
-      this.$http.request((_result) => {
-        this.processItems = _result.data;
-      }, (_error) => {
-        window.getApp.$emit('APP_REQUEST_ERROR', _error);
       });
     },
     // 유해인자 그리드
@@ -435,30 +359,11 @@ export default {
     selectedRow (data) {
       if (data === null) return;
 
-      this.$http.url = this.$format(selectConfig.hazard.get.url, data.heaHazardCd);
+      this.$http.url = this.$format(selectConfig.hazard.get.url, data.hazardCd);
       this.$http.type = 'GET';
       this.$http.request((_result) => {
         this.updateMode = true;
         this.hazard = this.$_.clone(_result.data);
-
-        // 공정
-        this.$http.url = selectConfig.manage.process.list.url;
-        this.$http.type = 'GET';
-        this.$http.param = {
-          'heaHazardCd': this.hazard.heaHazardCd
-        };
-        this.$http.request((_result) => {
-          var options = [];
-          this.$_.forEach(_result.data, (_item) => {
-            options.push({
-              name: _item['processNm'],
-              code: _item['processNo']
-            });
-          });
-          this.processNos = options;
-        }, (_error) => {
-          window.getApp.$emit('APP_REQUEST_ERROR', _error);
-        });
       }, (_error) => {
         window.getApp.$emit('APP_REQUEST_ERROR', _error);
       });
@@ -476,8 +381,8 @@ export default {
     
     /** validation checking **/
     beforeInsert () {
-      var heaHazardNmKos = this.$_.map(this.gridOptions.data, 'heaHazardNmKo');
-      if (this.$_.indexOf(heaHazardNmKos, this.hazard.heaHazardNmKo) > -1) {
+      var hazardNmKos = this.$_.map(this.gridOptions.data, 'hazardNmKo');
+      if (this.$_.indexOf(hazardNmKos, this.hazard.hazardNmKo) > -1) {
         window.getApp.$emit('ALERT', {
           title: '안내',
           message: '이미 같은 이름의 유해인자명(한글)이 존재합니다.',
@@ -535,7 +440,6 @@ export default {
     // 검색
     btnSearchClickedCallback (_result) {
       this.getDataList();
-      window.getApp.$emit('APP_REQUEST_SUCCESS', '검색 버튼이 클릭되었습니다.');
     },
     // 검색박스숨기기
     btnSearchVisibleClicked () {      
@@ -555,7 +459,7 @@ export default {
     },
     // 신규등록
     btnInsertClickedCallback (_result) {
-      this.hazard.heaHazardCd = _result.data;
+      this.hazard.hazardCd = _result.data;
       this.getDataList();
       this.updateMode = true;
       this.isInsert = false;

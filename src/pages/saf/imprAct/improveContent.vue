@@ -19,36 +19,36 @@
           <b-row>
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-6">
               <y-datepicker
-                :width="8"
+                :width="6"
                 :disabled="contentsCheck"
                 label="조치일"
                 type="today"
-                name="workOverTime"
-                v-model="imprAct.safImprActNo"
+                name="actConfirmYmd"
+                v-model="imprAct.actConfirmYmd"
               >
               </y-datepicker>
             </b-col>
             <b-col sm="12" md="12" lg="12" xl="12" class="col-xxl-12">
               <y-textarea
-                :width="10"
+                :width="9"
                 :maxlength="150"
                 :disabled="contentsCheck"
                 :required="!contentsCheck"
-                label="조치내용 및 결과"
+                label="조치결과내용"
                 ui="bootstrap"
-                name="imprRqstContents"
-                v-model="imprAct.imprRqstContents"
+                name="actResultContents"
+                v-model="imprAct.actResultContents"
               />
             </b-col>
             <b-col sm="12" md="12" lg="12" xl="12" class="col-xxl-12">
               <y-textarea
-                :width="10"
+                :width="9"
                 :maxlength="150"
                 :disabled="reviewCheck"
                 :required="!reviewCheck"
-                label="요청부서 검토결과"
+                label="요청부서 조치결과검토"
                 ui="bootstrap"
-                name="imprRqstContents"
+                name="actResultReview"
                 v-model="imprAct.actResultReview"
               />
             </b-col>
@@ -98,7 +98,7 @@ export default {
         flag: ''
       },
       contentsCheck: true,
-      reviewCheck: true
+      reviewCheck: true,
     }
   },
   data () {
@@ -112,33 +112,27 @@ export default {
   },
   beforeMount () {
     Object.assign(this.$data, this.$options.data());
-    if (this.imprAct.flag === 'ACTION') 
-    {
-      this.contentsCheck = false;
-      this.reviewCheck = true;
-    }
-    else if (this.imprAct.flag === 'CONFIRM')
-    {
-      this.contentsCheck = true;
-      this.reviewCheck = false;
-    }
-    else
-    {
-      this.contentsCheck = true;
-      this.reviewCheck = true;
-    }
+    this.init();
   },
   updated () {
   },
   mounted () {
   },
-  beforeDestory () {
+  beforeDestroy () {
   },
   //* methods */
   methods: {
     init () {
-    },
-    getList () {
+      if (this.imprAct.flag === 'IMPROVE') {
+        this.contentsCheck = false;
+        this.reviewCheck = true;
+      } else if (this.imprAct.flag === 'CONFIRM') {
+        this.contentsCheck = true;
+        this.reviewCheck = false;
+      } else {
+        this.contentsCheck = true;
+        this.reviewCheck = true;
+      }
     },
     fileUploadComplete () {
     },

@@ -10,8 +10,10 @@ import Layout from '@/views/layout/Layout'
 import heaRouter from './modules/heaRouter.js'
 import safeRouter from './modules/safeRouter.js'
 import envRouter from './modules/envRouter.js'
+import baseInfoRouter from './modules/baseInfoRouter.js'
 import manageRouter from './modules/manageRouter.js'
 import sampleRouter from './modules/sampleRouter.js'
+import rsaRouter from './modules/rsaRouter.js'
 
 /** note: Submenu only appear when children.length>=1
  *  detail see  https://panjiachen.github.io/vue-element-admin-site/guide/essentials/router-and-nav.html
@@ -87,10 +89,12 @@ export default new Router({
 
 export const asyncRouterMap = [
   /** When your routing table is too long, you can split it into small modules**/
-  heaRouter,
   safeRouter,
-  envRouter,  
+  heaRouter,
+  envRouter,
+  rsaRouter,
+  baseInfoRouter,
   manageRouter,
-  sampleRouter,  
+  sampleRouter,
   { path: '*', redirect: '/404', hidden: true }
 ]

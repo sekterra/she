@@ -79,18 +79,7 @@
         </b-col>
       </b-col>
     </b-row>
-    <el-dialog
-      :title="popupOptions.title"
-      :visible.sync="popupOptions.visible"
-      :fullscreen="false"
-      :append-to-body="true"
-      :close-on-click-modal="false"
-      :close-on-press-escape="false"
-      :show-close="false"
-      :width="popupOptions.width"
-      :top="popupOptions.top">
-      <component :is="popupOptions.target" :popupParam="popupOptions.param" @closePopup="popupOptions.closeCallback" />
-    </el-dialog>
+    <y-popup :param="popupOptions"></y-popup>
   </b-container>
 </template>
 
@@ -184,7 +173,7 @@ export default {
         _result.data.splice(0, 0, { 'deptCd': '', 'deptNm': '전체' });
         this.comboDeptItems = _result.data;
       }, (_error) => {
-        window.getApp.$emit('APP_REQUEST_ERROR', _error);
+        window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
       });
     },
 
@@ -195,7 +184,7 @@ export default {
       this.$http.request((Result) => {
         this.gridOptions.data = Result.data;
       }, (_error) => {
-        window.getApp.$emit('APP_REQUEST_ERROR', _error);
+        window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
       });
     },
     /**

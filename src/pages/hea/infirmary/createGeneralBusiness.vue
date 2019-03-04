@@ -167,18 +167,7 @@
         </div>
       </b-col>
     </b-row>
-    <el-dialog
-      :title="popupOptions.title"
-      :visible.sync="popupOptions.visible"
-      :fullscreen="false"
-      :append-to-body="true"
-      :close-on-click-modal="false"
-      :close-on-press-escape="false"
-      :show-close="false"
-      :width="popupOptions.width"
-      :top="popupOptions.top">
-      <component :is="popupOptions.target" :popupParam="popupOptions.param" @closePopup="popupOptions.closeCallback" />
-    </el-dialog>
+    <y-popup :param="popupOptions"></y-popup>
   </b-container>
 </template>
 
@@ -308,7 +297,7 @@ export default {
         _result.data.splice(0, 0, { 'userId': null, 'userNm': '선택하세요' });
         this.comboUserItems = _result.data;
       }, (_error) => {
-        window.getApp.$emit('APP_REQUEST_ERROR', _error);
+        window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
       });
     },
     getHeaTreatCdItems () {
@@ -318,7 +307,7 @@ export default {
         _result.data.splice(0, 0, { 'code': '', 'codeNm': '선택하세요' });
         this.heaTreatCdItems = _result.data;
       }, (_error) => {
-        window.getApp.$emit('APP_REQUEST_ERROR', _error);
+        window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
       });
     },
     getDrugList () {
@@ -330,7 +319,7 @@ export default {
       this.$http.request((_result) => {
         this.drugGridData = _result.data;
       }, (_error) => {
-        window.getApp.$emit('APP_REQUEST_ERROR', _error);
+        window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
       });
     },
     getInfirmaryUsage () {
@@ -342,7 +331,7 @@ export default {
         
         this.tempYmd = this.infirmaryUsage.visitYmd;
       }, (_error) => {
-        window.getApp.$emit('APP_REQUEST_ERROR', _error);
+        window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
       });
     },
     beforeInsert () {
@@ -359,7 +348,7 @@ export default {
         if (_result) {
           window.getApp.$emit('CONFIRM', {
             title: '확인',
-            message: '등록하시겠습니까?',
+            message: '건강관리실 일반업무 정보를 저장하시겠습니까?',
             type: 'info',
             // 확인 callback 함수
             confirmCallback: () => {
@@ -393,7 +382,7 @@ export default {
         if (_result) {
           window.getApp.$emit('CONFIRM', {
             title: '확인',
-            message: '수정하시겠습니까?',
+            message: '건강관리실 일반업무 정보를 수정하시겠습니까?',
             type: 'info',
             // 확인 callback 함수
             confirmCallback: () => {
@@ -427,7 +416,7 @@ export default {
       this.isInsertSubmit = false;
       window.getApp.$emit('ALERT', {
         title: '안내',
-        message: '등록되었습니다.',
+        message: '건강관리실 일반업무 정보를 정상적으로 저장하였습니다.',
         type: 'success',
       });
       this.closePopupUsage();
@@ -436,7 +425,7 @@ export default {
       this.isEditSubmit = false;
       window.getApp.$emit('ALERT', {
         title: '안내',
-        message: '수정되었습니다.',
+        message: '건강관리실 일반업무 정보를 정상적으로 수정하였습니다.',
         type: 'success',
       });
       this.closePopupUsage();
@@ -445,13 +434,12 @@ export default {
       this.isInsertSubmit = false;
       this.isEditSubmit = false;
       this.editable = false;
-      window.getApp.$emit('APP_REQUEST_ERROR', _result);
+      window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
       this.closePopupUsage();
     },
     btnClearClickedCallback () {
       Object.assign(this.$data.infirmaryUsage, this.$options.data().infirmaryUsage);
       this.$validator.reset();
-      window.getApp.$emit('APP_REQUEST_SUCCESS', '초기화 버튼이 클릭 되었습니다.');
       var rowVal = [];
       this.$_.forEach(this.drugGridData, (row) => {
         row.amount = 0;

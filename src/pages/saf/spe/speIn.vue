@@ -94,10 +94,12 @@
             gridType="edit"
             :excel-down="true"
             :print="true"
+            :use-paging="true"
             ref="dataTable"
             :height="gridOptions.height"
             :headers="gridOptions.header"
             :items="gridOptions.data"
+            @tableLinkClicked="tableLinkClicked"
             >
           </y-data-table>
         </b-col>
@@ -105,17 +107,7 @@
     </b-row>
 
     <!-- 팝업 설정 -->
-    <el-dialog
-      :title="popupOptions.title"
-      :visible.sync="popupOptions.visible"
-      :fullscreen="false"
-      :width="popupOptions.width"        
-      :close-on-click-modal="false"
-      :close-on-press-escape="false"
-      :show-close="false"
-      :top="popupOptions.top" >
-      <component :is="popupOptions.target" :popupParam="popupOptions.param" @closePopup="popupOptions.closeCallback" />
-    </el-dialog>
+    <y-popup :param="popupOptions"></y-popup>
   </b-container>
 </template>
 
@@ -143,7 +135,7 @@ export default {
       gridOptions: {
         header: [],
         data: [],
-        height: '500'
+        height: '440'
       },
       popupOptions: {
         target: null,
@@ -185,6 +177,7 @@ export default {
     /** 초기화 관련 함수 **/
     init () {
       // URL 셋팅
+      this.searchUrl = selectConfig.saf.speInList.list.url;
 
       var today = this.$comm.getToday();
       var from = this.$comm.getCalculatedDate(today, '-1m', 'YYYY-MM-DD', 'YYYY-MM-DD');
@@ -192,19 +185,22 @@ export default {
 
       setTimeout(() => {
         this.searchParam.period = [from, to];
+        this.getDataList();  // 입고현황 grid
       }, 200);
       
       this.getSpeKindCds(); // 보호구 종류
 
       // 보호구 입고 grid 헤더 설정
       this.gridOptions.header = [
-        { text: '진행단계', name: 'processStepNm', width: '150px', align: 'center' },
-        { text: '입고일', name: 'inYmd', width: '100px', align: 'center' },
-        { text: '보호구종류', name: 'speKindNm', width: '130px', align: 'center' },
-        { text: '보호구명', name: 'speNm', width: '200px', align: 'left' },
+        { text: '진행단계', name: 'processStepNm', width: '120px', align: 'center' },
+        { text: '입고일', name: 'inYmd', width: '140px', align: 'center' },
+        { text: '보호구종류', name: 'speKindNm', width: '140px', align: 'center' },
+        { text: '보호구명', name: 'speNm', width: '220px', align: 'left', url: 'true' },
         { text: '입고개수', name: 'inNum', width: '100px', align: 'center' },
-        { text: '단위', name: 'giveUnitNm', width: '90px', align: 'center' },
+        { text: '단위', name: 'giveUnitNm', width: '100px', align: 'center' },
       ];
+
+      this.setGridSize();
     },
     // 보호구 종류
     getSpeKindCds () {
@@ -216,6 +212,20 @@ export default {
       }, (_error) => {
         window.getApp.$emit('APP_REQUEST_ERROR', _error);
       });
+    },
+    // 수불현황 grid
+    getDataList () {
+      this.$http.url = this.searchUrl;
+      this.$http.type = 'GET';
+      this.$http.param = this.searchParam;
+      this.$http.request((_result) => {
+        this.gridOptions.data = _result.data;
+      }, (_error) => {
+        window.getApp.$emit('APP_REQUEST_ERROR', _error);
+      });
+    },
+    openDetailPage (data) {
+    
     },
     /** /초기화 관련 함수 **/
     
@@ -233,7 +243,7 @@ export default {
     setGridSize () {
       window.getApp.$emit('LOADING_SHOW');
       setTimeout(() => {
-        this.gridOptions.height = window.innerHeight - this.$refs.searchBox.clientHeight - 260;
+        this.gridOptions.height = window.innerHeight - this.$refs.searchBox.clientHeight - 320;
         window.getApp.$emit('LOADING_HIDE');
       }, 600);
     },
@@ -273,12 +283,25 @@ export default {
     },
     // 검색
     btnSearchClickedCallback (_result) {
-      // this.getDataList();
+      this.getDataList();
+    },
+    // 수정 팝업
+    tableLinkClicked (header, data) {
+      this.popupOptions.target = () => import(`${'./createSpeIn.vue'}`);
+      this.popupOptions.title = '입고 상세';
+      this.popupOptions.visible = true;
+      this.popupOptions.width = '70%';
+      this.popupOptions.top = '10px';
+      this.popupOptions.param = {
+        'safSpeInNo': data.safSpeInNo,
+        'processStepCd': data ? data.processStepCd : 'STEP1'
+      };
+      this.popupOptions.closeCallback = this.closePopup;
     },
     // 신규등록 팝업
     btnPopupClickedCallback () {
       this.popupOptions.target = () => import(`${'./createSpeIn.vue'}`);
-      this.popupOptions.title = '유형별 설비 등록';
+      this.popupOptions.title = '보호구 입고 등록';
       this.popupOptions.visible = true;
       this.popupOptions.width = '70%';
       this.popupOptions.top = '10px';
@@ -291,7 +314,7 @@ export default {
     closePopup (data) {
       this.popupOptions.target = null;
       this.popupOptions.visible = false;
-      // this.getDataList();
+      this.getDataList();
     },
     /**
     * 저장 버튼 처리용 샘플함수

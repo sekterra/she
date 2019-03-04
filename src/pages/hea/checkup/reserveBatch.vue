@@ -13,13 +13,13 @@
         <b-card no-body class="px-3 py-2">
           <b-row class="mt-2">
             <b-col sm="4">
-              <y-label label="검진종류: " /><y-label :label="checkupPlan.heaCheckupClassNm" fieldable="true" />
+              <y-label label="검진종류: " /><y-label :label="checkupPlan.heaCheckupClassNm" :fieldable="true" />
             </b-col>
             <b-col sm="4">
-              <y-label label="검진계획: " /><y-label :label="checkupPlan.heaCheckupPlanNm" fieldable="true" />
+              <y-label label="검진계획: " /><y-label :label="checkupPlan.heaCheckupPlanNm" :fieldable="true" />
             </b-col>
             <b-col sm="4">
-              <y-label label="검진일자: " /><y-label :label="checkupPlan.heaCheckupPlanPeriod" fieldable="true" />
+              <y-label label="검진일자: " /><y-label :label="checkupPlan.heaCheckupPlanPeriod" :fieldable="true" />
             </b-col>
           </b-row>
         </b-card>
@@ -53,7 +53,7 @@
       />
       </b-col>    
       <b-col sm="4" md="4" lg="4" xl="4" class="col-xxl-4">
-      <y-label label="예약일: " /><y-label :label="editParam.reserveYmd" fieldable="true" />
+      <y-label label="예약일: " /><y-label :label="editParam.reserveYmd" :fieldable="true" />
       </b-col>        
     </b-row>
 
@@ -210,7 +210,7 @@ export default {
         { text: '사번', name: 'userId', width: '100px', align: 'center' },
         { text: '성명', name: 'userNm', width: '100px', align: 'center' },
         { text: '입사일', name: 'entryYmd', width: '100px', align: 'center' },
-        { text: '휴대전환', name: 'phoneNo', width: '120px', align: 'center' },
+        { text: '휴대전화', name: 'phoneNo', width: '120px', align: 'center' },
         { text: '사내전화', name: 'officeTel', width: '120px', align: 'center' }
       ];
 
@@ -242,7 +242,7 @@ export default {
       this.$http.request((_result) => {
         this.checkupPlan = _result.data;
       }, (_error) => {
-        window.getApp.$emit('APP_REQUEST_ERROR', _error);
+        window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
       });
     },
     getList () {
@@ -252,7 +252,7 @@ export default {
       this.$http.request((_result) => {
         this.gridData = _result.data;
       }, (_error) => {
-        window.getApp.$emit('APP_REQUEST_ERROR', _error);
+        window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
       });
     },
     getReserveList () {
@@ -265,7 +265,7 @@ export default {
         this.$http.request((_result) => {
           this.reserveGridData = _result.data;
         }, (_error) => {
-          window.getApp.$emit('APP_REQUEST_ERROR', _error);
+          window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
         });        
       }
       else {
@@ -283,7 +283,7 @@ export default {
         this.heaCheckupOrgNoReserveItems = _result.data;
         this.searchReserveParam.heaCheckupOrgNo = 0;
       }, (_error) => {
-        window.getApp.$emit('APP_REQUEST_ERROR', _error);
+        window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
       });
     },
     reserveSelectedRow (data) {
@@ -339,7 +339,7 @@ export default {
     },
     btnClickedErrorCallback (_result) {
       this.isEditSubmit = false;       
-      window.getApp.$emit('APP_REQUEST_ERROR', _result);
+      window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
     },
     /** end button 관련 이벤트 **/
   }

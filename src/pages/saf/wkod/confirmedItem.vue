@@ -19,13 +19,10 @@
                     :width="9"
                     :maxlength="150"
                     :disabled="true"
-                    label="취급물질" 
-                    :required="true"
+                    label="유해인자" 
                     ui="bootstrap"
                     name="handleChemContent"
                     v-model="wkodMaster.handleChemContent"
-                    v-validate="'required'"
-                    :state="validateState('handleChemContent')"
                   />
                 </b-col>
                 <b-col sm="4">
@@ -41,6 +38,7 @@
               <y-checkbox
                 :width="10"
                 :comboItems="wkodSpeCdsItems"
+                :disabled="!editable"
                 itemText="codeNm"
                 itemValue="code"
                 ui="bootstrap"
@@ -52,7 +50,8 @@
             <b-col sm="12" md="12" lg="12" xl="12" class="col-xxl-12">
               <y-text
                 :width="10"
-                :maxlength="50"
+                :maxlength="30"
+                :disabled="!editable"
                 ui="bootstrap"
                 label="보호구 기타"
                 name="spmEtc"
@@ -64,21 +63,7 @@
         </b-card>
       </b-col>
     </b-row>
-    
-    <el-dialog
-      :title="popupOptions.title"
-      :visible.sync="popupOptions.visible"
-      :fullscreen="false"
-      :append-to-body="true"
-      :close-on-click-modal="false"
-      :close-on-press-escape="false"
-      :show-close="false"
-      :width="popupOptions.width"
-      :height="popupOptions.height"
-      :top="popupOptions.top">
-      <component :is="popupOptions.target" :popupParam="popupOptions.param" @closePopup="closePopup" />
-    </el-dialog>
-
+    <y-popup :param="popupOptions"></y-popup>
   </b-container>
 </template>
 
@@ -107,9 +92,10 @@ export default {
         target: null,
         title: '',
         visible: false,
-        width: '40%',
+        width: '80%',
         top: '50px',
-        param: {}
+        param: {},
+        closeCallback: null
       },
       searchUrl: '',
       editable: true,
@@ -123,7 +109,7 @@ export default {
   },
   beforeMount () {
     Object.assign(this.$data, this.$options.data());
-    this.getWkodSpeCdsItems();
+    this.init();
   },
   updated () {
     // this.$nextTick(function () {
@@ -132,15 +118,18 @@ export default {
     // })
   },
   mounted () {
-    if (this.wkodMaster.wkodStepCd !== 'WKS01') {
-      this.editable = false;
-    }
   },
-  beforeDestory () {
+  beforeDestroy () {
   },
   //* methods */
   methods: {
     init () {
+      console.log(this.wkodMaster.wkodStepCd);
+      if (this.wkodMaster.wkodStepCd !== 'WKS01') {
+        this.editable = false;
+      }
+
+      this.getWkodSpeCdsItems();
     },
     getList () {
     },
@@ -154,20 +143,15 @@ export default {
         this.$emit('APP_REQUEST_ERROR', _error);
       });
     },
-    validateState (ref) {
-      if (this.veeBag[ref] && (this.veeBag[ref].dirty || this.veeBag[ref].validated)) {
-        return !this.errors.has(ref);
-      }
-      return null;
-    },
     openPopup () {
       this.popupOptions.param = {
         'wkodNo': this.wkodMaster.wkodNo,
         'selectHandleChemContentRow': this.wkodMaster.selectHandleChemContentRow
       };
-      this.popupOptions.target = () => import(`${'./wkodMatMstDialog.vue'}`);
-      this.popupOptions.title = '취급물질검색';
+      this.popupOptions.target = () => import(`${'./hazardDialog.vue'}`);
+      this.popupOptions.title = '유해인자검색';
       this.popupOptions.visible = true;
+      this.popupOptions.closeCallback = this.closePopup;
     },
     closePopup (data) {
       var i = 0;
@@ -176,11 +160,9 @@ export default {
       this.wkodMaster.selectHandleChemContentRow.forEach(data => {
         if (i === 0) {
           i++;
-          this.wkodMaster.handleChemContent = data.wkodMatNm;
-        }
-        else
-        {
-          this.wkodMaster.handleChemContent += " ," + data.wkodMatNm;
+          this.wkodMaster.handleChemContent = data.hazardNmKo;
+        } else {
+          this.wkodMaster.handleChemContent += " ," + data.hazardNmKo;
         }
       });
       this.popupOptions.target = null;

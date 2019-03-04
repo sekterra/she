@@ -11,62 +11,33 @@
     
     <b-row class="mt-3" ref="insertBox">
       <b-col sm="12">
-        <b-row>
-          <b-col sm="12">
-            <y-label label="폭기조 운전상태" icon="user-edit" color-class="cutstom-title-color" />
-          </b-col>
-        </b-row>
-        <b-card >
-          <b-row>
-            <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
-              <y-datepicker 
-                :width="8"
-                :editable="editable"
-                label="측정일"
-                name="measureYmd"
-                v-model="ewtrAerationTankChkResult.measureYmd"
-                :disabled="true"
-                :required="true"
-                v-validate="'required'"
-                :state="validateState('measureYmd')"
-              >
-              </y-datepicker>
-            </b-col>
-          </b-row>
-
-          <b-col sm="12" class="px-0">
-            <y-data-table 
-              label="폭기조 운전상태  점검 목록"
-              ref="dataTable"
-              grid-type="edit"
-              :editable="editable"
-              :height="gridOptions.height"
-              :headers="gridOptions.header"
-              :items="gridOptions.data"
-              >
-            </y-data-table>
-          </b-col>
-          <div class="float-right mt-3">
+        <b-col sm="12" class="px-0">
+          <div slot="buttonGroup" class="float-right mb-1">
             <y-btn
-              v-if="editable"
-              title="초기화"
-              @btnClicked="btnClearClickedCallback" 
-            />
-            <y-btn
-              v-if="editable"
-              :action-url="insertUrl"
-              :param="ewtrAerationTankChkResult"
-              :is-submit="isInsert"
+              v-if="editable&&measureEditable"
+              :action-url="editUrl"
+              :param="gridOptions.data"
+              :is-submit="isUpdate"
               title="저장"
               color="orange"
-              action-type="POST"
-              beforeSubmit = "beforeInsert"
-              @beforeInsert="beforeInsert"
-              @btnClicked="btnInsertClickedCallback" 
+              action-type="PUT"
+              beforeSubmit = "beforeUpdate"
+              @beforeUpdate="beforeUpdate"
+              @btnClicked="btnUpdateClickedCallback" 
               @btnClickedErrorCallback="btnClickedErrorCallback"
             />
           </div>
-        </b-card>
+          <y-data-table 
+            label="폭기조 운전상태  점검 목록"
+            ref="dataTable"
+            grid-type="edit"
+            :editable="editable"
+            :height="gridOptions.height"
+            :headers="gridOptions.header"
+            :items="gridOptions.data"
+            >
+          </y-data-table>
+        </b-col>
       </b-col>
     </b-row>
   </b-container>
@@ -80,23 +51,26 @@ export default {
   name: 'aeration-tank-chk-result',
   props: {
     paramMeasureYmd: '',
+    measureEditable: false,
+    isSaveAerationTankChkResult: false,
   },
   data: () => ({
-    ewtrAerationTankChkResult: {
-      measureYmd: '',
-      aerationTankChkResultList: [],
-    },
     gridOptions: {
       header: [],
       data: [],
       height: 300
     },
     editable: true,
-    isInsert: false,
-    insertUrl: '',
+    isUpdate: false,
+    editUrl: '',
     searchUrl: '',
   }),
   watch: {
+    isSaveAerationTankChkResult: function (newValue, oldValue) {
+      if (this.isSaveAerationTankChkResult) {
+        this.beforeUpdate();
+      }
+    }
   },
   //* Vue lifecycle: created, mounted, destroyed, etc */
   beforeCreate () {
@@ -115,24 +89,21 @@ export default {
   methods: {
     /** 초기화 관련 함수 **/
     init () {
-      setTimeout(() => {
-        this.ewtrAerationTankChkResult.measureYmd = this.paramMeasureYmd;
-      }, 200);
       
       // 그리드 헤더 설정
       this.gridOptions.header = [
-        { text: '폭기조명', name: 'ewtrAerationTankNm', width: '100px', align: 'left' },
-        { text: 'pH', name: 'ph', width: '80px', align: 'center', type: 'text' },
-        { text: '수온', name: 'temp', width: '80px', align: 'center', type: 'text' },
-        { text: 'DO', name: 'dOxigen', width: '80px', align: 'center', type: 'text' },
-        { text: 'SV30', name: 'sv30', width: '80px', align: 'center', type: 'text' },
-        { text: 'MLSS', name: 'mlss', width: '80px', align: 'center', type: 'text' },
-        { text: 'SVI', name: 'svi', width: '80px', align: 'center', type: 'text' },
-        { text: '폭기시간', name: 'runTm', width: '80px', align: 'center', type: 'text' },
-        { text: '주미생물 상태', name: 'microbeCond', width: '80px', align: 'center', type: 'text' },
+        { text: '폭기조명', name: 'ewtrAerationTankNm', width: '200px', align: 'left' },
+        { text: 'pH', name: 'ph', width: '100px', align: 'center', type: 'number', pointNumber: 2 },
+        { text: '수온', name: 'temp', width: '100px', align: 'center', type: 'number', pointNumber: 2 },
+        { text: 'DO', name: 'dOxigen', width: '100px', align: 'center', type: 'number', pointNumber: 2 },
+        { text: 'SV30', name: 'sv30', width: '100px', align: 'center', type: 'number', pointNumber: 2 },
+        { text: 'MLSS', name: 'mlss', width: '100px', align: 'center', type: 'number', pointNumber: 2 },
+        { text: 'SVI', name: 'svi', width: '100px', align: 'center', type: 'number', pointNumber: 2 },
+        { text: '폭기시간', name: 'runTm', width: '120px', align: 'center', type: 'number', pointNumber: 2 },
+        { text: '주미생물 상태', name: 'microbeCond', width: '150px', align: 'center', type: 'text' },
       ];
 
-      this.insertUrl = transactionConfig.env.water.operationLog.aerationTankChkResult.insert.url;
+      this.editUrl = transactionConfig.env.water.operationLog.aerationTankChkResult.edit.url;
       this.searchUrl = selectConfig.env.water.operationLog.aerationTankChkResult.list.url;
 
       this.getList();
@@ -147,23 +118,25 @@ export default {
       this.$http.request((_result) => {
         this.gridOptions.data = this.$_.clone(_result.data);
       }, (_error) => {
-        window.getApp.$emit('APP_REQUEST_ERROR', _error);
+        window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
       });
     },
 
     /** 신규등록 하기전 UI단 유효성 검사 **/
-    beforeInsert () {
+    beforeUpdate () {
       this.$validator.validateAll().then((_result) => {
         if (_result) {
-          window.getApp.$emit('CONFIRM', {
-            title: '확인',
-            message: '등록하시겠습니까?',
-            type: 'info',
-            confirmCallback: () => {
-              this.ewtrAerationTankChkResult.aerationTankChkResultList = this.gridOptions.data;
-              this.isInsert = true;
-            },
-          });
+          if (this.isSaveAerationTankChkResult) this.isUpdate = true;
+          else {
+            window.getApp.$emit('CONFIRM', {
+              title: '확인',
+              message: '폭기조 운전상태 점검 정보를 저장하시겠습니까?',
+              type: 'info',
+              confirmCallback: () => {
+                this.isUpdate = true;
+              },
+            });
+          }
         }
       }).catch(() => {
         window.getApp.$emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
@@ -181,24 +154,31 @@ export default {
     },
     
     /** button 관련 이벤트 **/
-    btnInsertClickedCallback (_result) {
-      this.isInsert = false;
-      window.getApp.$emit('ALERT', {
-        title: '안내',
-        message: '등록되었습니다.',
-        type: 'success',
-      });
+    btnUpdateClickedCallback (_result) {
+      this.isUpdate = false;
+      if (this.isSaveAerationTankChkResult) this.$emit('callbackSaveOperationLog', { 'isSaveAerationTankChkResult': true });
+      else {
+        window.getApp.$emit('ALERT', {
+          title: '안내',
+          message: '폭기조 운전상태 점검 정보를 정상적으로 저장하였습니다.',
+          type: 'success',
+        });
+      }
       this.getList();
     },
-    btnClearClickedCallback () {
-      Object.assign(this.$data.ewtrAerationTankChkResult, this.$options.data().ewtrAerationTankChkResult);
-      this.$validator.reset();
-    },
     btnClickedErrorCallback (_result) {
-      this.isInsert = false;
-      window.getApp.$emit('APP_REQUEST_ERROR', _result);
+      this.isUpdate = false;
+      window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
     },
     /** end button 관련 이벤트 **/
   }
 };
 </script>
+
+<style>
+.container-fluid {
+  /* 내부로 들어가므로 padding 제거 */
+  padding-right: 0px;
+  padding-left: 0px;
+}
+</style>

@@ -66,7 +66,7 @@
                 :maxlength="5"
                 :hasSeperator="false"
                 ui="bootstrap"
-                label="출력순서"
+                label="정렬순서"
                 name="sortOrder"
                 v-model="process.sortOrder"
               />

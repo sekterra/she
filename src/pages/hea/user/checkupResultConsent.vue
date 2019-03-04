@@ -162,7 +162,6 @@ export default {
       return null;
     },
     btnInsertClickedCallback (_result) {
-      console.log(1);
       this.closePopup();
       this.$validator.reset();
       this.isAction = false;

@@ -23,12 +23,8 @@
                 @btnClicked="btnSearchVisibleClicked" 
               />
               <y-btn
-                v-if="editable"
-                :action-url="searchUrl"
-                :param="searchParam"
                 title="검색"
                 color="green"
-                action-type="GET"
                 @btnClicked="btnSearchClickedCallback" 
                 @btnClickedErrorCallback="btnClickedErrorCallback"
               />
@@ -38,7 +34,6 @@
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <y-datepicker
                 :width="baseWidth"
-                :editable="editable"
                 :range="true"
                 label="신청기간"
                 name="period"
@@ -49,20 +44,19 @@
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <y-select
                 :width="baseWidth"
-                :comboItems="comboDeptItems"
-                itemText="deptNm"
-                itemValue="deptCd"
+                :comboItems="processStepCds"
+                itemText="codeNm"
+                itemValue="code"
                 ui="bootstrap"
-                label="신청부서"
-                name="deptCd"
-                v-model="searchParam.deptCd"
-              >
-              </y-select>
+                type="search"
+                label="진행단계"
+                name="processStepCd"
+                v-model="searchParam.processStepCd"
+              />
             </b-col>
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <y-select
                 :width="baseWidth"
-                :editable="editable"
                 :comboItems="speKindCds"
                 itemText="codeNm"
                 itemValue="code"
@@ -76,7 +70,6 @@
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <y-text
                 :width="baseWidth"
-                :editable="editable"
                 ui="bootstrap"
                 type="search"
                 label="보호구명"
@@ -86,14 +79,29 @@
               </y-text>
             </b-col>
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
+              <y-select
+                :width="baseWidth"
+                :comboItems="comboDeptItems"
+                itemText="deptNm"
+                itemValue="deptCd"
+                ui="bootstrap"
+                label="신청부서"
+                name="rqstDeptCd"
+                v-model="searchParam.rqstDeptCd"
+              >
+              </y-select>
+            </b-col>
+            <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <y-text
                 :width="baseWidth"
-                :editable="editable"
+                :clearable="true"
                 ui="bootstrap"
                 type="search"
                 label="신청자명"
                 name="rqstUserNm"
                 v-model="searchParam.rqstUserNm"
+                :appendIcon="[{ 'icon': 'search', callbackName: 'searchUser' }]"
+                @searchUser="btnSearchUserClicked"
               >
               </y-text>
             </b-col>
@@ -108,7 +116,6 @@
         <b-col sm="12" class="px-0">
           <div slot="buttonGroup" class="float-right mb-1">
             <y-btn
-              v-if="editable"
               title="신규등록"
               color="orange"
               @btnClicked="btnPopupClickedCallback" 
@@ -119,10 +126,12 @@
             gridType="edit"
             :excel-down="true"
             :print="true"
+            :use-paging="true"
             ref="dataTable"
             :height="gridOptions.height"
             :headers="gridOptions.header"
             :items="gridOptions.data"
+            @tableLinkClicked="tableLinkClicked"
             >
           </y-data-table>
         </b-col>
@@ -130,30 +139,16 @@
     </b-row>
 
     <!-- 팝업 설정 -->
-    <el-dialog
-      :title="popupOptions.title"
-      :visible.sync="popupOptions.visible"
-      :fullscreen="false"
-      :width="popupOptions.width"        
-      :close-on-click-modal="false"
-      :close-on-press-escape="false"
-      :show-close="false"
-      :top="popupOptions.top" >
-      <component :is="popupOptions.target" :popupParam="popupOptions.param" @closePopup="popupOptions.closeCallback" />
-    </el-dialog>
+    <y-popup :param="popupOptions"></y-popup>
   </b-container>
 </template>
 
 <script>
 import selectConfig from '@/js/selectConfig';
 export default {
-  /** attributes: name, components, props, data **/
   name: 'spe-rqst',
   props: {
   },
-  // TODO: 화살표 함수(=>)는 data에 사용하지 말 것
-  //    data: () => { return { a: this.myProp }}) 화살표 함수가 부모 컨텍스트를 바인딩하기 때문에 this는 예상과 달리 Vue 인스턴스가 아니기 때문에 this.myProp는 undefined로 나옵니다.
-  //    참고url: https://kr.vuejs.org/v2/api/index.html#data
   data () {
     return {
       searchArea: {
@@ -162,7 +157,8 @@ export default {
       },
       searchParam: {
         period: [],
-        deptCd: '',
+        processStepCd: '',
+        rqstDeptCd: '',
         speKindCd: '',
         speNm: '',
         rqstUserNm: ''
@@ -182,21 +178,13 @@ export default {
         closeCallback: null,
       },
       baseWidth: 8,
-      editable: true,
       comboDeptItems: [], // 신청부서
+      processStepCds: [], // 진행단계
       speKindCds: [], // 보호구 종류
       searchUrl: '',
-      isSubmit: false,  // 버튼을 submit 할 것인지 판단하는 변수로써 버튼의 개수만큼 필요합니다.
     };
   },
-  /** Vue lifecycle: created, mounted, destroyed, etc **/
-  beforeCreate () {
-  },
-  created () {
-  },
   beforeMount () {
-    // TODO : data를 초기화 시켜줌(검색 조건 유지가 필요할 때는 삭제할 것)
-    // 이유 : vue.js는 SPA기반으로 동작하기 때문에 페이지를 이동하더라도 기존 입력된 정보가 그대로 남아 있는 문제가 있음
     Object.assign(this.$data, this.$options.data());
     this.init();
   },
@@ -213,28 +201,31 @@ export default {
     /** 초기화 관련 함수 **/
     init () {
       // URL 셋팅
+      this.searchUrl = selectConfig.saf.speRqst.list.url;
 
       var today = this.$comm.getToday();
-      var from = this.$comm.getCalculatedDate(today, '-1m', 'YYYY-MM-DD', 'YYYY-MM-DD');
-      var to = this.$comm.getCalculatedDate(today, '1m', 'YYYY-MM-DD', 'YYYY-MM-DD');
+      var from = this.$comm.getCalculatedDate(today, '-7d', 'YYYY-MM-DD', 'YYYY-MM-DD');
+
+      this.setGridSize();
 
       setTimeout(() => {
-        this.searchParam.period = [from, to];
+        this.searchParam.period = [from, today];
+        this.getProcessStepCds(); // 진행단계
+        this.getSpeKindCds(); // 보호구 종류
+        this.getDeptItems();  // 신청부서
+        this.getDataList();
       }, 200);
-      
-      this.getDeptItems();  // 신청부서
-      this.getSpeKindCds(); // 보호구 종류
 
       // 보호구 신청 grid 헤더 설정
       this.gridOptions.header = [
-        { text: '진행단계', name: 'processStepNm', width: '150px', align: 'center' },
-        { text: '신청일', name: 'rqstYmd', width: '100px', align: 'center' },
-        { text: '신청부서', name: 'rqstDeptCd', width: '100px', align: 'center' },
-        { text: '신청자', name: 'rqstUserNm', width: '100px', align: 'center' },
+        { text: '진행단계', name: 'processStepNm', width: '115px', align: 'center' },
+        { text: '신청일', name: 'rqstYmd', width: '115px', align: 'center' },
+        { text: '신청부서', name: 'rqstDeptNm', width: '110px', align: 'left' },
+        { text: '신청자', name: 'rqstUserNm', width: '100px', align: 'center', type: 'link' },
         { text: '보호구종류', name: 'speKindNm', width: '130px', align: 'center' },
         { text: '보호구명', name: 'speNm', width: '200px', align: 'left' },
-        { text: '신청개수', name: 'rqstNum', width: '100px', align: 'center' },
-        { text: '단위', name: 'giveUnitNm', width: '90px', align: 'center' },
+        { text: '신청개수', name: 'rqstNum', width: '100px', align: 'right' },
+        { text: '단위', name: 'giveUnitNm', width: '90px', align: 'left' },
       ];
     },
     // 신청부서
@@ -244,6 +235,17 @@ export default {
       this.$http.request((_result) => {
         _result.data.splice(0, 0, { 'deptCd': '', 'deptNm': '전체' });
         this.comboDeptItems = _result.data;
+      }, (_error) => {
+        window.getApp.$emit('APP_REQUEST_ERROR', _error);
+      });
+    },
+    // 진행단계
+    getProcessStepCds () {
+      this.$http.url = this.$format(selectConfig.codeMaster.getSelect.url, 'SAF_PROCESS_STEP');
+      this.$http.type = 'get';
+      this.$http.request((_result) => {
+        this.processStepCds = this.$_.clone(_result.data);
+        this.processStepCds.splice(0, 0, { 'code': '', 'codeNm': '전체' });
       }, (_error) => {
         window.getApp.$emit('APP_REQUEST_ERROR', _error);
       });
@@ -259,50 +261,31 @@ export default {
         window.getApp.$emit('APP_REQUEST_ERROR', _error);
       });
     },
-    /** /초기화 관련 함수 **/
-    
-    /** Call API service
-    * Naming Rule: get, post, put 등의 RESTFul verb를 접두사로 사용하고 그 뒤에 관련 모델명을 Camel case로 추가하세요.
-    * Naming Rule: get의 경우 복수의 데이터조회(리스트 데이터 등)시에는 복수를 나타내는 접미사 "s"를 붙여주세요.
-    * ex) getExamData () {}
-    * ex) getExamDatas () {}
-    */
-    
-    /** /Call API service **/
+    // 보호구 신청 grid
+    getDataList () {
+      this.$http.url = this.searchUrl;
+      this.$http.type = 'GET';
+      this.$http.param = this.searchParam;
+      this.$http.request((_result) => {
+        this.gridOptions.data = _result.data;
+      }, (_error) => {
+        window.getApp.$emit('APP_REQUEST_ERROR', _error);
+      });
+    },
+    // 그리드 row click 이벤트
+    tableLinkClicked (header, data) {
+      this.btnPopupClickedCallback(data);
+    },
     /**
      * 그리드 리사이징
      */
     setGridSize () {
       window.getApp.$emit('LOADING_SHOW');
       setTimeout(() => {
-        this.gridOptions.height = window.innerHeight - this.$refs.searchBox.clientHeight - 260;
+        this.gridOptions.height = window.innerHeight - this.$refs.searchBox.clientHeight - 310;
         window.getApp.$emit('LOADING_HIDE');
       }, 600);
     },
-    
-    /** validation checking(필요없으면 지워주세요) **/
-    checkValidation () {
-      this.$validator.validateAll().then((_result) => {
-        this.isSubmit = _result;
-        // TODO : 전역 성공 메시지 처리
-        // 이벤트는 ./event.js 파일에 선언되어 있음
-        if (!this.isSubmit) window.getApp.emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
-      }).catch(() => {
-        this.isSubmit = false;
-      });
-    },
-    validateState (_ref) {
-      if (this.veeBag[_ref] && (this.veeBag[_ref].dirty || this.veeBag[_ref].validated)) {
-        return !this.errors.has(_ref);
-      }
-      return null;
-    },
-    /** /validation checking **/
-    
-    /** Component Events, Callbacks (버튼 제외) **/
-    
-    /** /Component, Callbacks (버튼 제외) **/
-    
     /** Button Event **/
     // 검색박스숨기기
     btnSearchVisibleClicked () {      
@@ -315,17 +298,27 @@ export default {
     },
     // 검색
     btnSearchClickedCallback (_result) {
-      // this.getDataList();
+      this.getDataList();
     },
+    // 사용자 검색
+    btnSearchUserClicked (_item) {
+      this.popupOptions.target = () => import(`${'../../manage/user/userSearch.vue'}`);
+      this.popupOptions.title = '사용자검색';
+      this.popupOptions.visible = true;
+      this.popupOptions.width = '60%';
+      this.popupOptions.top = '100px';
+      this.popupOptions.closeCallback = this.closePopupSearchUser;
+    },    
     // 신규등록 팝업
-    btnPopupClickedCallback () {
+    btnPopupClickedCallback (data) {
       this.popupOptions.target = () => import(`${'./createSpeRqst.vue'}`);
-      this.popupOptions.title = '보호구 신청 등록';
+      this.popupOptions.title = '보호구 신청';
       this.popupOptions.visible = true;
       this.popupOptions.width = '70%';
       this.popupOptions.top = '10px';
       this.popupOptions.param = {
-        'safSpeRqstNo': 0
+        'safSpeRqstNo': data ? data.safSpeRqstNo : 0,
+        'processStepCd': data ? data.processStepCd : 'STEP1'
       };
       this.popupOptions.closeCallback = this.closePopup;
     },
@@ -333,29 +326,21 @@ export default {
     closePopup (data) {
       this.popupOptions.target = null;
       this.popupOptions.visible = false;
-      // this.getDataList();
+      this.getDataList();
     },
-    /**
-    * 저장 버튼 처리용 샘플함수
-    */
-    btnSaveClickedCallback (_result) {
-      this.isSubmit = false;  // 반드시 isSubmit을 false로 초기화 하세요. 그렇지 않으면 버튼을 다시 클릭해도 동작하지 않습니다.
-      // TODO : 여기에 추가 로직 삽입(로직 삽입시 지워주세요)
-      window.getApp.emit('APP_REQUEST_SUCCESS', "정상적으로 저장 되었습니다.");
+    // 사용자 검색 팝업 닫기
+    closePopupSearchUser (data) {
+      this.popupOptions.target = null;
+      this.popupOptions.visible = false;
+      if (data.user) {
+        this.searchParam.rqstUserNm = data.user.userNm;
+      }
     },
-    /**
-    * 버튼 에러 처리용 공통함수
-    */
+    // 버튼 에러 처리
     btnClickedErrorCallback (_result) {
-      this.isSubmit = false;  // 반드시 isSubmit을 false로 초기화 하세요. 그렇지 않으면 버튼을 다시 클릭해도 동작하지 않습니다.
-      // TODO : 여기에 추가 로직 삽입(로직 삽입시 지워주세요)
       window.getApp.emit('APP_REQUEST_ERROR', _result);
     },
     /** /Button Event **/
-    
-    /** 기타 function **/
-    
-    /** /기타 function **/
   }
 };
 </script>

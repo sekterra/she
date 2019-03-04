@@ -38,14 +38,14 @@
               <y-select
                 :width="8"
                 :editable="editable"
-                :comboItems="heaHazardCdItems"
-                itemText="heaHazardNmKo"
-                itemValue="heaHazardCd"
+                :comboItems="hazardCdItems"
+                itemText="hazardNmKo"
+                itemValue="hazardCd"
                 ui="bootstrap"
                 type="save"
-                name="heaHazardCd"
+                name="hazardCd"
                 label="유해인자"
-                v-model="checkupResultDiag.heaHazardCd"
+                v-model="checkupResultDiag.hazardCd"
                 />
             </b-col>
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
@@ -138,20 +138,7 @@
           </b-col>
       </b-col>      
     </b-row>
-
-    <el-dialog
-      :title="popupOptions.title"
-      :visible.sync="popupOptions.visible"
-      :fullscreen="false"
-      :append-to-body="true"
-      :close-on-click-modal="false"
-      :close-on-press-escape="false"
-      :show-close="false"
-      :width="popupOptions.width"
-      :top="popupOptions.top">
-      <component :is="popupOptions.target" :popupParam="popupOptions.param" @closePopup="closePopup" />
-    </el-dialog>
-
+    <y-popup :param="popupOptions"></y-popup>
   </b-container>
 </template>
 
@@ -181,22 +168,23 @@ export default {
         visible: false,
         width: '80%',
         top: '50px',
-        param: {}
+        param: {},
+        closeCallback: null
       },
       // Naming Rule : JAVA model class와 연동되는 vue model은 model class명을 Camel case로 변환해서 선언하시고 기본값은 {}로 초기화 시켜주세요.
       // 예) ExamData -> examData: {},
       checkupResultDiag: {
         heaCheckupPlanNo: 0,
         userId: '',
-        heaDiagnoseCd: '',
+        heaDiagnoseCd: null,
         heaDiagnoseNm: '',
-        heaDiseaseClassCd: '',
+        heaDiseaseClassCd: null,
         heaDiseaseClassNm: '',
-        heaDiseaseCd: '',
+        heaDiseaseCd: null,
         heaDiseaseNm: '',
-        heaHazardCd: '',
-        heaHazardNmKo: '',
-        heaHazardNmEn: ''
+        hazardCd: null,
+        hazardNmKo: '',
+        hazardNmEn: ''
       },
       editable: true,
       isCreateSubmit: false,
@@ -210,7 +198,7 @@ export default {
       heaDiagnoseCdItems: [],
       heaDiseaseClassCdItems: [],
       heaDiseaseCdItems: [],
-      heaHazardCdItems: [],
+      hazardCdItems: [],
 
       insertUrl: '',
       deleteUrl: '',
@@ -253,7 +241,7 @@ export default {
         this.getHeaDiagnoseCdItems();
         this.getHeaDiseaseClassCdItems();
         this.getHeaDiseaseCdItems();
-        this.getHeaHazardCdItems();
+        this.getHazardCdItems();
       }, 200);
 
       // 그리드 헤더 설정
@@ -261,7 +249,7 @@ export default {
         { text: '판정', name: 'heaDiagnoseNm', width: '15%', align: 'center' },
         { text: '질환종류', name: 'heaDiseaseClassNm', width: '45%' },
         { text: '질환', name: 'heaDiseaseNm', width: '20%' },
-        { text: '유해인자', name: 'heaHazardNmKo', width: '20%' }
+        { text: '유해인자', name: 'hazardNmKo', width: '20%' }
       ];
 
       this.searchUrl = selectConfig.checkupResultDiag.list.url;      
@@ -285,27 +273,27 @@ export default {
       this.$http.request((_result) => {
         this.gridResultDiagData = _result.data;
       }, (_error) => {
-        window.getApp.$emit('APP_REQUEST_ERROR', _error);
+        window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
       });
     },
     getHeaDiagnoseCdItems () {
       this.$http.url = this.$format(selectConfig.codeMaster.getSelect.url, 'HEA_DIAGNOSE');
       this.$http.type = 'get';
       this.$http.request((_result) => {
-        _result.data.splice(0, 0, { 'code': '', 'codeNm': '선택하세요' });
+        _result.data.splice(0, 0, { 'code': null, 'codeNm': '선택하세요' });
         this.heaDiagnoseCdItems = _result.data;
       }, (_error) => {
-        window.getApp.$emit('APP_REQUEST_ERROR', _error);
+        window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
       });
     },
     getHeaDiseaseClassCdItems () {
       this.$http.url = this.$format(selectConfig.codeMaster.getSelect.url, 'HEA_DISEASE_CLASS');
       this.$http.type = 'get';
       this.$http.request((_result) => {
-        _result.data.splice(0, 0, { 'code': '', 'codeNm': '선택하세요' });
+        _result.data.splice(0, 0, { 'code': null, 'codeNm': '선택하세요' });
         this.heaDiseaseClassCdItems = _result.data;
       }, (_error) => {
-        window.getApp.$emit('APP_REQUEST_ERROR', _error);
+        window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
       });
     },
     getHeaDiseaseCdItems () {
@@ -315,21 +303,21 @@ export default {
         'heaDiseaseClassCd': this.checkupResultDiag.heaDiseaseClassCd
       };
       this.$http.request((_result) => {
-        _result.data.splice(0, 0, { 'heaDiseaseCd': '', 'heaDiseaseNm': '선택하세요' });
+        _result.data.splice(0, 0, { 'heaDiseaseCd': null, 'heaDiseaseNm': '선택하세요' });
         this.heaDiseaseCdItems = _result.data;
-        this.checkupResultDiag.heaDiseaseCd = '';
+        this.checkupResultDiag.heaDiseaseCd = null;
       }, (_error) => {
-        window.getApp.$emit('APP_REQUEST_ERROR', _error);
+        window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
       });
     },
-    getHeaHazardCdItems () {
+    getHazardCdItems () {
       this.$http.url = selectConfig.hazard.list.url;
       this.$http.type = 'get';
       this.$http.request((_result) => {
-        _result.data.splice(0, 0, { 'heaHazardCd': '', 'heaHazardNmKo': '선택하세요' });
-        this.heaHazardCdItems = _result.data;
+        _result.data.splice(0, 0, { 'hazardCd': null, 'hazardNmKo': '선택하세요' });
+        this.hazardCdItems = _result.data;
       }, (_error) => {
-        window.getApp.$emit('APP_REQUEST_ERROR', _error);
+        window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
       });
       // this.heaHazardCdItems.push({ 'code': '', 'codeNm': '선택하세요' });
     },
@@ -452,6 +440,7 @@ export default {
       this.popupOptions.target = () => import(`${'./diagnoseResultHistory.vue'}`);
       this.popupOptions.title = '과거판정데이터';
       this.popupOptions.visible = true;
+      this.popupOptions.closeCallback = this.closePopup;
     },
     /**
     * 버튼 에러 처리용 공통함수
@@ -459,7 +448,7 @@ export default {
     btnClickedErrorCallback (_result) {
       this.isCreateSubmit = false;
       this.isDeleteSubmit = false;
-      window.getApp.$emit('APP_REQUEST_ERROR', _result);
+      window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
     },
     /** /Button Event **/
     

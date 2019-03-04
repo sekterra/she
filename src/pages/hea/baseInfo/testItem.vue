@@ -17,7 +17,7 @@
               :items="gridOptions.data"
               :excel-down="true"
               :print="true"
-              :cellClick="true"
+              :useRownum="false"
               v-model="testItem"
               label="검진항목 목록"
               ref="dataTable"
@@ -101,7 +101,7 @@
                     :hasSeperator="false"
                     ui="bootstrap"
                     name="sortOrder"
-                    label="출력순서"
+                    label="정렬순서"
                     v-model="testItem.sortOrder"
                     >
                     </y-number>
@@ -254,8 +254,8 @@ export default {
         { text: '검진항목', name: 'heaTestItemNm', width: '20%', align: 'left' },
         { text: '단위', name: 'unit', width: '10%', align: 'center' },
         { text: '결과타입', name: 'heaResultTypeNm', width: '10%', align: 'center' },
-        { text: '출력순서', name: 'sortOrder', width: '10%', align: 'center' },
         { text: '사용여부', name: 'useYnNm', width: '10%', align: 'center' },
+        { text: '정렬순서', name: 'sortOrder', width: '10%', align: 'center' },
       ];
 
       this.getComboItems('HEA_RESULT_TYPE'); // 결과타입
@@ -273,14 +273,12 @@ export default {
         if (codeGroupCd === 'HEA_RESULT_TYPE') 
         {
           this.comboResultTypeItems = this.$_.clone(_result.data);
-          this.comboResultTypeItems.splice(0, 0, { 'code': '', 'codeNm': '선택하세요' });
-          this.testItem.heaResultTypeCd = '';
+          this.comboResultTypeItems.splice(0, 0, { 'code': null, 'codeNm': '선택하세요' });
         }
         else
         {
           this.comboTestClassItems = this.$_.clone(_result.data);
-          this.comboTestClassItems.splice(0, 0, { 'code': '', 'codeNm': '선택하세요' });
-          this.testItem.heaTestClassCd = '';
+          this.comboTestClassItems.splice(0, 0, { 'code': null, 'codeNm': '선택하세요' });
         }
       }, (_error) => {
         window.getApp.$emit('APP_REQUEST_ERROR', _error);
@@ -456,8 +454,8 @@ export default {
       this.editable = false;
       Object.assign(this.$data.testItem, this.$options.data().testItem);
       
-      this.testItem.heaTestClassCd = '';
-      this.testItem.heaResultTypeCd = '';
+      // this.testItem.heaTestClassCd = '';
+      // this.testItem.heaResultTypeCd = '';
       this.$validator.reset();
     },
     /** end button 관련 이벤트 **/

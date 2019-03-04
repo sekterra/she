@@ -85,7 +85,7 @@
                     itemValue="code"
                     ui="bootstrap"
                     name="eduCourseCd"
-                    label="교육과정/교육구분"
+                    label="교육과정/구분"
                     v-model="searchParam.eduCourseCd"
                   >
                   </y-select>
@@ -127,10 +127,11 @@
       <b-col sm="12">
         <b-col sm="12" class="px-0">
           <y-data-table 
-            label="교육 실시 현황 목록"
+            label="교육 실시 현황"
             gridType="edit"
             :excel-down="true"
             :print="true"
+            :use-paging="true"
             ref="dataTable"
             :height="gridOptions.height"
             :headers="gridOptions.header"
@@ -264,15 +265,17 @@ export default {
 
       // 교육 결과 목록 grid 헤더 설정
       this.gridOptions.header = [
-        { text: '교육기간', name: 'eduYmd', width: '100px', align: 'center' },
-        { text: '교육과정', name: 'eduCourseNm', width: '100px', align: 'center' },
+        { text: '교육기간', name: 'eduYmd', width: '180px', align: 'center' },
+        { text: '교육과정', name: 'eduCourseNm', width: '140px', align: 'center' },
         { text: '교육구분', name: 'eduTypeNm', width: '100px', align: 'center' },
-        { text: '교육명', name: 'eduNm', width: '100px', align: 'center' },
+        { text: '교육명', name: 'eduNm', width: '200px', align: 'center' },
         { text: '주관부서', name: 'deptNm', width: '120px', align: 'center' },
         { text: '대상부서', name: 'tgtDeptNm', width: '120px', align: 'center' },
         { text: '이수인원', name: 'eduUserNum', width: '100px', align: 'center' },
         { text: '교육시간', name: 'eduTime', width: '150px', align: 'center' }
       ];
+      
+      this.setGridSize();
     },
     // 주관부서
     getDeptItems () {
@@ -326,7 +329,7 @@ export default {
     setGridSize () {
       window.getApp.$emit('LOADING_SHOW');
       setTimeout(() => {
-        this.gridOptions.height = window.innerHeight - this.$refs.searchBox.clientHeight - 260;
+        this.gridOptions.height = window.innerHeight - this.$refs.searchBox.clientHeight - 320;
         window.getApp.$emit('LOADING_HIDE');
       }, 600);
     },

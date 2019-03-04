@@ -16,7 +16,7 @@
             <div class="float-right">
               <y-btn
                 :title="searchArea.title"
-                color="orange"
+                color="green"
                 @btnClicked="btnSearchVisibleClicked"
               />
               <y-btn
@@ -34,11 +34,11 @@
              <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
                <y-select
                 :width="8"
-                :comboItems="comboFacilityType"
+                :comboItems="comboFacilityTypeSearch"
                 itemText="safFacilityTypeNm"
                 itemValue="safFacilityTypeCd"
                 ui="bootstrap"
-                label="안전설비유형"
+                label="설비유형"
                 name="safFacilityTypeCd"
                 v-model="searchParam.safFacilityTypeCd"
               ></y-select>
@@ -47,7 +47,7 @@
                <y-text
                 :width="8"
                 ui="bootstrap"
-                label="설비유형항목명"
+                label="관리항목"
                 name="safFacilityTypeItemNm"
                 v-model="searchParam.safFacilityTypeItemNm"
               ></y-text>
@@ -66,10 +66,11 @@
             :height="gridOptions.height"
             :headers="gridOptions.header"
             :items="gridOptions.data"
+            :useRownum="false"
             :excel-down="true"
             :print="true"
             @selectedRow="selectedRow"
-            label="점검항목"
+            label="설비 유형별 관리 항목 목록"
           ></y-data-table>
         </b-col>
       </b-col>
@@ -80,7 +81,7 @@
       <b-col sm="12">
         <b-row>
           <b-col sm="12">
-            <y-label label="안전점검 항목 상세" icon="user-edit" color-class="cutstom-title-color"/>
+            <y-label label="설비 유형별 관리 항목 상세" icon="user-edit" color-class="cutstom-title-color"/>
           </b-col>
         </b-row>
         <b-card>
@@ -88,23 +89,29 @@
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <y-select
                 :width="8"
-                :comboItems="comboFacilityType"
+                :comboItems="comboFacilityTypeDetail"
+                :required="true"
                 itemText="safFacilityTypeNm"
                 itemValue="safFacilityTypeCd"
                 ui="bootstrap"
-                label="안전설비유형"
+                label="설비유형"
                 name="safFacilityTypeCd"
+                v-validate="'required'"
                 v-model="facilityTypeItem.safFacilityTypeCd"
+                :state="validateState('safFacilityTypeCd')"
               ></y-select>
             </b-col>
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <y-text
                 :width="8"
+                :maxlength="50"
+                :required="true"
                 ui="bootstrap"
-                label="설비유형명"
+                label="관리항목"
                 name="safFacilityTypeItemNm"
                 v-validate="'required'"
                 v-model="facilityTypeItem.safFacilityTypeItemNm"
+                :state="validateState('safFacilityTypeItemNm')"
               ></y-text>
             </b-col>
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
@@ -113,7 +120,7 @@
                 :maxlength="5"
                 :hasSeperator="false"
                 ui="bootstrap"
-                label="정렬 순서"
+                label="정렬순서"
                 name="sortOrder"
                 v-model="facilityTypeItem.sortOrder"
               ></y-number>
@@ -171,12 +178,12 @@ import selectConfig from "@/js/selectConfig";
 import transactionConfig from "@/js/transactionConfig";
 export default {
   /* attributes: name, components, props, data */
-  name: "y-checkKind",
+  name: "y-facility-Type-Item",
   props: {},
   data: () => ({
     facilityTypeItem: {
       safFacilityTypeItemNo: "",
-      safFacilityTypeCd: "",
+      safFacilityTypeCd: null,
       safFacilityTypeItemNm: "",
       sortOrder: "",
       useYn: "",
@@ -195,7 +202,8 @@ export default {
       data: [],
       height: "300"
     },
-    comboFacilityType: [],
+    comboFacilityTypeSearch: [],
+    comboFacilityTypeDetail: [],
     baseWidth: 9,
     editable: false,
     isInsert: false,
@@ -208,12 +216,12 @@ export default {
   //* Vue lifecycle: created, mounted, destroyed, etc */
   beforeCreate () {},
   created () {},
-  update () {},
+  updated () {},
   beforeMount () {
     Object.assign(this.$data, this.$options.data());
     this.init();
-    this.getFacilityTypeItems();
-
+    
+    
   },
   mounted () {
     // 윈도우 resize event
@@ -237,16 +245,22 @@ export default {
           { useYn: "Y", useName: "사용" },
           { useYn: "N", useName: "미사용" }
         ];
-      }, 1000);
+
+        this.getFacilityTypeItems();
+        this.getList();
+      }, 100);
+      
+      
 
       // 그리드 헤더 설정
       this.gridOptions.header = [
         { text: "설비유형", name: "safFacilityTypeNm", width: "180px", align: "center" },
         { text: "관리항목", name: "safFacilityTypeItemNm", width: "300px", align: "left" },
-        { text: "정렬순서", name: "sortOrder", width: "180px", align: "center" },
-        { text: "사용여부", name: "useYn", width: "100px", align: "center" }
+        { text: "사용여부", name: "useYnNm", width: "100px", align: "center" },
+        { text: "정렬순서", name: "sortOrder", width: "100px", align: "center" },
       ];
       this.setGridSize();
+      
     },
     // 입력 setting
     selectedRow (data) {
@@ -262,16 +276,6 @@ export default {
         console.log(_error);
       });
 
-    },
-    // combo box list 공통
-    getComboItems (codeGroupCd) {
-      this.$http.url = this.$format(selectConfig.codeMaster.getSelect.url, codeGroupCd);
-      this.$http.type = 'GET';
-      this.$http.request((_result) => {
-        this.safFacilityTypeItemNm = this.$_.clone(_result.data);
-      }, (_error) => {
-        console.log(_error);
-      });
     },
 
     /** 수정 하기전 UI단 유효성 검사 **/
@@ -290,7 +294,7 @@ export default {
     beforeInsert () {
       window.getApp.$emit('CONFIRM', {
         title: '확인',
-        message: '수정하시겠습니까?',
+        message: '등록하시겠습니까?',
         // TODO : 필요시 추가하세요.
         type: 'info',  // success / info / warning / error
         // 확인 callback 함수
@@ -307,8 +311,9 @@ export default {
         this.isEdit = _result;
         // TODO : 전역 성공 메시지 처리
         // 이벤트는 ./event.js 파일에 선언되어 있음
-        if (!this.isEdit) window.getApp.$emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
+        if (!this.isEdit) window.getApp.$emit('APP_VALID_ERROR', '필수 입력값을 입력해 주세요.');
       }).catch(() => {
+        window.getApp.$emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
         this.isEdit = false;
       });
     },
@@ -317,8 +322,9 @@ export default {
         this.isInsert = _result;
         // TODO : 전역 성공 메시지 처리
         // 이벤트는 ./event.js 파일에 선언되어 있음
-        if (!this.isInsert) window.getApp.$emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
+        if (!this.isInsert) window.getApp.$emit('APP_VALID_ERROR', '필수 입력값을 입력해 주세요.');
       }).catch(() => {
+        window.getApp.$emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
         this.isInsert = false;
       });
     },
@@ -334,9 +340,16 @@ export default {
       this.$http.url = selectConfig.saf.refInfoFacilityType.list.url;
       this.$http.type = 'GET';
       this.$http.request((_result) => {
-        this.comboFacilityType = this.$_.clone(_result.data);
-        this.searchParam.safFacilityTypeCd = this.$_.map(this.$_.clone(_result.data), 'safFacilityTypeCd')[0];
+        
+        var searchItems = this.$_.clone(_result.data);
+        var detailItems = this.$_.clone(_result.data);
+        searchItems.splice(0, 0, { 'safFacilityTypeCd': '', 'safFacilityTypeNm': '전체' });
+        detailItems.splice(0, 0, { 'safFacilityTypeCd': null, 'safFacilityTypeNm': '선택하세요' });
+        
+        this.comboFacilityTypeSearch = searchItems;
+        this.comboFacilityTypeDetail = detailItems;
 
+        
       }, (_error) => {
         console.log(_error);
       });
@@ -347,8 +360,6 @@ export default {
       this.$http.url = this.searchUrl;
       this.$http.type = "GET";
       this.$http.param = this.searchParam;
-
-      
       this.$http.request(
         _result => {
           this.gridOptions.data = this.$_.clone(_result.data);
@@ -401,13 +412,22 @@ export default {
       // window.getApp.$emit('APP_REQUEST_SUCCESS', '조회 버튼이 클릭되었습니다.');
     },
     btnSaveClickedCallback (result) {
+      
       this.getList();
-
-      window.getApp.$emit('ALERT', {
-        title: '안내',
-        message: '수정되었습니다.',
-        type: 'success',  // success / info / warning / error
-      });
+      if (result.data === 0) {
+        window.getApp.$emit('ALERT', {
+          title: '안내',
+          message: '관리항목이 중복입니다.',
+          type: 'warning',  // success / info / warning / error
+        });
+      }
+      else {
+        window.getApp.$emit('ALERT', {
+          title: '안내',
+          message: '수정되었습니다.',
+          type: 'success',  // success / info / warning / error
+        });
+      }
       this.isEdit = false;
       // this.$emit('APP_REQUEST_SUCCESS', '수정 버튼이 클릭 되었습니다.');
     },
@@ -415,18 +435,28 @@ export default {
       // this.disease.heaDiseaseCd = _result.data;
       this.getList();
 
-      window.getApp.$emit('ALERT', {
-        title: '안내',
-        message: '저장되었습니다.',
-        type: 'success',  // success / info / warning / error
-      });
+      if (result.data === 0) {
+        window.getApp.$emit('ALERT', {
+          title: '안내',
+          message: '관리항목이 중복입니다.',
+          type: 'warning',  // success / info / warning / error
+        });
+      }
+      else {
+        window.getApp.$emit('ALERT', {
+          title: '안내',
+          message: '등록되었습니다.',
+          type: 'success',  // success / info / warning / error
+        });
+        this.facilityTypeItem.safFacilityTypeItemNo = this.$_.clone(result.data);
+      }
       this.isInsert = false;
       this.editable = true;
     },
 
     btnClearClickedCallback () {
       this.editable = false;
-      Object.assign(this.$data.safFacilityType, this.$options.data().safFacilityType);
+      Object.assign(this.$data.facilityTypeItem, this.$options.data().facilityTypeItem);
       this.$validator.reset();
       // this.disease.heaDiseaseClassCd = "";
       // window.getApp.$emit('APP_REQUEST_SUCCESS', '초기화 버튼이 클릭 되었습니다.');

@@ -8,7 +8,9 @@
     @row-dblclick="rowDoubleClicked"
     style="width: 100%; min-height: 200px;"
     v-bind="$attrs">
-    <el-table-column v-if="columns.length===0" width="150">
+    <el-table-column 
+      v-if="columns.length===0" 
+      :width="expandColumnWidth">
       <template slot-scope="scope">
         <span v-for="space in scope.row._level" :key="space" class="ms-tree-space"/>
         <span @click="toggleExpanded(scope.$index)">
@@ -22,7 +24,12 @@
               <i v-else class="el-icon-minus"/> 
             -->
           </span>
-          <span v-if="expandColumnName">{{scope.row[expandColumnName]}}</span>
+          <span v-else class="element">
+            <f-icon icon="angle-right" />
+          </span>
+          <span v-if="expandColumnName">
+            {{scope.row[expandColumnName]}}
+          </span>
           <span v-else>{{ scope.$index }}</span>
         </span>
       </template>
@@ -92,7 +99,12 @@ export default {
     },
     cellClassName: {
       type: String
-    }
+    },
+    // 확장 컬럼 크기
+    expandColumnWidth: {
+      type: [Number, String],
+      default: '200px'
+    },
   },
   computed: {
     // 서식이 지정된 데이터 테이블 소스
@@ -174,6 +186,10 @@ export default {
     position: relative;
     cursor: pointer;
     color: $color-blue;
+    margin-left: -$space-width;
+  }
+  .element {
+    position: relative;
     margin-left: -$space-width;
   }
 </style>

@@ -16,7 +16,7 @@
             <div class="float-right">
               <y-btn
                 :title="searchArea.title"
-                color="orange"
+                color="green"
                 @btnClicked="btnSearchVisibleClicked"
               />
               <y-btn
@@ -35,7 +35,7 @@
                 <y-datepicker
                 :width="8"
                 :range="true"
-                label="작업기간"
+                label="기간"
                 name="duration"
                 v-model="searchParam.duration"
               >
@@ -45,7 +45,7 @@
               <y-text
                 :width="8"
                 ui="bootstrap"
-                label="비고"
+                label="명칭"
                 name="remark"
                 v-model="searchParam.remark"
               ></y-text>
@@ -67,7 +67,7 @@
             :excel-down="true"
             :print="true"
             @selectedRow="selectedRow"
-            label="점검항목"
+            label="공휴일목록"
           ></y-data-table>
         </b-col>
       </b-col>
@@ -78,7 +78,7 @@
       <b-col sm="12">
         <b-row>
           <b-col sm="12">
-            <y-label label="안전점검 항목 상세" icon="user-edit" color-class="cutstom-title-color"/>
+            <y-label label="공휴일 상세" icon="user-edit" color-class="cutstom-title-color"/>
           </b-col>
         </b-row>
         <b-card>
@@ -86,7 +86,7 @@
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <y-datepicker 
                 :width="8"
-                label="방문일"
+                label="일자"
                 name="afterHolidayYmd"
                 v-model="holiday.afterHolidayYmd"
                 default="today"
@@ -100,9 +100,13 @@
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
                <y-text
                 :width="8"
+                :maxlength="150"
+                :required="true"
                 ui="bootstrap"
-                label="비고"
+                label="명칭"
                 name="remark"
+                :state="validateState('remark')"
+                v-validate="'required'"
                 v-model="holiday.remark"
               ></y-text>
             </b-col>
@@ -183,14 +187,10 @@ export default {
   //* Vue lifecycle: created, mounted, destroyed, etc */
   beforeCreate () {},
   created () {},
-  update () {},
+  updated () {},
   beforeMount () {
     Object.assign(this.$data, this.$options.data());
     this.init();
-    // 오늘 날짜 구하기
-    this.today = this.$comm.getToday();
-    
-
   },
   mounted () {
     // 윈도우 resize event
@@ -208,14 +208,22 @@ export default {
         this.searchUrl = selectConfig.saf.holiday.list.url;
         this.editUrl = transactionConfig.saf.holiday.edit.url;
         this.insertUrl = transactionConfig.saf.holiday.insert.url;
-      }, 1000);
+        // 오늘 날짜 구하기
+        this.today = this.$comm.getToday();
+        this.searchParam.duration = [this.today.substring(0, 4) + "-01-01", this.today.substring(0, 4) + "-12-31"];
+        this.getList();
+
+      }, 100);
 
       // 그리드 헤더 설정
       this.gridOptions.header = [
-        { text: "공휴일", name: "beforeHolidayYmd", width: "180px", align: "center" },
-        { text: "비고", name: "remark", width: "100px", align: "center" }
+        { text: "일자", name: "beforeHolidayYmd", width: "180px", align: "center" },
+        { text: "명칭", name: "remark", width: "100px", align: "center" }
       ];
       this.setGridSize();
+
+      
+
     },
     // 입력 setting
     selectedRow (data) {
@@ -252,7 +260,7 @@ export default {
     beforeInsert () {
       window.getApp.$emit('CONFIRM', {
         title: '확인',
-        message: '저장하시겠습니까?',
+        message: '등록하시겠습니까?',
         // TODO : 필요시 추가하세요.
         type: 'info',  // success / info / warning / error
         // 확인 callback 함수
@@ -270,8 +278,9 @@ export default {
         this.isEdit = _result;
         // TODO : 전역 성공 메시지 처리
         // 이벤트는 ./event.js 파일에 선언되어 있음
-        if (!this.isEdit) window.getApp.$emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
+        if (!this.isEdit) window.getApp.$emit('APP_VALID_ERROR', '필수 입력값을 입력해 주세요.');
       }).catch(() => {
+        window.getApp.$emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
         this.isEdit = false;
       });
     },
@@ -280,8 +289,9 @@ export default {
         this.isInsert = _result;
         // TODO : 전역 성공 메시지 처리
         // 이벤트는 ./event.js 파일에 선언되어 있음
-        if (!this.isInsert) window.getApp.$emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
+        if (!this.isInsert) window.getApp.$emit('APP_VALID_ERROR', '필수 입력값을 입력해 주세요.');
       }).catch(() => {
+        window.getApp.$emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
         this.isInsert = false;
       });
     },
@@ -349,15 +359,15 @@ export default {
     },
     btnSaveClickedCallback (result) {
       this.getList();
-
-      if (result.data === false)
+      
+      if (result.data === "date")
       {
         window.getApp.$emit('ALERT', {
           title: '안내',
           message: '이미 존재하는 휴일 일자 입니다.',
           type: 'warning',  // success / info / warning / error
         });
-      }
+      } 
       else
       {
         window.getApp.$emit('ALERT', {
@@ -365,6 +375,7 @@ export default {
           message: '저장되었습니다.',
           type: 'success',  // success / info / warning / error
         });
+        this.holiday.holidayYmd = this.$_.clone(result.data);
       }
       this.isEdit = false;
       // this.$emit('APP_REQUEST_SUCCESS', '수정 버튼이 클릭 되었습니다.');
@@ -373,11 +384,18 @@ export default {
       // this.disease.heaDiseaseCd = _result.data;
       this.getList();
 
-      if (result.data === false)
+      if (result.data === "date")
       {
         window.getApp.$emit('ALERT', {
           title: '안내',
           message: '이미 존재하는 휴일 일자 입니다.',
+          type: 'warning',  // success / info / warning / error
+        });
+      } 
+      else if (result.data === "remark") {
+        window.getApp.$emit('ALERT', {
+          title: '안내',
+          message: '이미 존재하는 명칭 입니다.',
           type: 'warning',  // success / info / warning / error
         });
       }
@@ -385,7 +403,7 @@ export default {
       {
         window.getApp.$emit('ALERT', {
           title: '안내',
-          message: '저장되었습니다.',
+          message: '등록되었습니다.',
           type: 'success',  // success / info / warning / error
         });
       }
@@ -399,6 +417,7 @@ export default {
       this.$validator.reset();
       // this.disease.heaDiseaseClassCd = "";
       // window.getApp.$emit('APP_REQUEST_SUCCESS', '초기화 버튼이 클릭 되었습니다.');
+      this.holiday.afterHolidayYmd = this.$comm.getToday();
     },
     btnClickedErrorCallback (result) {
       this.editable = false;

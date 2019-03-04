@@ -119,17 +119,7 @@
         </b-col>
       </b-col>
     </b-row>
-    <el-dialog
-      :title="popupOptions.title"
-      :visible.sync="popupOptions.visible"
-      :fullscreen="false"
-      :width="popupOptions.width"        
-      :close-on-click-modal="false"
-      :close-on-press-escape="false"
-      :show-close="false"
-      :top="popupOptions.top" >
-      <component :is="popupOptions.target" :popupParam="popupOptions.param" @closePopup="popupOptions.closeCallback" />
-    </el-dialog>
+    <y-popup :param="popupOptions"></y-popup>
   </b-container>
 </template>
 
@@ -196,14 +186,14 @@ export default {
     /** 초기화 관련 함수 **/
     init () {
       this.gridOptions.header = [
-        { text: '사번', name: 'userId', width: '10px', align: 'center' },
-        { text: '직원명', name: 'userNm', width: '15px', align: 'center' },
-        { text: '부서', name: 'deptNm', width: '15px', align: 'center' },
-        { text: '방문일', name: 'visitYmd', width: '20px', align: 'center', url: 'true' },
-        { text: '진료내역', name: 'heaTreatNm', width: '20px', align: 'left' },
-        { text: '주호소 및 증상', name: 'symptom', width: '20px', align: 'left' },
-        { text: '간호 및 상담내용', name: 'consult', width: '20px', align: 'left' },
-        { text: '특이사항', name: 'remark', width: '20px', align: 'left' },
+        { text: '사번', name: 'userId', width: '100px', align: 'center' },
+        { text: '직원명', name: 'userNm', width: '150px', align: 'center' },
+        { text: '부서', name: 'deptNm', width: '150px', align: 'center' },
+        { text: '방문일', name: 'visitYmd', width: '200px', align: 'center', url: 'true' },
+        { text: '진료내역', name: 'heaTreatNm', width: '200px', align: 'left' },
+        { text: '주호소 및 증상', name: 'symptom', width: '200px', align: 'left' },
+        { text: '간호 및 상담내용', name: 'consult', width: '200px', align: 'left' },
+        { text: '특이사항', name: 'remark', width: '200px', align: 'left' },
       ];
 
       this.searchUrl = selectConfig.infirmaryUsageHistory.list.url;
@@ -222,7 +212,7 @@ export default {
         _result.data.splice(0, 0, { 'deptCd': '', 'deptNm': '전체' });
         this.comboDeptItems = _result.data;
       }, (_error) => {
-        window.getApp.$emit('APP_REQUEST_ERROR', _error);
+        window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
       });
     },
     getDataList () {
@@ -232,7 +222,7 @@ export default {
       this.$http.request((_result) => {
         this.gridOptions.data = _result.data;
       }, (_error) => {
-        window.getApp.$emit('APP_REQUEST_ERROR', _error);
+        window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
       });
     },
     /**
@@ -250,7 +240,7 @@ export default {
       {
         window.getApp.$emit('ALERT', {
           title: '안내',
-          message: '항목을 선택해주세요.',
+          message: '건강관리실 일반업무를 항목을 선택해주세요.',
           type: 'warning',
         });
         return;
@@ -258,7 +248,7 @@ export default {
       
       window.getApp.$emit('CONFIRM', {
         title: '확인',
-        message: '삭제하시겠습니까?',
+        message: '건강관리실 일반업무를 삭제하시겠습니까?',
         type: 'info',
         confirmCallback: () => {
           this.deleteValue = {
@@ -298,13 +288,13 @@ export default {
       this.isDeleteSubmit = false;
       window.getApp.$emit('ALERT', {
         title: '안내',
-        message: '삭제되었습니다.',
+        message: '건강관리실 일반업무가 정상적으로 삭제하였습니다.',
         type: 'success',
       });
     },
     btnClickedErrorCallback (_result) {
       this.isDeleteSubmit = false;
-      window.getApp.$emit('APP_REQUEST_ERROR', _result);
+      window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
     },
     btnPopupClickedCallback () {
       this.popupOptions.target = () => import(`${'./createGeneralBusiness.vue'}`);

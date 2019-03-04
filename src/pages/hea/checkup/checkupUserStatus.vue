@@ -13,13 +13,13 @@
         <b-card no-body class="px-3 py-2">
           <b-row class="mt-2">
             <b-col sm="4">
-              <y-label label="검진종류: " /><y-label :label="checkupPlan.heaCheckupClassNm" fieldable="true" />
+              <y-label label="검진종류: " /><y-label :label="checkupPlan.heaCheckupClassNm" :fieldable="true" />
             </b-col>
             <b-col sm="4">
-              <y-label label="검진계획: " /><y-label :label="checkupPlan.heaCheckupPlanNm" fieldable="true" />
+              <y-label label="검진계획: " /><y-label :label="checkupPlan.heaCheckupPlanNm" :fieldable="true" />
             </b-col>
             <b-col sm="4">
-              <y-label label="검진일자: " /><y-label :label="checkupPlan.heaCheckupPlanPeriod" fieldable="true" />
+              <y-label label="검진일자: " /><y-label :label="checkupPlan.heaCheckupPlanPeriod" :fieldable="true" />
             </b-col>
           </b-row>
         </b-card>
@@ -85,19 +85,11 @@
                 :width="8"
                 :editable="editable"
                 ui="bootstrap"
-                label="사번"
-                name="userId"
-                v-model="searchParam.userId"
-              />
-            </b-col>
-            <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
-              <y-text
-                :width="8"
-                :editable="editable"
-                ui="bootstrap"
                 label="사원명"
                 name="userNm"
                 v-model="searchParam.userNm"
+                :appendIcon="[{ 'icon': 'search', callbackName: 'searchUser' }]"
+                @searchUser="btnSearchLeaderUserClicked"
               />
             </b-col>
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
@@ -179,7 +171,7 @@
         </b-col>
       </b-col>
     </b-row>
-
+    <y-popup :param="popupOptions"></y-popup>
   </b-container>
 </template>
 
@@ -233,7 +225,17 @@ export default {
       gridHeaderOptions: [],
       gridData: [],
       gridHeight: 300,
-      gridSelectedRows: []
+      gridSelectedRows: [],
+
+      popupOptions: {
+        target: null,
+        title: '',
+        visible: false,
+        width: '60%',
+        top: '10px',
+        param: {},
+        closeCallback: null,
+      },
     };
   },
   watch: {
@@ -311,7 +313,7 @@ export default {
       this.$http.request((_result) => {
         this.checkupPlan = _result.data;
       }, (_error) => {
-        window.getApp.$emit('APP_REQUEST_ERROR', _error);
+        window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
       });
     },
     getList () {
@@ -321,12 +323,12 @@ export default {
       this.$http.request((_result) => {
         this.gridData = _result.data;
       }, (_error) => {
-        window.getApp.$emit('APP_REQUEST_ERROR', _error);
+        window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
       });
     },
 
     getProcessNoItems () {
-      this.$http.url = selectConfig.process.list.url;
+      this.$http.url = selectConfig.manage.process.list.url;
       this.$http.type = 'get';
       this.$http.param = {
         'useYn': 'Y'
@@ -336,7 +338,7 @@ export default {
         this.processNoItems = _result.data;
         this.searchParam.processNo = 0;
       }, (_error) => {
-        window.getApp.$emit('APP_REQUEST_ERROR', _error);
+        window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
       });
     },
     getDeptCdItems () {
@@ -347,7 +349,7 @@ export default {
         this.deptCdItems = _result.data;
         this.searchParam.deptCd = '';
       }, (_error) => {
-        window.getApp.$emit('APP_REQUEST_ERROR', _error);
+        window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
       });
     },
     getNotifyPlanYnItems () {
@@ -435,7 +437,22 @@ export default {
     },
     btnClickedErrorCallback (_result) {
       this.isDeleteSubmit = false;
-      window.getApp.$emit('APP_REQUEST_ERROR', _result);
+      window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
+    },
+    btnSearchLeaderUserClicked () {
+      this.popupOptions.target = () => import(`${'../../manage/user/userSearch.vue'}`);
+      this.popupOptions.title = '사용자검색';
+      this.popupOptions.visible = true;
+      this.popupOptions.width = '60%';
+      this.popupOptions.top = '100px';
+      this.popupOptions.closeCallback = this.closePopupSearchUser;
+    },
+    closePopupSearchUser (data) {
+      this.popupOptions.target = null;
+      this.popupOptions.visible = false;
+      if (data.user) {
+        this.searchParam.userNm = data.user.userNm;
+      }
     },
     /** /Button Event **/
     

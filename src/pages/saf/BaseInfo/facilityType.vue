@@ -16,7 +16,7 @@
             <div class="float-right">
               <y-btn
                 :title="searchArea.title"
-                color="orange"
+                color="green"
                 @btnClicked="btnSearchVisibleClicked"
               />
               <y-btn
@@ -54,10 +54,11 @@
             :height="gridOptions.height"
             :headers="gridOptions.header"
             :items="gridOptions.data"
+            :useRownum="false"
             :excel-down="true"
             :print="true"
             @selectedRow="selectedRow"
-            label="점검항목"
+            label="설비유형 목록"
           ></y-data-table>
         </b-col>
       </b-col>
@@ -68,7 +69,7 @@
       <b-col sm="12">
         <b-row>
           <b-col sm="12">
-            <y-label label="안전점검 항목 상세" icon="user-edit" color-class="cutstom-title-color"/>
+            <y-label label="설비유형 상세" icon="user-edit" color-class="cutstom-title-color"/>
           </b-col>
         </b-row>
         <b-card>
@@ -76,21 +77,27 @@
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <y-text
                 :width="8"
+                :required="true"
+                :maxlength="15"
                 ui="bootstrap"
                 label="설비유형코드"
                 name="safFacilityTypeCd"
                 v-validate="'required'"
                 v-model="facilityType.safFacilityTypeCd"
+                :state="validateState('safFacilityTypeCd')"
               ></y-text>
             </b-col>
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <y-text
                 :width="8"
+                :maxlength="50"
+                :required="true"
                 ui="bootstrap"
                 label="설비유형명"
                 name="safFacilityTypeNm"
                 v-validate="'required'"
                 v-model="facilityType.safFacilityTypeNm"
+                :state="validateState('safFacilityTypeNm')"
               ></y-text>
             </b-col>
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
@@ -99,7 +106,7 @@
                 :maxlength="5"
                 :hasSeperator="false"
                 ui="bootstrap"
-                label="정렬 순서"
+                label="정렬순서"
                 name="sortOrder"
                 v-model="facilityType.sortOrder"
               ></y-number>
@@ -163,8 +170,9 @@ export default {
     facilityType: {
       safFacilityTypeCd: "",
       safFacilityTypeNm: "",
-      sortOrder: "",
+      sortOrder: 0,
       useYn: "",
+      beforeSafFacilityTypeCd: "",
     },
     searchParam: {
       safFacilityTypeNm: "",
@@ -191,7 +199,7 @@ export default {
   //* Vue lifecycle: created, mounted, destroyed, etc */
   beforeCreate () {},
   created () {},
-  update () {},
+  updated () {},
   beforeMount () {
     Object.assign(this.$data, this.$options.data());
     this.init();
@@ -207,25 +215,24 @@ export default {
   //* methods */
   methods: {
     init () {
-      setTimeout(() => {
-        // Url Setting
-        this.searchUrl = selectConfig.saf.refInfoFacilityType.list.url;
-        this.editUrl = transactionConfig.saf.refInfoFacilityType.edit.url;
-        this.insertUrl = transactionConfig.saf.refInfoFacilityType.insert.url;
+      // Url Setting
+      this.searchUrl = selectConfig.saf.refInfoFacilityType.list.url;
+      this.editUrl = transactionConfig.saf.refInfoFacilityType.edit.url;
+      this.insertUrl = transactionConfig.saf.refInfoFacilityType.insert.url;
 
-        // radio 버튼 셋팅
-        this.radioItems = [
-          { useYn: "Y", useName: "사용" },
-          { useYn: "N", useName: "미사용" }
-        ];
-      }, 1000);
+      // radio 버튼 셋팅
+      this.radioItems = [
+        { useYn: "Y", useName: "사용" },
+        { useYn: "N", useName: "미사용" }
+      ];
+      this.getList();
 
       // 그리드 헤더 설정
       this.gridOptions.header = [
         { text: "설비유형코드", name: "safFacilityTypeCd", width: "100px" },
         { text: "설비유형명", name: "safFacilityTypeNm", width: "300px" },
-        { text: "정렬순서", name: "sortOrder", width: "100px" },
-        { text: "사용여부", name: "useYn", width: "100px", align: "center" }
+        { text: "사용여부", name: "useYnNm", width: "100px", align: "center" },
+        { text: "정렬순서", name: "sortOrder", width: "100px", align: "center" },
       ];
       this.setGridSize();
     },
@@ -239,6 +246,7 @@ export default {
       this.$http.request((_result) => {
         this.editable = true;
         this.facilityType = this.$_.clone(_result.data);
+        this.facilityType.beforeSafFacilityTypeCd = this.$_.clone(this.facilityType.safFacilityTypeCd);
       }, (_error) => {
         console.log(_error);
       });
@@ -271,7 +279,7 @@ export default {
     beforeInsert () {
       window.getApp.$emit('CONFIRM', {
         title: '확인',
-        message: '수정하시겠습니까?',
+        message: '등록하시겠습니까?',
         // TODO : 필요시 추가하세요.
         type: 'info',  // success / info / warning / error
         // 확인 callback 함수
@@ -288,8 +296,9 @@ export default {
         this.isEdit = _result;
         // TODO : 전역 성공 메시지 처리
         // 이벤트는 ./event.js 파일에 선언되어 있음
-        if (!this.isEdit) window.getApp.$emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
+        if (!this.isEdit) window.getApp.$emit('APP_VALID_ERROR', '필수 입력값을 입력해 주세요.');
       }).catch(() => {
+        window.getApp.$emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
         this.isEdit = false;
       });
     },
@@ -298,8 +307,9 @@ export default {
         this.isInsert = _result;
         // TODO : 전역 성공 메시지 처리
         // 이벤트는 ./event.js 파일에 선언되어 있음
-        if (!this.isInsert) window.getApp.$emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
+        if (!this.isInsert) window.getApp.$emit('APP_VALID_ERROR', '필수 입력값을 입력해 주세요.');
       }).catch(() => {
+        window.getApp.$emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
         this.isInsert = false;
       });
     },
@@ -357,34 +367,63 @@ export default {
       // window.getApp.$emit('APP_REQUEST_SUCCESS', '조회 버튼이 클릭되었습니다.');
     },
     btnSaveClickedCallback (result) {
-      this.getList();
+      if (result.data === "facilityTypeCd") {
+        window.getApp.$emit('ALERT', {
+          title: '안내',
+          message: '설비유형코드가 이미 존재합니다.',
+          type: 'warning',  // success / info / warning / error
+        });
+      }
 
-      window.getApp.$emit('ALERT', {
-        title: '안내',
-        message: '수정되었습니다.',
-        type: 'success',  // success / info / warning / error
-      });
+      else if (result.data === "facilityTypeNm") {
+        window.getApp.$emit('ALERT', {
+          title: '안내',
+          message: '설비유형명이 이미 존재 합니다.',
+          type: 'warning',  // success / info / warning / error
+        });
+      } 
+      else {
+        window.getApp.$emit('ALERT', {
+          title: '안내',
+          message: '저장되었습니다.',
+          type: 'success',  // success / info / warning / error
+        });
+      }
+      
+      this.getList();
       this.isEdit = false;
+
+      
       // this.$emit('APP_REQUEST_SUCCESS', '수정 버튼이 클릭 되었습니다.');
     },
     btnInsertClickedCallback (result) {
-      this.getList();
-      if (result.data === false) {
+      if (result.data === "facilityTypeCd") {
         window.getApp.$emit('ALERT', {
           title: '안내',
-          message: '이미 존재 하는 유형코드 입니다.',
+          message: '설비유형코드가 이미 존재합니다.',
           type: 'warning',  // success / info / warning / error
         });
-        return;
       }
 
-      window.getApp.$emit('ALERT', {
-        title: '안내',
-        message: '저장되었습니다.',
-        type: 'success',  // success / info / warning / error
-      });
+      else if (result.data === "facilityTypeNm") {
+        window.getApp.$emit('ALERT', {
+          title: '안내',
+          message: '설비유형명이 이미 존재 합니다.',
+          type: 'warning',  // success / info / warning / error
+        });
+      } 
+      else {
+        window.getApp.$emit('ALERT', {
+          title: '안내',
+          message: '저장되었습니다.',
+          type: 'success',  // success / info / warning / error
+        });
+        this.facilityType.safFacilityTypeCd = this.$_.clone(result.data);
+        this.facilityType.beforeSafFacilityTypeCd = this.$_.clone(result.data);
+      }
+      this.getList();
       this.isInsert = false;
-      this.editable = true;
+      this.editable = true; 
     },
 
     btnClearClickedCallback () {

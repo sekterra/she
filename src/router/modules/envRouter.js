@@ -222,6 +222,12 @@ const envRouter = {
               name: 'chemical',
               meta: { title: '약품', navi: '환경 > 수질 > 원료/약품관리 >' }, 
             },
+            {
+              path: 'chemicalStatus',
+              component: () => import('@/pages/env/water/ingrChem/chemicalStatus'),
+              name: 'chemicalStatus',
+              meta: { title: '약품사용량현황', navi: '환경 > 수질 > 원료/약품관리 >' }, 
+            },
           ]
         },
         {
@@ -270,7 +276,7 @@ const envRouter = {
               path: 'dispoCompany',
               component: () => import('@/pages/env/waste/baseInfo/dispoCompany'),
               name: 'dispoCompany',
-              meta: { title: '폐기물처리업체', navi: '환경 > 폐기물 > 기준정보 >' },
+              meta: { title: '처리/운반업체', navi: '환경 > 폐기물 > 기준정보 >' },
             },
           ]
         },        
@@ -296,7 +302,7 @@ const envRouter = {
             },
             {
               path: 'operationLog',
-              component: () => import('@/pages/env/waste/operationLog/operationLog'),
+              component: () => import('@/pages/env/waste/operationLog/dailyReport'),
               name: 'operationLog',
               meta: { title: '관리대장', navi: '환경 > 폐기물 > 운영관리 >' },
             },

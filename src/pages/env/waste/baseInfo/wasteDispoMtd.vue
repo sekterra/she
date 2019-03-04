@@ -36,6 +36,7 @@
               <y-text
                 :width="8"
                 :editable="editable"
+                :required="true"
                 :disabled="updateMode"
                 :maxlength="4"
                 ui="bootstrap"
@@ -50,6 +51,7 @@
               <y-text
                 :width="8"
                 :editable="editable"
+                :required="true"
                 :maxlength="30"
                 ui="bootstrap"
                 label="처리방법"
@@ -63,6 +65,7 @@
               <y-select
                 :width="8"
                 :editable="editable"
+                :required="true"
                 :comboItems="ewstDispoClassCdItems"
                 itemText="codeNm"
                 itemValue="code"
@@ -82,7 +85,7 @@
                 :maxlength="5"
                 :hasSeperator="false"
                 ui="bootstrap"
-                label="출력순서"
+                label="정렬순서"
                 name="sortOrder"
                 v-model="wasteDispoMtd.sortOrder"
               />
@@ -153,9 +156,9 @@ export default {
   data () {
     return {
       wasteDispoMtd: {
-        ewstDispoMtdCd: '',
+        ewstDispoMtdCd: null,
         ewstDispoMtdNm: '',
-        ewstDispoClassCd: '',
+        ewstDispoClassCd: null,
         ewstDispoClassNm: '',
         sortOrder: null,
         useYn: 'Y',
@@ -212,8 +215,8 @@ export default {
         { text: '처리방법코드', name: 'ewstDispoMtdCd', width: '160px', align: 'center' },
         { text: '처리방법', name: 'ewstDispoMtdNm', width: '200px' },
         { text: '처리분류', name: 'ewstDispoClassNm', width: '200px', align: 'center' },
-        { text: '출력순서', name: 'sortOrder', width: '100px', align: 'center' },
         { text: '사용여부', name: 'useYn', width: '100px', align: 'center' },
+        { text: '정렬순서', name: 'sortOrder', width: '100px', align: 'center' },
         { text: '등록일', name: 'createDt', width: '200px', align: 'center' },
         { text: '등록자', name: 'createUserNm', width: '120px', align: 'center' },
         { text: '수정일', name: 'updateDt', width: '200px', align: 'center' },
@@ -253,7 +256,7 @@ export default {
       this.$http.url = this.$format(selectConfig.manage.codeMaster.getSelect.url, 'EWST_DISPO_CLASS');
       this.$http.type = 'get';
       this.$http.request((_result) => {
-        _result.data.splice(0, 0, { 'code': '', 'codeNm': '선택하세요' });
+        _result.data.splice(0, 0, { 'code': null, 'codeNm': '선택하세요' });
         this.ewstDispoClassCdItems = _result.data;
       }, (_error) => {
         window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');

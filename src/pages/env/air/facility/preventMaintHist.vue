@@ -75,7 +75,7 @@
                 :range="true"
                 :required="true"
                 label="보수기간"
-                name="period"
+                name="maintPeriod"
                 v-model="preventMaintHist.maintPeriod"
                 v-validate="'required'"
                 :state="validateState('maintPeriod')"
@@ -87,24 +87,28 @@
               <y-text
                 :width="8"
                 :editable="editable"
-                :disabled="detailMode"
+                :required="true"
                 :maxlength="30"
                 ui="bootstrap"
                 label="보수자"
                 name="worker"                
                 v-model="preventMaintHist.worker"
+                v-validate="'required'"
+                :state="validateState('worker')"
                 />
             </b-col>
             <b-col sm="12" md="12" lg="12" xl="12" class="col-xxl-6">
               <y-textarea
                 :width="10"
                 :editable="editable"
-                :disabled="detailMode"
+                :required="true"
                 :maxlength="200"
                 ui="bootstrap"
-                label="부수명세"
+                label="보수명세"
                 name="remark"
                 v-model="preventMaintHist.remark"
+                v-validate="'required'"
+                :state="validateState('remark')"
                 :rows="2" />
             </b-col> 
           </b-row>
@@ -115,7 +119,7 @@
               @btnClicked="btnClearClickedCallback" 
               />
             <y-btn
-              v-if="editable&&!detailMode&&prevention.eairPreventFacNo>0"
+              v-if="editable"
               :action-url="insertUrl"
               :param="preventMaintHist"
               :is-submit="isCreateSubmit"
@@ -126,7 +130,20 @@
               @beforeCreateSubmit="beforeCreateSubmit"
               @btnClicked="btnCreateClickedCallback" 
               @btnClickedErrorCallback="btnClickedErrorCallback"
-              />
+            />
+            <y-btn
+              v-if="editable&&updateMode"
+              :action-url="editUrl"
+              :param="preventMaintHist"
+              :is-submit="isUpdateSubmit"
+              title="수정"
+              color="orange"
+              action-type="put"
+              beforeSubmit = "beforeUpdateSubmit"
+              @beforeUpdateSubmit="beforeUpdateSubmit"
+              @btnClicked="btnUpdateClickedCallback" 
+              @btnClickedErrorCallback="btnClickedErrorCallback"
+              /> 
           </div>
         </b-card>
       </b-col>
@@ -176,12 +193,14 @@ export default {
         height: '250'
       },
       editable: true,
-      detailMode: false,
+      updateMode: false,
       isCreateSubmit: false,
+      isUpdateSubmit: false,
 
       selectedValue: [],
 
       insertUrl: '',
+      editUrl: '',
       deleteUrl: '',
       searchUrl: '',
       detailUrl: '',
@@ -224,10 +243,13 @@ export default {
         { text: '보수자', name: 'worker', width: '300px' },
         { text: '보수명세', name: 'remark', width: '500px' },
         { text: '등록일', name: 'createDt', width: '200px', align: 'center' },
-        { text: '등록자', name: 'createUserNm', width: '120px', align: 'center' }
+        { text: '등록자', name: 'createUserNm', width: '120px', align: 'center' },
+        { text: '수정일', name: 'updateDt', width: '200px', align: 'center' },
+        { text: '수정자', name: 'updateUserNm', width: '120px', align: 'center' }
       ];
       
       this.insertUrl = transactionConfig.env.air.facility.preventionMaintenanceHistory.insert.url;
+      this.editUrl = transactionConfig.env.air.facility.preventionMaintenanceHistory.edit.url;
       this.deleteUrl = transactionConfig.env.air.facility.preventionMaintenanceHistory.delete.url;
       this.searchUrl = selectConfig.env.air.facility.preventionMaintenanceHistory.list.url;
       this.detailUrl = selectConfig.env.air.facility.preventionMaintenanceHistory.get.url;
@@ -254,7 +276,7 @@ export default {
       this.$http.url = this.$format(this.detailUrl, data.eairPreventFacMaintHistNo);
       this.$http.type = 'get'; 
       this.$http.request((_result) => {
-        this.detailMode = true;
+        this.updateMode = true;
         this.preventMaintHist = _result.data;
         this.preventMaintHist.maintPeriod = [this.preventMaintHist.startYmd, this.preventMaintHist.endYmd];
       }, (_error) => {
@@ -279,7 +301,8 @@ export default {
     },
 
     beforeCreateSubmit () {
-      this.detailMode = false; 
+      this.preventMaintHist.eairPreventFacMaintHistNo = 0;
+      this.updateMode = false;
       this.$validator.validateAll().then((_result) => {
         if (_result) {
           window.getApp.$emit('CONFIRM', {
@@ -295,6 +318,22 @@ export default {
         window.getApp.$emit('APP_VALID_ERROR', '유효성 검사 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
       });
     },
+    beforeUpdateSubmit () {
+      this.$validator.validateAll().then((_result) => {
+        if (_result) {
+          window.getApp.$emit('CONFIRM', {
+            title: '확인',
+            message: '방지시설 보수 정보를 수정하시겠습니까?',
+            type: 'info',
+            confirmCallback: () => {
+              this.isUpdateSubmit = true;
+            }
+          });
+        }
+      }).catch(() => {
+        window.getApp.$emit('APP_VALID_ERROR', '유효성 검사 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
+      });
+    },
     validateState (_ref) {
       if (this.veeBag[_ref] && (this.veeBag[_ref].dirty || this.veeBag[_ref].validated)) {
         return !this.errors.has(_ref);
@@ -303,7 +342,8 @@ export default {
     },
     
     btnClearClickedCallback (_result) {
-      this.detailMode = false;
+      this.updateMode = false;
+      this.preventMaintHist.eairPreventFacMaintHistNo = 0;
       this.preventMaintHist.eairPreventFacNo = this.prevention.eairPreventFacNo;
       this.preventMaintHist.eairPreventFacNm = this.prevention.eairPreventFacNm;
       this.preventMaintHist.eairPreventFacClassCd = '';
@@ -311,22 +351,32 @@ export default {
       this.preventMaintHist.eairOutletNo = null;
       this.preventMaintHist.eairOutletNm = '';
       this.preventMaintHist.installPos = '';
-      this.preventMaintHist.startYmd = '';
-      this.preventMaintHist.endYmd = '';      
+      this.preventMaintHist.startYmd = null;
+      this.preventMaintHist.endYmd = null;      
       this.preventMaintHist.worker = '';
       this.preventMaintHist.remark = '';
       this.preventMaintHist.createUserId = '';
       this.preventMaintHist.createUserNm = '';
       this.preventMaintHist.createDt = '';
-      this.preventMaintHist.maintPeriod = [this.preventMaintHist.startYmd, this.preventMaintHist.endYmd];
+      this.preventMaintHist.maintPeriod = [];
     },
     btnCreateClickedCallback (_result) {
       this.isCreateSubmit = false;
-      this.detailMode = true;
+      this.updateMode = true;
+      this.preventMaintHist.eairPreventFacMaintHistNo = _result.data;
       this.getList(); 
       window.getApp.$emit('ALERT', {
         title: '안내',
         message: '방지시설 보수 정보를 정상적으로 저장하였습니다.',
+        type: 'success',
+      });
+    },
+    btnUpdateClickedCallback (_result) {
+      this.isUpdateSubmit = false;
+      this.getList();
+      window.getApp.$emit('ALERT', {
+        title: '안내',
+        message: '방지시설 보수 정보를 정상적으로 수정하였습니다.',
         type: 'success',
       });
     },

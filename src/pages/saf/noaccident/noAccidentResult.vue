@@ -40,7 +40,7 @@
                 :width="baseWidth"
                 :editable="editable"
                 :range="true"
-                label="기간"
+                label="시작일"
                 name="period"
                 v-model="searchParam.duration"
               >
@@ -53,7 +53,7 @@
       </b-col>
     </b-row>
 
-    <!-- 교육 결과 목록 grid -->
+    <!-- 무재해 목록 grid -->
     <b-row class="mt-3">
       <b-col sm="12">
         <b-col sm="12" class="px-0">
@@ -66,30 +66,22 @@
             />
           </div>
           <y-data-table 
-            label="무재해 목록"
+            label="사업장 무재해 목록"
             gridType="edit"
             :excel-down="true"
             :print="true"
+            :use-paging="true"
             ref="dataTable"
             :height="gridOptions.height"
             :headers="gridOptions.header"
             :items="gridOptions.data"
+            @tableLinkClicked="tableLinkClicked"
             >
           </y-data-table>
         </b-col>
       </b-col>
     </b-row>
-    <el-dialog
-      :title="popupOptions.title"
-      :visible.sync="popupOptions.visible"
-      :fullscreen="false"
-      :width="popupOptions.width"        
-      :close-on-click-modal="false"
-      :close-on-press-escape="false"
-      :show-close="false"
-      :top="popupOptions.top" >
-      <component :is="popupOptions.target" :popupParam="popupOptions.param" @closePopup="popupOptions.closeCallback" />
-    </el-dialog>
+    <y-popup :param="popupOptions"></y-popup>
   </b-container>
 </template>
 
@@ -112,7 +104,8 @@ export default {
       searchParam: {
         duration: []
       },
-      noAccidentResult: {
+      noAccident: {
+        safNoAccidentNo: 0,
         startYmd: '',
         endSchYmd: '',
         mhUseYn: '',
@@ -133,7 +126,15 @@ export default {
         createDt: '',
         updateUserId: '',
         updateDt: '',
-
+        totalMh: 0,
+        totalDays: 0,
+        progressMh: 0,
+        byDateMh: '',
+        noAccidentDays: 0,
+        byDefaultDays: '',
+        noaccStypeCd: '', 
+        noaccStypeNm: '',
+        noaccStypeYmd: '',
       },
       gridOptions: {
         header: [],
@@ -144,7 +145,7 @@ export default {
         target: null,
         title: '',
         visible: false,
-        width: '60%',
+        width: '90%',
         top: '10px',
         param: {},
         closeCallback: null,
@@ -153,6 +154,7 @@ export default {
       editable: true,
       searchUrl: '',
       isSubmit: false,  // 버튼을 submit 할 것인지 판단하는 변수로써 버튼의 개수만큼 필요합니다.
+      isInsert: false, 
     };
   },
   /** Vue lifecycle: created, mounted, destroyed, etc **/
@@ -182,40 +184,41 @@ export default {
       this.searchUrl = selectConfig.saf.noAccidentResult.list.url;      
 
       var today = this.$comm.getToday();
-      var from = this.$comm.getCalculatedDate(today, '-1m', 'YYYY-MM-DD', 'YYYY-MM-DD');
-      var to = this.$comm.getCalculatedDate(today, '1m', 'YYYY-MM-DD', 'YYYY-MM-DD');
+      var from = this.$comm.getCalculatedDate(today, '-1y', 'YYYY-MM-DD', 'YYYY-MM-DD');
+      var to = this.$comm.getCalculatedDate(today, '1y', 'YYYY-MM-DD', 'YYYY-MM-DD');
 
       setTimeout(() => {
         this.searchParam.duration = [from, to];
+        this.getDataList();
       }, 200);
-      
-
 
       // 교육 결과 목록 grid 헤더 설정
       this.gridOptions.header = [
-        { text: '시작일', name: 'startYmd', width: '140px', align: 'center' },
+        { text: '시작일', name: 'startYmd', width: '120px', align: 'center', url: 'true' },
         { text: '달성예정일', name: 'endSchYmd', width: '110px', align: 'center' },
         { text: '인시', child: 
           [
             { text: '초기인시', name: 'initMh', width: '100px', align: 'center' },
-            { text: '누적인시', name: 'normMh', width: '100px', align: 'center' },
-            { text: '목표인시', name: 'initMh', width: '100px', align: 'center' },
-            { text: '진행률', name: 'initMh', width: '120px', align: 'center' },
-            { text: '무재해 일', name: 'initMh', width: '100px', align: 'left' },
-            { text: '일별 생성인시', name: 'initMh', width: '120px', align: 'center' },
+            { text: '누적인시', name: 'totalMh', width: '100px', align: 'center' },
+            { text: '목표인시', name: 'targetMh', width: '100px', align: 'center' },
+            { text: '진행률', name: 'progressMh', width: '120px', align: 'center' },
+            { text: '무재해 일', name: 'noAccidentDays', width: '100px', align: 'center' },
+            { text: '일별 생성인시', name: 'byDateMh', width: '140px', align: 'center' },
           ]
         },
         { text: '일', child: 
           [
-            { text: '초기일', name: 'initMh', width: '100px', align: 'center' },
-            { text: '누적일', name: 'initMh', width: '100px', align: 'center' },
-            { text: '목표일', name: 'initMh', width: '100px', align: 'center' },
-            { text: '기본일(일수)', name: 'initMh', width: '100px', align: 'center' },
+            { text: '초기일', name: 'initDays', width: '100px', align: 'center' },
+            { text: '누적일', name: 'totalDays', width: '100px', align: 'center' },
+            { text: '목표일', name: 'targetDays', width: '100px', align: 'center' },
+            { text: '기본일(일수)', name: 'byDefaultDays', width: '140px', align: 'center' },
           ]
-        }
+        },
+        { text: '무산/시작사유', name: 'remark', width: '140px', align: 'center' },
       ];
-    },
 
+      this.setGridSize();
+    },
     closePopupUsage (data) {
       this.popupOptions.target = null;
       this.popupOptions.visible = false;
@@ -241,6 +244,35 @@ export default {
     * ex) getExamDatas () {}
     */
     
+    /** 
+    * 수정 팝업 호출
+    */
+    tableLinkClicked (header, data) {
+      this.openDetailPage(data);
+    },
+    openDetailPage (data) {
+      if (data === null || data === undefined)
+      {
+        this.popupOptions.param = {
+          'safNoAccidentNo': 0
+        };
+      } else {
+        this.popupOptions.param = {
+          'safNoAccidentNo': data.safNoAccidentNo,
+          'noAccUseYn': data.useYn
+        };
+      }
+      this.popupOptions.top = "10px";
+      this.popupOptions.width = '90%';
+      this.popupOptions.target = () => import(`${'./createNoAccident.vue'}`);
+      this.popupOptions.title = '사업장무재해 등록/수정';
+      this.popupOptions.visible = true;
+      this.popupOptions.closeCallback = this.closePopupUsage;
+    },
+    selectedRow (data) {
+      if (data === null) return;
+      this.noAccident = data;
+    },
     /** /Call API service **/
     /**
      * 그리드 리사이징
@@ -248,7 +280,7 @@ export default {
     setGridSize () {
       window.getApp.$emit('LOADING_SHOW');
       setTimeout(() => {
-        this.gridOptions.height = window.innerHeight - this.$refs.searchBox.clientHeight - 260;
+        this.gridOptions.height = window.innerHeight - this.$refs.searchBox.clientHeight - 320;
         window.getApp.$emit('LOADING_HIDE');
       }, 600);
     },
@@ -319,12 +351,12 @@ export default {
     /** /Button Event **/
     btnPopupClickedCallback () {
       this.popupOptions.target = () => import(`${'./createNoAccident.vue'}`);
-      this.popupOptions.title = '일반업무 등록';
+      this.popupOptions.title = '사업장 무재해 등록';
       this.popupOptions.visible = true;
-      this.popupOptions.width = '60%';
+      this.popupOptions.width = '90%';
       this.popupOptions.top = '10px';
       this.popupOptions.param = {
-        'saf_no_accident_no': 0
+        'safNoAccidentNo': 0
       };
       this.popupOptions.closeCallback = this.closePopupUsage;
     },

@@ -39,19 +39,19 @@
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <b-row>
               <b-col sm="4"><y-label label="업무수행적합"></y-label></b-col>
-              <b-col sm="8"><y-label :label="checkupResult.heaWorkableNm" fieldable="true"></y-label></b-col>
+              <b-col sm="8"><y-label :label="checkupResult.heaWorkableNm" :fieldable="true"></y-label></b-col>
               </b-row>
             </b-col>
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <b-row>
               <b-col sm="4"><y-label label="사후관리"></y-label></b-col>
-              <b-col sm="8"><y-label :label="checkupResult.heaWorkableNm" fieldable="true"></y-label></b-col>
+              <b-col sm="8"><y-label :label="checkupResult.heaWorkableNm" :fieldable="true"></y-label></b-col>
               </b-row>
             </b-col>
             <b-col sm="12" md="12" lg="12" xl="12" class="col-xxl-6">
               <b-row>
               <b-col sm="2"><y-label label="종합소견"></y-label></b-col>
-              <b-col sm="10"><y-label :label="checkupResult.overallOpinion" fieldable="true"></y-label></b-col>
+              <b-col sm="10"><y-label :label="checkupResult.overallOpinion" :fieldable="true"></y-label></b-col>
               </b-row>
             </b-col>
           </b-row>         
@@ -191,7 +191,7 @@ export default {
       this.$http.request((_result) => {
         this.gridHistoryData = _result.data;
       }, (_error) => {
-        window.getApp.$emit('APP_REQUEST_ERROR', _error);
+        window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
       });
     },
     getDetail () {
@@ -200,7 +200,7 @@ export default {
       this.$http.request((_result) => {
         this.checkupResult = _result.data;
       }, (_error) => {         
-        window.getApp.$emit('APP_REQUEST_ERROR', _error);
+        window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
       });            
     },
     getResultDiagList () {
@@ -210,7 +210,7 @@ export default {
       this.$http.request((_result) => {
         this.gridResultDiagHistoryData = _result.data;
       }, (_error) => {
-        window.getApp.$emit('APP_REQUEST_ERROR', _error);
+        window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
       });
     },
     selectedRow (data) {

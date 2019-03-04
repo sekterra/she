@@ -19,8 +19,9 @@
             <b-row>
               <b-col sm="12" md="12" lg="12" xl="12" class="col-xxl-12">
                 <y-textarea
+                  :disabled="this.checkResultDetail.checkStepCd === 'CHS03' || this.checkResultDetail.checkStepCd === 'CHS04'"
                   :width="10"
-                  :maxlength="60"
+                  :maxlength="1300"
                   :required="true"
                   ui="bootstrap"
                   label="점검결과요약"
@@ -42,7 +43,7 @@
                     :items="gridOptions.data"
                     :excel-down="true"
                     :print="true"
-                    label="점검항목별 결과"
+                    label="점검항목별 결과 목록"
                     >
                   </y-data-table>
                 </b-col>
@@ -66,11 +67,9 @@ export default {
       default: {
         safCheckRsltNo: 0,
         safCheckKindNo: 0,
-        checkResult: '',
+        checkResult: null,
         checkItemResults: [],
-        // safCheckItemNo: 0,
-        // checkResults: [],
-        // remarks: [],
+        checkStepCd: '',
       },
     },
   },
@@ -78,7 +77,7 @@ export default {
     gridOptions: {
       header: [],
       data: [],
-      height: '300'
+      height: '400'
     },
     editable: false,
     isInsert: false,
@@ -87,7 +86,7 @@ export default {
   }),
   watch: {
     'checkResultDetail.safCheckRsltNo': function (newValue, oldValue) {
-      // this.getList();
+      this.getList();
     },
     'checkResultDetail.safCheckKindNo': function (newValue, oldValue) {
       this.getList();
@@ -119,22 +118,33 @@ export default {
       this.searchUrl = selectConfig.saf.checkItemResult.list.url;      
       // 그리드 헤더 설정
       this.gridOptions.header = [
-        { text: '정렬순서', name: 'sortOrder', width: '100px', align: 'center' },
         { text: '점검항목', name: 'safCheckTypeNm', width: '200px', },
-        { text: '점검결과', name: 'checkResult', width: '150px', type: 'text' },
-        { text: '비고', name: 'remark', width: '350px', align: 'center', type: 'text' },
       ];
+
+      if (this.checkResultDetail.checkStepCd === 'CHS04' || this.checkResultDetail.checkStepCd === 'CHS03')
+      {
+        this.gridOptions.header.splice(1, 0, { text: '점검결과', name: 'checkResult', width: '150px', });
+        this.gridOptions.header.splice(2, 0, { text: '비고', name: 'remark', width: '350px', });
+        this.gridOptions.height = '280';
+      }
+      else
+      {
+        this.gridOptions.header.splice(1, 0, { text: '점검결과', name: 'checkResult', width: '150px', type: 'text', });
+        this.gridOptions.header.splice(2, 0, { text: '비고', name: 'remark', width: '350px', type: 'textarea' });
+        this.gridOptions.height = '400';
+      }
     },
     /** 안전점검결과 목록 조회 **/
     getList () {
       this.$http.url = this.searchUrl;
       this.$http.type = 'GET';
       this.$http.param = {
+        'safCheckRsltNo': this.checkResultDetail.safCheckRsltNo,
         'safCheckKindNo': this.checkResultDetail.safCheckKindNo,
       };
       this.$http.request((_result) => {
         this.gridOptions.data = _result.data; // this.$_.clone(_result.data);
-        this.checkResultDetail.checkItemResults = _result.data;
+        // this.checkResultDetail.checkItemResults = _result.data;
       }, (_error) => {
         window.getApp.$emit('APP_REQUEST_ERROR', _error);
       });

@@ -78,6 +78,7 @@
             :clear-on-select="false" 
             :close-on-select="false"
             :multiple="true"
+            :disabled="disabled"
             class="mb-3"
             @input="input"
           >
@@ -175,7 +176,11 @@ export default {
     required: {
       type: Boolean,
       default: false
-    }
+    },
+    disabled: {
+      type: Boolean,
+      default: false
+    },
   },
   // TODO: 화살표 함수(=>)는 data에 사용하지 말 것
   //    data: () => { return { a: this.myProp }}) 화살표 함수가 부모 컨텍스트를 바인딩하기 때문에 this는 예상과 달리 Vue 인스턴스가 아니며, this.myProp는 정의되지 않습니다.

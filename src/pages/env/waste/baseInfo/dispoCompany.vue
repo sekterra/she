@@ -1,7 +1,7 @@
 <!--
-  목적 : 폐기물-폐기물 처리업체
+  목적 : 폐기물-폐기물 처리/운반업체
   작성자 : khk
-  Detail : 폐기물 처리업체 관리
+  Detail : 폐기물 처리/운반업체 관리
   *
   examples:
   *
@@ -13,7 +13,7 @@
         <b-col sm="12" class="px-0">
           <y-data-table 
             ref="dataTable"
-            label="폐기물 처리업체 목록"
+            label="폐기물 처리/운반업체 목록"
             :height="gridOptions.height"
             :headers="gridOptions.header"
             :items="gridOptions.data" 
@@ -27,18 +27,35 @@
       <b-col sm="12">
         <b-row>
           <b-col sm="12">
-            <y-label label="폐기물 처리업체 등록" icon="user-edit" color-class="cutstom-title-color" />
+            <y-label label="폐기물 처리/운반업체 등록" icon="user-edit" color-class="cutstom-title-color" />
           </b-col>
         </b-row>
         <b-card>          
           <b-row> 
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
+              <y-checkbox
+                :width="8"
+                :editable="editable"
+                :required="true"
+                :comboItems="dispoFreightYnItems"
+                itemText="codeNm"
+                itemValue="code"
+                ui="bootstrap"
+                label="업체구분"
+                name="dispoFreightYn"
+                v-model="disposalCompany.dispoFreightYn"
+                v-validate="'required'"
+                :state="validateState('dispoFreightYn')"
+                />
+            </b-col>
+            <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <y-text
                 :width="8"
                 :editable="editable"
+                :required="true"
                 :maxlength="30"
                 ui="bootstrap"
-                label="처리업체명"
+                label="업체명"
                 name="ewstDispoCoNm"                
                 v-model="disposalCompany.ewstDispoCoNm"
                 v-validate="'required'"
@@ -56,6 +73,17 @@
                 v-model="disposalCompany.bizRegNo"
                 />
             </b-col>
+            <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
+              <y-text
+                :width="8"
+                :editable="editable"
+                :maxlength="20"
+                ui="bootstrap"
+                label="담당자전화번호"
+                name="telNo"                
+                v-model="disposalCompany.telNo"
+                />
+            </b-col>
             <b-col sm="12" md="12" lg="12" xl="12" class="col-xxl-6">
               <y-text
                 :width="10"
@@ -68,27 +96,16 @@
                 />
             </b-col>
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
-              <y-text
-                :width="8"
-                :editable="editable"
-                :maxlength="20"
-                ui="bootstrap"
-                label="담당자전화번호"
-                name="telNo"                
-                v-model="disposalCompany.telNo"
-                />
-            </b-col>
-            <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <y-number
                 :width="8"
                 :editable="editable"
                 :maxlength="5"
                 :hasSeperator="false"
                 ui="bootstrap"
-                label="출력순서"
+                label="정렬순서"
                 name="sortOrder"
                 v-model="disposalCompany.sortOrder"
-              />
+                />
             </b-col>
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
                 <y-switch
@@ -149,7 +166,7 @@ import selectConfig from '@/js/selectConfig';
 import transactionConfig from '@/js/transactionConfig';
 export default {
   /** attributes: name, components, props, data **/
-  name: 'disposal-company',
+  name: 'dispo-company',
   props: {
   },
   data () {
@@ -160,6 +177,9 @@ export default {
         bizRegNo: '',
         addr: '',
         telNo: '',
+        dispoYn: null,
+        freightYn: null,
+        dispoFreightYn: null,
         sortOrder: null,
         useYn: 'Y',
         createUserId: '',
@@ -178,6 +198,8 @@ export default {
       updateMode: false,
       isCreateSubmit: false,
       isUpdateSubmit: false,
+
+      dispoFreightYnItems: [],
 
       insertUrl: '',
       editUrl: '',
@@ -205,17 +227,20 @@ export default {
     init () {
       // 선택항목 설정
       setTimeout(() => {
+        this.dispoFreightYnItems.push({ 'code': 'dispo', 'codeNm': '처리업체' });
+        this.dispoFreightYnItems.push({ 'code': 'freight', 'codeNm': '운반업체' });
       }, 200);
 
       // 그리드 헤더 설정
       this.gridOptions.header = [
-        { text: '처리업체명', name: 'ewstDispoCoNm', width: '200px' },
+        { text: '처리업체', name: 'dispoYn', width: '100px', align: 'center' },
+        { text: '운반업체', name: 'freightYn', width: '100px', align: 'center' },
+        { text: '업체명', name: 'ewstDispoCoNm', width: '200px' },
         { text: '사업자등록번호', name: 'bizRegNo', width: '160px', align: 'center' },
         { text: '주소', name: 'addr', width: '300px' },
         { text: '담당자전화번호', name: 'telNo', width: '160px', align: 'center' },
-        { text: '출력순서', name: 'sortOrder', width: '100px', align: 'center' },
         { text: '사용여부', name: 'useYn', width: '100px', align: 'center' },
-        { text: '비고', name: 'remark', width: '500px' },        
+        { text: '정렬순서', name: 'sortOrder', width: '100px', align: 'center' },
         { text: '등록일', name: 'createDt', width: '200px', align: 'center' },
         { text: '등록자', name: 'createUserNm', width: '120px', align: 'center' },
         { text: '수정일', name: 'updateDt', width: '200px', align: 'center' },
@@ -244,8 +269,11 @@ export default {
       this.$http.url = this.$format(this.detailUrl, data.ewstDispoCoNo);
       this.$http.type = 'get'; 
       this.$http.request((_result) => {
-        this.updateMode = true;
+        this.updateMode = true;        
         this.disposalCompany = _result.data;
+        this.disposalCompany.dispoFreightYn = [];
+        if (this.disposalCompany.dispoYn === 'Y') this.disposalCompany.dispoFreightYn.push('dispo');
+        if (this.disposalCompany.freightYn === 'Y') this.disposalCompany.dispoFreightYn.push('freight');
       }, (_error) => {
         window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
       });
@@ -257,6 +285,16 @@ export default {
         this.gridOptions.height = window.innerHeight - this.$refs.detailBox.clientHeight - 240;
         window.getApp.$emit('LOADING_HIDE');
       }, 600);
+    },
+
+    discoverDispoFreightYn () {
+      var index = this.$_.indexOf(this.disposalCompany.dispoFreightYn, 'dispo');
+      if (index > -1) this.disposalCompany.dispoYn = 'Y'
+      else this.disposalCompany.dispoYn = 'N'
+
+      index = this.$_.indexOf(this.disposalCompany.dispoFreightYn, 'freight');
+      if (index > -1) this.disposalCompany.freightYn = 'Y'
+      else this.disposalCompany.freightYn = 'N'
     },
 
     checkDuplicate () {
@@ -279,7 +317,7 @@ export default {
       }
       return false;
     },
-    beforeCreateSubmit () {
+    beforeCreateSubmit () {      
       this.disposalCompany.ewstDispoCoNo = 0;
       this.updateMode = false;      
       if (this.checkDuplicate()) return;
@@ -290,6 +328,7 @@ export default {
             message: '폐기물 처리업체 정보를 저장 하시겠습니까?',
             type: 'info',
             confirmCallback: () => {
+              this.discoverDispoFreightYn();
               this.isCreateSubmit = true;
             }
           });
@@ -307,6 +346,7 @@ export default {
             message: '폐기물 처리업체 정보를 수정하시겠습니까?',
             type: 'info',
             confirmCallback: () => {
+              this.discoverDispoFreightYn();
               this.isUpdateSubmit = true;
             }
           });
@@ -329,6 +369,8 @@ export default {
       this.disposalCompany.bizRegNo = '';
       this.disposalCompany.addr = '';
       this.disposalCompany.telNo = '';
+      this.disposalCompany.dispoYn = 'Y';
+      this.disposalCompany.freightYn = 'Y';
       this.disposalCompany.sortOrder = null;
       this.disposalCompany.useYn = 'Y';
       this.disposalCompany.createUserId = '';

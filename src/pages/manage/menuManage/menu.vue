@@ -109,7 +109,9 @@
               <y-tree-data-table
                 :headers="gridOptions.header"
                 :items="menuTreeDataTable"
+                :height="450"
                 expand-column-name="menuNm"
+                expand-column-width="300"
                 data-key="menuId"
                 @rowClicked="rowClicked"
               >
@@ -505,6 +507,7 @@ export default {
       
       window.getApp.$emit('APP_REQUEST_SUCCESS', "정상적으로 저장되었습니다.");
       this.getMenuTreeDatatableBases();
+      this.getMenuTreeBases();
     },
     /**
     * 버튼 에러 처리용 공통함수
@@ -540,6 +543,7 @@ export default {
       this.isEdit = false;  // 반드시 isSubmit을 false로 초기화 하세요. 그렇지 않으면 버튼을 다시 클릭해도 동작하지 않습니다.
       window.getApp.$emit('APP_REQUEST_SUCCESS', "정상적으로 저장되었습니다.");
       this.getMenuTreeDatatableBases();
+      this.getMenuTreeBases();
     },
     removeParentNode () {
       this.menu.upMenuNm = null;

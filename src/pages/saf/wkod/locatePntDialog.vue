@@ -24,7 +24,8 @@
         <b-card header-class="default-card" body-class="default-body-card" class="py-0">
           <b-row>
             <b-col sm="12" md="12" lg="12" xl="12" class="col-xxl-12">
-              <img src="./map.png" class="image" @click="imageClick">
+              <canvas id="canvas" width="330" height="300" @click="imageClick"></canvas>
+              <!-- <img src="./map.png" class="image" @click="imageClick" id="canvas"> -->
             </b-col>
           </b-row>
         </b-card>
@@ -43,6 +44,7 @@ export default {
     popupParam: {
       type: Object,
       default: {
+        wkodStepCd: '',
         locatePntX: 0,
         locatePntY: 0
       },
@@ -72,29 +74,52 @@ export default {
   created () {
   },
   beforeMount () {
-    
   },
   mounted () {
+    this.init();
   },
-  beforeDestory () {
+  beforeDestroy () {
   },
   //* methods */
   methods: {
     init () {
-      setTimeout(() => {
-        // Url Setting
-      }, 1000);
+      this.draw();
     },
     /**
      * 사용자의 입력을 받는다.
      */
     imageClick () {
-      this.popupParam.locatePntX = event.x;
-      this.popupParam.locatePntY = event.y;
-
+      if (this.popupParam.wkodStepCd === 'WKS01') {
+        this.popupParam.locatePntX = event.offsetX;
+        this.popupParam.locatePntY = event.offsetY;
+      }
       this.closePopup(this.popupParam);
     },
     getConfirm () {
+    },
+    draw () {
+      const canvas = document.getElementById('canvas');
+      if (canvas.getContext) {
+        const ctx = canvas.getContext('2d');
+        
+        ctx.strokeStyle = "red"; // 선색
+        ctx.fillStyle = "red"; // 채우기 색
+        ctx.globalAlpha = "0.7"; // 투명도
+        
+        ctx.beginPath();
+
+        // 설정
+        const x = this.popupParam.locatePntX; // x 좌표
+        const y = this.popupParam.locatePntY; // y 좌표
+        const radius = 5; // 반지름
+        const startAngle = 0; // 시작각도
+        const endAngle = Math.PI * 2; // 종료각도
+        const anticlockwise = false; // 시계방향 or 시계반대방향
+        
+        ctx.arc(x, y, radius, startAngle, endAngle, anticlockwise);
+        // ctx.stroke(); // 채우기 없음
+        ctx.fill(); // 채우기
+      }
     },
     closePopup (data) {
       this.$emit('closePopup', data);
@@ -107,4 +132,7 @@ export default {
 
 <style>
 
+#canvas { background:url('./map.png') }
+
 </style>
+

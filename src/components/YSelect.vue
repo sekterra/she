@@ -259,7 +259,7 @@ export default {
     // itemSearchKey정보를 통해 backend에서 직접 조회할 경우
     if (this.itemSearchKey) this.getSelectItems();
     else if (this.comboItems && this.comboItems.length > 0) {
-      console.log(':::::::::: combo item before Mount');
+      // console.log(':::::::::: combo item before Mount');
       this.makeSelectOptions();
     }
   },

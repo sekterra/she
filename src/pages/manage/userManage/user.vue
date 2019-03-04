@@ -114,7 +114,9 @@
                 >
                 </y-text>
               </b-col>
-              <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
+              <b-col 
+                v-if="!user.userId"
+                sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
                 <y-text
                   :width="9"
                   :editable="editable"
@@ -122,6 +124,7 @@
                   :maxlength="100"
                   label="비밀번호*"
                   name="userPwd"
+                  type="password"
                   v-model="user.userPwd"
                   v-validate="'required'"
                   :state="validateState('userPwd')"
@@ -180,8 +183,6 @@
                   label="사내전화"
                   name="officeTel"
                   v-model="user.officeTel"
-                  v-validate="'required'"
-                  :state="validateState('officeTel')"
                 >
                 </y-text>
               </b-col>
@@ -194,8 +195,6 @@
                   label="휴대전화"
                   name="phoneNo"
                   v-model="user.phoneNo"
-                  v-validate="'required'"
-                  :state="validateState('phoneNo')"
                 >
                 </y-text>
               </b-col>
@@ -208,8 +207,6 @@
                   label="Email"
                   name="email"
                   v-model="user.email"
-                  v-validate="'required'"
-                  :state="validateState('email')"
                 >
                 </y-text>
               </b-col>
@@ -220,8 +217,6 @@
                 label="생년월일"
                 name="birthYmd"
                 v-model="user.birthYmd"
-                v-validate="'required'"
-                :state="validateState('birthYmd')"
                 />
               </b-col>
               <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
@@ -231,8 +226,6 @@
                 label="입사일"
                 name="entryYmd"
                 v-model="user.entryYmd"
-                v-validate="'required'"
-                :state="validateState('entryYmd')"
                 />
               </b-col>
               
@@ -261,36 +254,41 @@
         <b-row>
           <b-col sm="12">
             <div class="float-right mt-3" >
-                    <y-btn
-                      title="초기화"
-                      @btnClicked="btnClearClickedCallback" 
-                    />
-                    <y-btn 
-                      :action-url="insertUrl"
-                      :param="user"
-                      :is-submit="isInsert"
-                      title="신규등록"
-                      color="orange"
-                      action-type="POST"
-                      beforeSubmit="beforeInsert"
-                      @beforeInsert="beforeInsert"
-                      @btnClicked="btnInsertClickedCallback" 
-                      @btnClickedErrorCallback="btnClickedErrorCallback"
-                    />
-                    <!-- <y-btn 
-                      v-if="editable"
-                      :action-url="editUrl"
-                      :param="menu"
-                      :is-submit="isEdit"
-                      title="수정"
-                      color="orange"
-                      action-type="PUT"
-                      beforeSubmit = "beforeSubmit"
-                      @beforeSubmit="beforeSubmit"
-                      @btnClicked="btnSaveClickedCallback" 
-                      @btnClickedErrorCallback="btnClickedErrorCallback"
-                    /> -->
-                  </div>
+                <y-btn
+                  title="초기화"
+                  @btnClicked="btnClearClickedCallback" 
+                />
+                <y-btn
+                  v-if="editable && user.userId"
+                  title="비밀번호 변경"
+                  @btnClicked="btnPasswordChangeClickedCallback" 
+                />
+                <y-btn 
+                  v-if="editable"
+                  :action-url="editUrl"
+                  :param="user"
+                  :is-submit="isEdit"
+                  title="수정"
+                  color="orange"
+                  action-type="PUT"
+                  beforeSubmit = "beforeUpdate"
+                  @beforeUpdate="beforeUpdate"
+                  @btnClicked="btnSaveClickedCallback" 
+                  @btnClickedErrorCallback="btnClickedErrorCallback"
+                />
+                <y-btn 
+                  :action-url="insertUrl"
+                  :param="user"
+                  :is-submit="isInsert"
+                  title="신규등록"
+                  color="orange"
+                  action-type="POST"
+                  beforeSubmit="beforeInsert"
+                  @beforeInsert="beforeInsert"
+                  @btnClicked="btnInsertClickedCallback" 
+                  @btnClickedErrorCallback="btnClickedErrorCallback"
+                />
+              </div>
           </b-col>
         </b-row>
       </b-card>
@@ -322,6 +320,7 @@ export default {
       user: {
         useYn: 'Y'
       },
+      orgUser: {},
       gridOptions: {
         header: [],
         data: [],
@@ -349,18 +348,20 @@ export default {
     // 이유 : vue.js는 SPA기반으로 동작하기 때문에 페이지를 이동하더라도 기존 입력된 정보가 그대로 남아 있는 문제가 있음
     Object.assign(this.$data, this.$options.data());
     this.init();
+    window.getApp.$on('POPUP_SEND_DATA', this.passwordChanged);
   },
   mounted () {
   },
   beforeDestory () {
-    this.init();
+    window.getApp.$off('POPUP_SEND_DATA', this.passwordChanged);
   },
   /** methods **/
   methods: {
     /** 초기화 관련 함수 **/
     init () {
-      // this.insertUrl = transactionConfig.user.insert.url;
+      this.insertUrl = transactionConfig.user.insert.url;
       this.searchUrl = selectConfig.manage.user.list.url;
+      this.editUrl = transactionConfig.user.update.url;
       this.getComboItems('HEA_GENDER_TYPE');
       this.getDeptCdItems();
       this.setGridSize();
@@ -423,12 +424,14 @@ export default {
       if (_type === 'insert') type = this.isInsert;
 
       this.$validator.validateAll().then((_result) => {
-        this.isInsert = _result;
+        if (_type === 'insert') this.isInsert = _result;
+        else this.isEdit = _result;
         // TODO : 전역 성공 메시지 처리
         // 이벤트는 ./event.js 파일에 선언되어 있음
-        if (!this.isInsert) window.getApp.emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
+        if (!_result) window.getApp.emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
       }).catch(() => {
         this.isInsert = false;
+        this.isEdit = false;
       });
     },
     validateState (_ref) {
@@ -440,27 +443,64 @@ export default {
     /** /validation checking **/
     
     /** Component Events, Callbacks (버튼 제외) **/
+
     /**
      * 등록전 유효성 검사
      */
     beforeInsert () {
       this.checkValidation('insert');
     },
-    
+    beforeUpdate () {
+      if (this.orgUser.userId !== this.user.userId) {
+        this.isEdit = false;
+        window.getApp.$emit('APP_VALID_ERROR', 'ID는 수정할 수 없습니다.');
+        return;
+      }
+      this.checkValidation('update');
+    },
+    /**
+     * 팝업으로부터 password를 받아와서 비밀번호 업데이트.
+     */
+    passwordChanged (_result) {
+      if (_result.userPwd !== _result.userPwdRepeat) {
+        window.getApp.$emit('APP_REQUEST_ERROR', '비밀번호와 비밀번호 확인은 동일해야 합니다.');
+        return;
+      } else if (!_result.userPwd) {
+        window.getApp.$emit('APP_REQUEST_ERROR', '비밀번호를 반드시 입력하세요.');
+        return;
+      }
+
+      this.$http.url = this.$format(transactionConfig.user.password.url, this.user.userId);
+      this.$http.param = _result;
+      this.$http.type = 'PATCH';
+      this.$http.request((_result) => {
+        if (_result) window.getApp.$emit('APP_REQUEST_SUCCESS', "정상적으로 저장되었습니다.");
+        else window.getApp.$emit('APP_REQUEST_ERROR', '비밀번호 변경처리가 되지 않았습니다. 관리자에게 문의바랍니다.');
+      });
+    },
     /** /Component, Callbacks (버튼 제외) **/
     
     /** Button Event **/
     // 초기화
     btnClearClickedCallback () {
-      Object.assign(this.$data.user, this.$options.data().user);
+      // Object.assign(this.$data.user, this.$options.data().user);
+      // Object.assign(this.$data, this.$options.data());
+      this.user = {
+        useYn: 'Y'
+      };
+      this.orgUser = {};
       this.$validator.reset();
+      console.log('::::::: btnClearClickedCallback:' + JSON.stringify(this.user));
     },
     /**
     * 저장 버튼 처리용 샘플함수
     */
     btnInsertClickedCallback (_result) {
       this.isInsert = false;  // 반드시 isSubmit을 false로 초기화 하세요. 그렇지 않으면 버튼을 다시 클릭해도 동작하지 않습니다.
-      
+      window.getApp.$emit('APP_REQUEST_SUCCESS', "정상적으로 저장되었습니다.");
+    },
+    btnSaveClickedCallback (_result) {
+      this.isEdit = false;
       window.getApp.$emit('APP_REQUEST_SUCCESS', "정상적으로 저장되었습니다.");
     },
     /**
@@ -468,11 +508,27 @@ export default {
     */
     btnClickedErrorCallback (_result) {
       this.isInsert = false;  // 반드시 isSubmit을 false로 초기화 하세요. 그렇지 않으면 버튼을 다시 클릭해도 동작하지 않습니다.
+      this.isEdit = false;
       // window.alert('error:' + JSON.stringify(_result));
       // window.getApp.$emit('APP_REQUEST_ERROR', _result);
     },
     btnSearchClickedCallback (_result) {
       this.gridOptions.data = _result.data;
+    },
+    btnPasswordChangeClickedCallback () {
+      if (!this.user.userId) {
+        window.getApp.$emit('APP_REQUEST_ERROR', '사용자를 먼저 선택해주세요.');
+        return;
+      }
+      window.getApp.$emit('POPUP_OPEN', {
+        isPopupOpen: true,
+        id: 'popup',
+        label: '비밀번호 변경',
+        editable: true,
+        type: 'passwordChange',
+        fullscreen: false,
+        getPopupDataFuncName: 'getPassword',
+      });
     },
     /** /Button Event **/
     
@@ -493,8 +549,15 @@ export default {
         console.log(_error);
       });
     },
-    selectedRow () {
-
+    selectedRow (_row) {
+      this.$http.url = this.$format(selectConfig.manage.user.get.url, _row.userId);
+      this.$http.type = 'GET';
+      this.$http.request((_result) => {
+        this.user = _result.data;
+        this.orgUser = this.$_.clone(this.user);
+      }, (_error) => {
+        console.log(_error);
+      });
     }
     /** /기타 function **/
   }

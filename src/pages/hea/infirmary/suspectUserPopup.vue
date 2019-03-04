@@ -188,18 +188,7 @@
         </b-col>
       </b-col>
     </b-row>
-    <el-dialog
-      :title="popupOptions.title"
-      :visible.sync="popupOptions.visible"
-      :fullscreen="false"
-      :append-to-body="true"
-      :close-on-click-modal="false"
-      :close-on-press-escape="false"
-      :show-close="false"
-      :width="popupOptions.width"
-      :top="popupOptions.top">
-      <component :is="popupOptions.target" :popupParam="popupOptions.param" @closePopup="popupOptions.closeCallback" />
-    </el-dialog>
+    <y-popup :param="popupOptions"></y-popup>
   </b-container>
 </template>
 
@@ -319,11 +308,11 @@ export default {
         _result.data.splice(0, 0, { 'deptCd': '', 'deptNm': '전체' });
         this.deptItems = _result.data;
       }, (_error) => {
-        window.getApp.$emit('APP_REQUEST_ERROR', _error);
+        window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
       });
     },
     getProcessNoItems () {
-      this.$http.url = selectConfig.process.list.url;
+      this.$http.url = selectConfig.manage.process.list.url;
       this.$http.type = 'get';
       this.$http.param = {
         'useYn': 'Y'
@@ -333,7 +322,7 @@ export default {
         this.processNoItems = _result.data;
         this.searchParam.processNo = 0;
       }, (_error) => {
-        window.getApp.$emit('APP_REQUEST_ERROR', _error);
+        window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
       });
     },
     getDataList () {
@@ -346,7 +335,7 @@ export default {
         });
         this.gridOptions.data = _result.data;
       }, (_error) => {
-        window.getApp.$emit('APP_REQUEST_ERROR', _error);
+        window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
       });
     },
     
@@ -355,7 +344,7 @@ export default {
       {
         window.getApp.$emit('ALERT', {
           title: '안내',
-          message: '항목을 선택해주세요.',
+          message: '유소견자 항목을 선택해주세요.',
           type: 'warning',
         });
         return;
@@ -379,7 +368,7 @@ export default {
       {
         window.getApp.$emit('ALERT', {
           title: '안내',
-          message: '항목을 선택해주세요.',
+          message: '유소견자 항목을 선택해주세요.',
           type: 'warning',
         });
         return;
@@ -387,7 +376,7 @@ export default {
 
       window.getApp.$emit('CONFIRM', {
         title: '확인',
-        message: '수정하시겠습니까?',
+        message: '유소견자를 해제하시겠습니까?',
         type: 'info',
         // 확인 callback 함수
         confirmCallback: () => {
@@ -407,7 +396,7 @@ export default {
       this.$http.request((_result) => {
         row['suspectHists'] = _result.data;
       }, (_error) => {
-        window.getApp.$emit('APP_REQUEST_ERROR', _error);
+        window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
       });
     },
     closePopup () {
@@ -446,7 +435,7 @@ export default {
     btnClickedErrorCallback (_result) {
       this.isInsertSubmit = false;
       this.isDeleteSubmit = false;
-      window.getApp.emit('APP_REQUEST_ERROR', _result);
+      window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
     },
     btnSearchClicked () {
       this.getDataList();

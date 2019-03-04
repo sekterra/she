@@ -105,7 +105,7 @@
                     :editable="editable"
                     :maxlength="5"
                     ui="bootstrap"
-                    label="출력 순서"
+                    label="정렬순서"
                     name="sortOrder"
                     v-model="heaDrug.sortOrder"
                   >
@@ -217,7 +217,7 @@ export default {
         { text: '적정 재고량', name: 'amountLimit', width: '10%', align: 'center' },
         { text: '현재 재고량', name: 'amountCurr', width: '10%', align: 'center' },
         { text: '사용여부', name: 'useYnNm', width: '10%', align: 'center' },
-        { text: '출력순서', name: 'sortOrder', width: '10%', align: 'center' },
+        { text: '정렬순서', name: 'sortOrder', width: '10%', align: 'center' },
       ];
 
       this.searchUrl = selectConfig.drugManage.list.url;
@@ -244,7 +244,7 @@ export default {
       this.$http.request((_result) => {
         this.gridOptions.data = _result.data;
       }, (_error) => {
-        window.getApp.$emit('APP_REQUEST_ERROR', _error);
+        window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
       });
     },
     getDrugManage (data) {
@@ -259,7 +259,7 @@ export default {
         if (_result) {
           window.getApp.$emit('CONFIRM', {
             title: '확인',
-            message: '등록하시겠습니까?',
+            message: '약품 정보를 저장하시겠습니까?',
             type: 'info',
             // 확인 callback 함수
             confirmCallback: () => {
@@ -277,7 +277,7 @@ export default {
         if (_result) {
           window.getApp.$emit('CONFIRM', {
             title: '확인',
-            message: '수정하시겠습니까?',
+            message: '약품 정보를 수정하시겠습니까?',
             type: 'info',
             // 확인 callback 함수
             confirmCallback: () => {
@@ -338,7 +338,7 @@ export default {
       this.updateMode = true;
       window.getApp.$emit('ALERT', {
         title: '안내',
-        message: '등록되었습니다.',
+        message: '약품 정보를 정상적으로 저장하였습니다.',
         type: 'success',
       });
     },
@@ -347,14 +347,14 @@ export default {
       this.isEditSubmit = false;
       window.getApp.$emit('ALERT', {
         title: '안내',
-        message: '수정되었습니다.',
+        message: '약품 정보를 정상적으로 수정하였습니다.',
         type: 'success',
       });
     },
     btnClickedErrorCallback (_result) {
       this.isInsertSubmit = false;
       this.isEditSubmit = false;
-      window.getApp.$emit('APP_REQUEST_ERROR', _result);
+      window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
     },
     btnClearClickedCallback () {
       Object.assign(this.$data.heaDrug, this.$options.data().heaDrug);

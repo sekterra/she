@@ -14,15 +14,36 @@
             <y-label label="안전점검결과 상세" icon="user-edit" color-class="cutstom-title-color" />
             <div slot="buttonGroup" class="float-right mb-1">
               <y-btn 
+                v-if="!popupParam.flag && completeable"
+                :action-url="editUrl"
+                :param="checkResultDetail"
+                :is-submit="isComplete"
+                title="완료"
+                color="black"
+                action-type="PUT"
+                beforeSubmit = "beforeComplete"
+                @beforeComplete="beforeComplete"
+                @btnClicked="btnCompleteClickedCallback" 
+                @btnClickedErrorCallback="btnClickedErrorCallback"
+              />
+              <y-btn 
+                v-if="insertable || editable"
                 :action-url="editUrl"
                 :param="checkResultDetail"
                 :is-submit="isEdit"
-                title="수정"
+                title="저장"
                 color="orange"
                 action-type="PUT"
                 beforeSubmit = "beforeEdit"
                 @beforeEdit="beforeEdit"
                 @btnClicked="btnSaveClickedCallback" 
+                @btnClickedErrorCallback="btnClickedErrorCallback"
+              />
+              <y-btn 
+                v-if="!popupParam.flag && deleteable"
+                color="red"
+                title="삭제"
+                @btnClicked="btnDeleteClickedCallback" 
                 @btnClickedErrorCallback="btnClickedErrorCallback"
               />
               <y-btn
@@ -38,6 +59,7 @@
               <y-select
                 :width="8"
                 :comboItems="comboCheckKindItems"
+                :disabled="disabled || !popupParam.flag"
                 itemText="safCheckKindNm"
                 itemValue="safCheckKindNo"
                 ui="bootstrap"
@@ -53,6 +75,7 @@
                 <y-datepicker
                   :width="6"
                   :required="true"
+                  :disabled="disabled"
                   label="점검일/예정일"
                   name="checkYmd"
                   v-model="checkResultDetail.checkYmd"
@@ -70,6 +93,7 @@
               <y-select
                 :width="8"
                 :comboItems="comboDeptItems"
+                :disabled="disabled || !popupParam.flag"
                 itemText="deptNm"
                 itemValue="deptCd"
                 ui="bootstrap"
@@ -110,6 +134,7 @@
               <y-select
                 :width="8"
                 :comboItems="comboTgtDeptItems"
+                :disabled="disabled || !popupParam.flag"
                 :required="true"
                 itemText="deptNm"
                 itemValue="deptCd"
@@ -122,11 +147,12 @@
               >
               </y-select>
             </b-col>
-            <b-col sm="12" md="12" lg="12" xl="12" class="col-xxl-12">
+            <b-col sm="12" md="12" lg="12" xl="12" class="col-xxl-6">
               <y-text
               :width="10"
               :maxlength="60"
               :required="true"
+              :disabled="disabled"
               ui="bootstrap"
               label="점검명"
               name="checkTitle"
@@ -153,13 +179,34 @@
           {{ item.title }}
         </span>
         <keep-alive>
-          <component :is="component" v-if="component" :checkResultDetail.sync="checkResultDetail"/>
+          <component :is="component" v-if="component" :checkResultDetail.sync="checkResultDetail" :tabParam.sync="tabParam"/>
         </keep-alive>
       </el-tab-pane>
     </el-tabs>
     <b-row>
       <b-col sm="12">  
         <div class="float-right mt-2">
+          <y-btn 
+            v-if="!popupParam.flag && completeable"
+            title="완료"
+            color="black"
+            @btnClicked="beforeComplete" 
+            @btnClickedErrorCallback="btnClickedErrorCallback"
+          />
+          <y-btn 
+            v-if="insertable || editable"
+                title="저장"
+            color="orange"
+            @btnClicked="beforeEdit" 
+            @btnClickedErrorCallback="btnClickedErrorCallback"
+          />
+          <y-btn 
+            v-if="!popupParam.flag && deleteable"
+            color="red"
+            title="삭제"
+            @btnClicked="btnDeleteClickedCallback" 
+            @btnClickedErrorCallback="btnClickedErrorCallback"
+          />
           <y-btn
               title="닫기"
               size="mini"
@@ -192,6 +239,8 @@ export default {
         checkStepCd: '', // 점검진행상태코드
         checkStepNm: '', // 점검진행상태명
         safCheckKindNo: '', // 안전점검종류번호
+
+        flag: true, // 수정인지 등록인지 판단
       },
     },
   },
@@ -201,32 +250,49 @@ export default {
     tabItems: [
       { title: '결과', url: './checkItemResult' },
       { title: '점검자', url: './checkInspector' },
-      { title: '개선사항', url: 'imprActTab' },
-      { title: '첨부파일', url: 'fileUploadPage' },
+      // { title: '개선사항', url: 'imprActTab' },
+      // { title: '첨부파일', url: 'fileUploadPage' },
     ],
     component: null,
     tabIndex: 0,
-    checkResultDetail: {
+    checkResultDetail: { 
       safCheckRsltNo: 0,
       checkYmd: '', // 점검일
-      tgtDeptCd: '', // 대상부서코드
+      tgtDeptCd: null, // 대상부서코드
       deptCd: '', // 주관부서코드
       checkSchYmd: '',
       safCheckKindNo: '',
       checkTitle: '',
       checkOrgCd: '',
+      checkStepCd: '',
       checkItemResults: [],
       innerTeamData: [],
       outerTeamData: [],
       checkInspectors: [],
+      checkResult: null,
+      isComplete: 0,
+      isResult: 0,
     },
+    // 개선조치를 위한 변수
+    tabParam: {
+      imprClassCd: '',
+      refTableId: 0,
+      editable: true,
+    },
+    disabled: false,
+    // saveBtnTitile: '수정',
+    insertable: false,
     editable: false,
+    deleteable: false,
+    completeable: false,
     isInsert: false,
     isEdit: false,
+    isComplete: false,
     comboCheckKindItems: [], // 점검종류 
     comboDeptItems: [], // 주관부서
     comboTgtDeptItems: [], // 대상부서
     comboCheckOrgItems: [], // 점검기관
+    deleteUrl: '',
     editUrl: '',
   }),
   watch: {
@@ -252,7 +318,11 @@ export default {
     },
     'popupParam.checkResult': function (newValue, oldValue) {
     },
-    'popupParam.checkStepCd': function (newValue, oldValue) {
+    'popupParam.checkStepCd': {
+      handler: function (newValue, oldValue) {
+        this.setBtnVisible();
+      },
+      deep: true
     },
     'popupParam.checkStepNm': function (newValue, oldValue) {
     },
@@ -280,6 +350,23 @@ export default {
   //* methods */
   methods: {
     init () {
+      this.checkResultDetail.checkStepCd = this.popupParam.checkStepCd;
+      this.setBtnVisible();
+      if (this.popupParam.flag)
+      {
+        // this.saveBtnTitile = '신규등록';
+        this.popupParam.checkYmd = this.$comm.getToday();
+      }
+      else
+      {
+        // this.saveBtnTitile = '수정';
+        // 개선조치를 위한 변수 Setting
+        this.tabParam.imprClassCd = 'ICL03';
+        this.tabParam.refTableId = this.popupParam.safCheckRsltNo;
+        this.popupParam.checkYmd = this.popupParam.checkYmd ? this.popupParam.checkYmd : this.popupParam.checkSchYmd;
+        this.tabItems.splice(2, 0, { 'title': '개선사항', 'url': 'imprActTab' });
+        this.tabItems.splice(3, 0, { 'title': '첨부파일', 'url': 'fileUploadPage' });
+      }
       // Url Setting
       this.editUrl = transactionConfig.saf.checkResult.edit.url;
       setTimeout(() => {
@@ -297,12 +384,62 @@ export default {
       else if (path === 'imprActTab') this.component = () => import('@/pages/saf/imprAct/imprActTab');
       else this.component = () => import(`${path}`);
     },
+    setBtnVisible () {
+      if (this.popupParam.checkStepCd === 'CHS01')
+      {
+        this.tabParam.editable = true;
+        this.insertable = true;
+        this.editable = true;
+        this.deleteable = true;
+        this.completeable = true;
+        this.disabled = false;
+      }
+      else if (this.popupParam.checkStepCd === 'CHS02')
+      {
+        this.tabParam.editable = true;
+        this.insertable = false;
+        this.editable = true;
+        this.deleteable = true;
+        this.completeable = true;
+        this.disabled = false;
+      }
+      else if (this.popupParam.checkStepCd === 'CHS03')
+      {
+        this.tabParam.editable = false;
+        this.insertable = false;
+        this.editable = false;
+        this.deleteable = false;
+        this.completeable = true;
+        this.disabled = true;
+      }
+      else if (this.popupParam.checkStepCd === 'CHS04')
+      {
+        this.tabParam.editable = false;
+        this.insertable = false;
+        this.editable = false;
+        this.deleteable = false;
+        this.completeable = false;
+        this.disabled = true;
+      }
+      else
+      {
+        this.insertable = true;
+        this.editable = false;
+        this.deleteable = false;
+        this.completeable = false;
+        this.disabled = false;
+      }
+    },
     /**
      * 점검종류 조회
      */
     getComboCheckKindItems () {
       this.$http.url = selectConfig.saf.checkKind.list.url;
       this.$http.type = 'GET';
+      this.$http.param = {
+        'facilityUseYn': 'N',
+        'useYn': 'Y',
+      };
       this.$http.request((_result) => {
         this.comboCheckKindItems = this.$_.clone(_result.data);
         this.comboCheckKindItems.splice(0, 0, { 'safCheckKindNo': '', 'safCheckKindNm': '선택하세요' });
@@ -320,24 +457,32 @@ export default {
       this.$http.request((_result) => {
         this.comboDeptItems = this.$_.clone(_result.data);
         this.comboDeptItems.splice(0, 0, { 'deptCd': '', 'deptNm': '선택하세요' });
-        this.checkResultDetail.deptCd = this.popupParam.deptCd;
+        // this.checkResultDetail.deptCd = this.popupParam.deptCd;
         this.comboTgtDeptItems = this.$_.clone(_result.data);
-        this.comboTgtDeptItems.splice(0, 0, { 'deptCd': '', 'deptNm': '선택하세요' });
-        this.checkResultDetail.tgtDeptCd = this.popupParam.tgtDeptCd;
+        this.comboTgtDeptItems.splice(0, 0, { 'deptCd': null, 'deptNm': '선택하세요' });
+        // this.checkResultDetail.tgtDeptCd = this.popupParam.tgtDeptCd;
       }, (_error) => {
         window.getApp.$emit('APP_REQUEST_ERROR', _error);
       });
     },
-    /** 수정 하기전 UI단 유효성 검사 **/
-    beforeEdit () {
+    saveCheckResult (completeable, alertTitle) {
       this.$validator.validateAll().then((_result) => {
         // TODO : 전역 성공 메시지 처리
         // 이벤트는 ./event.js 파일에 선언되어 있음
         if (_result) {
-          // this.isEdit = window.confirm("수정하시겠습니까?");
+          if (!this.checkResultDetail.checkResult)
+          {
+            window.getApp.$emit('ALERT', {
+              title: '안내',
+              message: '점검결과요약을 입력해주세요.',
+              type: 'warning',  // success / info / warning / error
+            });
+            return;
+          }
+
           window.getApp.$emit('CONFIRM', {
             title: '확인',
-            message: '수정하시겠습니까?',
+            message: alertTitle + '하시겠습니까?',
             // TODO : 필요시 추가하세요.
             type: 'info',  // success / info / warning / error
             // 확인 callback 함수
@@ -349,17 +494,19 @@ export default {
               this.$_.forEach(this.checkResultDetail.outerTeamData, (item) => {
                 this.checkResultDetail.checkInspectors.push(item);
               });
-              console.log(this.checkResultDetail);
-              this.isEdit = true;
+              this.checkResultDetail.isComplete = completeable;
+              this.checkResultDetail.isResult = !this.popupParam.flag ? 1 : 0;
+              if (completeable > 0) this.isComplete = true;
+              else this.isEdit = true;
             },
             // 취소 callback 함수
             cancelCallback: () => {
-              this.isEdit = false;
+              if (completeable > 0) this.isComplete = false;
+              else this.isEdit = false;
             }
           });
         }
         else if (!_result) {
-          // window.alert("필수입력값을 입력해주세요");
           window.getApp.$emit('ALERT', {
             title: '안내',
             message: '필수입력값을 입력해주세요.',
@@ -368,8 +515,16 @@ export default {
         }
       }).catch(() => {
         window.getApp.$emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
-        this.isEdit = false;
+        if (completeable > 0) this.isComplete = false;
+        else this.isEdit = false;
       });
+    },
+    beforeComplete () {
+      this.saveCheckResult(1, '완료');
+    },
+    /** 수정 하기전 UI단 유효성 검사 **/
+    beforeEdit () {
+      this.saveCheckResult(0, '저장');
     },
     /**
      * 필수입력값 유효성 검사
@@ -398,17 +553,62 @@ export default {
     },
     /** button 관련 이벤트 **/
     /**
-     * 검진항목  목록 조회
      *  수정 버튼 callback
      * _result : backend에서 return하는 데이터
      */
     btnSaveClickedCallback (_result) {
       window.getApp.$emit('ALERT', {
         title: '안내',
-        message: '수정되었습니다.',
+        message: '저장되었습니다.',
         type: 'success',  // success / info / warning / error
       });
+      // this.saveBtnTitile = '수정';
       this.isEdit = false;
+      this.closePopup(null);
+    },
+    /**
+     * 안전점검결과 삭제
+     *  삭제 버튼 callback
+     * _result : backend에서 return하는 데이터
+     */
+    btnDeleteClickedCallback (_result) {
+      window.getApp.$emit('CONFIRM', {
+        title: '확인',
+        message: '삭제하시겠습니까?',
+        // TODO : 필요시 추가하세요.
+        type: 'info',  // success / info / warning / error
+        // 확인 callback 함수
+        confirmCallback: () => {
+          this.$http.url = this.$format(transactionConfig.saf.checkResult.delete.url, this.checkResultDetail.safCheckRsltNo);
+          this.$http.type = 'DELETE';
+          this.$http.request((_result) => {
+            window.getApp.$emit('ALERT', {
+              title: '안내',
+              message: '삭제되었습니다.',
+              type: 'success',  // success / info / warning / error
+            });
+            this.closePopup(null);
+          }, (_error) => {
+            window.getApp.$emit('APP_REQUEST_ERROR', _error);
+          });
+        },
+        // 취소 callback 함수
+        cancelCallback: () => {
+        }
+      });
+    },
+    btnCompleteClickedCallback (_result) {
+      window.getApp.$emit('ALERT', {
+        title: '안내',
+        message: '완료되었습니다.',
+        type: 'success',  // success / info / warning / error
+      });
+      this.isComplete = false;
+      
+      this.editable = false;
+      this.deleteable = false;
+      this.completeable = false;
+      this.closePopup(null);
     },
     /** end button 관련 이벤트 **/
   }

@@ -214,6 +214,7 @@ let selectConfig = {
     },
     user: {
       list: { url: 'api/manage/users' },
+      get: { url: 'api/manage/user/{0}' }
     },
     loginuser: {
       get: {
@@ -288,7 +289,7 @@ let selectConfig = {
         },
         preventionChangeHistory: {
           list: { url: '/api/env/air/facility/preventionfacilitychangehistories' },
-          get: { url: '/api/env/air/facility/preventionfacilitychangehistory/{0}/{1}' }          
+          get: { url: '/api/env/air/facility/preventionfacilitychangehistory/{0}' }          
         },
         preventionMaintenanceHistory: {
           list: { url: '/api/env/air/facility/preventionfacilitymaintenancehistories' },
@@ -297,22 +298,25 @@ let selectConfig = {
       },
       operationLog: {
         list: { url: '/api/env/air/operation/operationlogs' },
-        get: { url: '/api/env/air/facility/preventionfacilitymaintenancehistory/{0}' },
+        get: { url: '/api/env/air/operation/operationlogresult/{0}' },        
         outletCheckResult: { 
-          get: { url: '/api/env/air/facility/preventionfacilitymaintenancehistory/{0}' } 
+          get: { url: '/api/env/air/operation/outletcheckresults/{0}' } 
         },
-        prevnetionFacilityPwrcCheckResult: { 
-          get: { url: '/api/env/air/facility/preventionfacilitymaintenancehistory/{0}' } 
+        prevnetFacPwrcChkResult: { 
+          get: { url: '/api/env/air/operation/preventionfacilitypowercheckresults/{0}' } 
         },
         outletTestItemResult: { 
-          get: { url: '/api/env/air/facility/preventionfacilitymaintenancehistory/{0}' } 
+          get: { url: '/api/env/air/operation/outlettestitemresults/{0}' } 
         },
         fuelCheckResult: { 
-          get: { url: '/api/env/air/facility/preventionfacilitymaintenancehistory/{0}' } 
+          get: { url: '/api/env/air/operation/fuelcheckresults/{0}' } 
         },
-        IngredientCheckResult: { 
-          get: { url: '/api/env/air/facility/preventionfacilitymaintenancehistory/{0}' } 
+        ingredientCheckResult: { 
+          get: { url: '/api/env/air/operation/ingredientcheckresults/{0}' } 
         },
+      },
+      operationStatus: { 
+        list: { url: '/api/env/air/operation/operationstatus' },
       }
     },
     waste: {
@@ -341,6 +345,27 @@ let selectConfig = {
           list: { url: '/api/env/waste/baseinfo/disposalcompanies' },
           get: { url: '/api/env/waste/baseinfo/disposalcompany/{0}' }
         }
+      },
+      operationLog: {
+        disposalRequest: {
+          list: { url: '/api/env/waste/disposal/disposalrequests' },
+          get: { url: '/api/env/waste/disposal/disposalrequest/{0}' }
+        },
+        disposalResult: {
+          list: { url: '/api/env/waste/disposal/disposalresults' },
+          get: { url: '/api/env/waste/disposal/disposalresult/{0}' }
+        },
+        dailyReport: {
+          amgGen: {
+            list: { url: '/api/env/waste/operation/operationlogamtgens' }
+          },
+          selfDispo: {
+            list: { url: '/api/env/waste/operation/operationlogselfdisposals' }
+          },
+          consignDispo: {
+            list: { url: '/api/env/waste/operation/operationlogconsigndisposals' }
+          }
+        }
       }
     },
     water: {
@@ -368,6 +393,9 @@ let selectConfig = {
         monPos: {
           list: { url: '/api/env/water/baseinfo/monpos/monposs' },
           get: { url: '/api/env/water/baseinfo/monpos/monpos/{0}' }
+        },
+        monPosTestItem: {
+          list: { url: '/api/env/water/baseinfo/monpos/monpostestitems' },
         },
         ingredient: {
           list: { url: '/api/env/water/baseinfo/ingredient/ingredients' },
@@ -428,7 +456,25 @@ let selectConfig = {
         aerationTankChkResult: {
           list: { url: '/api/env/water/operationlog/operation/aerationtankchkresults' },
         },
+        ingrChkResult: {
+          list: { url: '/api/env/water/operationlog/operation/ingrchkresults' },
+        },
+        testItemResult: {
+          list: { url: '/api/env/water/operationlog/operation/testitemresults' },
+        },
+        dischRunTm: {
+          list: { url: '/api/env/water/operationlog/operation/dischruntms' },
+        },
+        preventRunTm: {
+          list: { url: '/api/env/water/operationlog/operation/preventruntms' },
+        },
+        chemicalStatus: { 
+          list: { url: '/api/env/water/operationlog/operation/chemicalstatus' },
+        }
       },
+      operationStatus: { 
+        list: { url: '/api/env/water/operationlog/operation/operationstatus' },
+      }
     }
   },
 
@@ -480,6 +526,14 @@ let selectConfig = {
         url: '/api/saf/wkod/wkodmastertabdata/{0}'
       }
     },
+    imprAct: {
+      list: {
+        url: '/api/saf/impract/impracts'
+      },
+      get: {
+        url: '/api/saf/impract/impract/{0}'
+      },
+    },
     checkResult: {
       list: {
         url: '/api/saf/check/checkresults'
@@ -508,6 +562,14 @@ let selectConfig = {
       list: {
         url: '/api/saf/facility/facilitymsts'
       },
+      get: {
+        url: '/api/saf/facility/facilitymst/{0}'
+      },
+    },
+    facilityMstStatus: {
+      list: {
+        url: '/api/saf/facility/facilitymststatus'
+      },
     },
     facilityCheckResult: {
       list: {
@@ -519,6 +581,11 @@ let selectConfig = {
         url: '/api/saf/facility/facilitytype'
       },
     },
+    facilityTypeItem: {
+      list: {
+        url: '/api/saf/facility/facilitytypeitems'
+      },
+    },
     facilityCheckInspector: {
       list: {
         url: '/api/saf/facility/facilitycheckinspectors'
@@ -527,12 +594,109 @@ let selectConfig = {
         url: '/api/saf/facility/facilitycheckinspector/{0}'
       },
     },
+    nearmiss: {
+      list: {
+        url: '/api/saf/accident/getnearmisslist'
+      },
+      get: {
+        url: '/api/saf/accident/getnearmiss/{0}'
+      },
+      getImprActList: {
+        url: '/api/saf/accident/getimpractlist/{0}'
+      }
+    },
+    spe: {
+      list: {
+        url: '/api/saf/spe/spes'
+      },
+      get: {
+        url: '/api/saf/spe/spe/{0}'
+      },
+    },
+    speRqst: {
+      list: {
+        url: '/api/saf/spe/sperqsts'
+      },
+      get: {
+        url: '/api/saf/spe/sperqst/{0}'
+      },
+    },
+    speRqstDtl: {
+      list: {
+        url: '/api/saf/spe/sperqstdtls'
+      },
+    },
+    speGive: {
+      list: {
+        url: '/api/saf/spe/spegives'
+      },
+      get: {
+        url: '/api/saf/spe/spegive/{0}'
+      },
+    },
+    speGiveDtl: {
+      list: {
+        url: '/api/saf/spe/spegivedtls'
+      },
+    },
+    speInList: {
+      list: {
+        url: '/api/saf/spe/speinlist'
+      },
+      get: {
+        url: '/api/saf/spe/spein/{0}'
+      }
+    },
+    speInDtl: {
+      list: {
+        url: '/api/saf/spe/speindtls'
+      },
+    },
+    speGiveinList: {
+      list: {
+        url: '/api/saf/spe/spegiveinlist'
+      }
+    },
+    speGiveinStatus: {
+      list: {
+        url: '/api/saf/spe/spegiveinstatus'
+      }
+    },
     accident: {
       list: {
         url: '/api/saf/accident/accidents'
       },
       get: {
         url: '/api/saf/accident/accident/{0}'
+      },
+      accidentNum: {
+        get: {
+          url: '/api/saf/accident/accident/accidentnum/{0}'
+        },
+      },
+    },
+    accidentInvest: {
+      list: {
+        url: '/api/saf/accident/accidentinvests'
+      },
+      get: {
+        url: '/api/saf/accident/accidentinvest/{0}'
+      },
+    },
+    accidentVictim: {
+      list: {
+        url: '/api/saf/accident/accidentvictims'
+      },
+      get: {
+        url: '/api/saf/accident/accidentvictim/{0}'
+      },
+    },
+    accidentInvestPsn: {
+      list: {
+        url: '/api/saf/accident/accidentinvestpsns'
+      },
+      get: {
+        url: '/api/saf/accident/accidentinvestpsn/{0}'
       },
     },
     accidentOccType: {
@@ -541,6 +705,14 @@ let selectConfig = {
       },
       get: {
         url: '/api/saf/accident/accidentocctype/{0}'
+      },
+    },
+    accidentCauMeas: {
+      list: {
+        url: '/api/saf/accident/accidentcaumeass'
+      },
+      get: {
+        url: '/api/saf/accident/accidentcaumeas/{0}'
       },
     },
     facilityItemResult: {
@@ -555,12 +727,18 @@ let selectConfig = {
       list: {
         url: '/api/saf/noaccident/noaccidents'
       },
-    },
-    spe: {
-      list: {
-        url: '/api/saf/spe/facilitytypes'
+      get: {
+        url: '/api/saf/noaccident/getnoaccident/{0}'
+      },
+      getNoaccLastView: {
+        url: '/api/saf/noaccident/getnoaccidentlastview'
       },
     },
+    // spe: {
+    //   list: {
+    //     url: '/api/saf/spe/facilitytypes'
+    //   },
+    // },
     refInfoFacilityType: {
       list: {
         url: '/api/saf/baseinfo/getfacilitytypelist'
@@ -610,11 +788,119 @@ let selectConfig = {
       },
     }
   },
+  // 기초정보 Config
+  baseInfo: {
+    chemical: {
+      list: {
+        url: '/api/baseinfo/chemical/chemicals'
+      },
+      get: {
+        url: '/api/baseinfo/getchemicalitem/{0}'
+      }
+    },
+    // 취급물질
+    chemprod: {
+      list: {
+        url: '/api/baseinfo/chemprod/getchemprodlist'
+      },
+      get: {
+        url: '/api/baseinfo/chemprod/getchemprod/{0}'
+      },
+      chemlist: {
+        url: '/api/baseinfo/chemprod/getchemlist/{0}'
+      }
+    },
+  },
   // 메뉴 트리 기초 정보
   menuTreeBases: {
     list: {
       url: '/api/common/menutreebases'
     }
+  },
+  // 유해인자 트리 기초 정보
+  hazardtreebases: {
+    list: {
+      url: '/api/common/hazardtreebases'
+    }
+  },
+  
+  // 직무위험성평가 Config
+  rsa: {
+    workArea: {
+      list: {
+        url: '/api/rsa/baseinfo/workareas'
+      },
+      get: {
+        url: '/api/rsa/baseinfo/workarea/{0}'
+      }
+    },
+    assessEstablish: {
+      list: {
+        url: '/api/rsa/assess/assessestablishs'
+      },
+      get: {
+        url: '/api/rsa/assess/assessestablish/{0}'
+      }
+    },
+    jobRiskBookKRAS: {
+      list: {
+        url: '/api/rsa/jobriskbook/jobriskbookkrass'
+      },
+      get: {
+        url: '/api/rsa/jobriskbook/jobriskbookkras/{0}'
+      }
+    },
+    jobRiskBookJSA: {
+      list: {
+        url: '/api/rsa/jobriskbook/jobriskbookjsas'
+      },
+      get: {
+        url: '/api/rsa/jobriskbook/jobriskbookjsa/{0}'
+      }
+    },
+    jobRiskBookCHARM: {
+      list: {
+        url: '/api/rsa/jobriskbook/jobriskbookcharms'
+      },
+      get: {
+        url: '/api/rsa/jobriskbook/jobriskbookcharm/{0}'
+      }
+    },
+    workMeasureResultChemical: {
+      list: {
+        url: '/api/rsa/workmeasureresult/workmeasureresultchemicals'
+      },
+      get: {
+        url: '/api/rsa/workmeasureresult/workmeasureresultchemical/{0}'
+      }
+    },
+    workMeasureResultPhysical: {
+      list: {
+        url: '/api/rsa/workmeasureresult/workmeasureresultphysicals'
+      },
+      get: {
+        url: '/api/rsa/workmeasureresult/workmeasureresultphysical/{0}'
+      }
+    },
+    assessType: {
+      list: {
+        url: '/api/rsa/baseinfo/assesstypes'
+      },
+      get: {
+        url: '/api/rsa/baseinfo/assesstype/{0}'
+      }
+    },
+    riskHazard: {
+      plist: {
+        url: '/api/rsa/baseinfo/priskhazard'
+      },
+      list: {
+        url: '/api/rsa/baseinfo/riskhazards'
+      },
+      get: {
+        url: '/api/rsa/baseinfo/riskhazard/{0}'
+      }
+    },
   },
   // 권한 그룹
   authGrp: {
@@ -641,6 +927,18 @@ let selectConfig = {
     },
     get: {
       url: '/api/manage/usermenus/'
+    }
+  },
+  // 첨부파일
+  attachFile: {
+    list: {
+      url: '/api/attachfile/uploadfiles'
+    },
+    get: {
+      url: '/api/attachfile/uploadfile/{0}'
+    },
+    zip: {
+      url: '/api/attachfile/zipping'
     }
   }
 };

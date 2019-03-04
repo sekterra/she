@@ -26,49 +26,49 @@
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <b-row>
               <b-col sm="4"><y-label label="현재 부서"></y-label></b-col>
-              <b-col sm="8"><y-label :label="checkupResult.deptNm" fieldable="true"></y-label></b-col>
+              <b-col sm="8"><y-label :label="checkupResult.deptNm" :fieldable="true"></y-label></b-col>
               </b-row>
             </b-col>
 
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <b-row>
               <b-col sm="4"><y-label label="성명"></y-label></b-col>
-              <b-col sm="8"><y-label :label="checkupResult.userNm" fieldable="true"></y-label></b-col>
+              <b-col sm="8"><y-label :label="checkupResult.userNm" :fieldable="true"></y-label></b-col>
               </b-row>
             </b-col>
 
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <b-row>
               <b-col sm="4"><y-label label="사번"></y-label></b-col>
-              <b-col sm="8"><y-label :label="checkupResult.userId" fieldable="true"></y-label></b-col>
+              <b-col sm="8"><y-label :label="checkupResult.userId" :fieldable="true"></y-label></b-col>
               </b-row>
             </b-col>
 
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <b-row>
               <b-col sm="4"><y-label label="검진당시 부서"></y-label></b-col>
-              <b-col sm="8"><y-label :label="checkupResult.deptNmOrg" fieldable="true"></y-label></b-col>
+              <b-col sm="8"><y-label :label="checkupResult.deptNmOrg" :fieldable="true"></y-label></b-col>
               </b-row>
             </b-col>
 
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <b-row>
               <b-col sm="4"><y-label label="검진일"></y-label></b-col>
-              <b-col sm="8"><y-label :label="checkupResult.heaCheckedYmd" fieldable="true"></y-label></b-col>
+              <b-col sm="8"><y-label :label="checkupResult.heaCheckedYmd" :fieldable="true"></y-label></b-col>
               </b-row>
             </b-col>
 
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <b-row>
               <b-col sm="4"><y-label label="검진기관"></y-label></b-col>
-              <b-col sm="8"><y-label :label="checkupResult.heaCheckupOrgNm" fieldable="true"></y-label></b-col>
+              <b-col sm="8"><y-label :label="checkupResult.heaCheckupOrgNm" :fieldable="true"></y-label></b-col>
               </b-row>
             </b-col>
 
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <b-row>
               <b-col sm="4"><y-label label="검진계획(검진종류)"></y-label></b-col>
-              <b-col sm="8"><y-label :label="checkupResult.heaCheckupPlanNm" fieldable="true"></y-label> <y-label :label="checkupResult.heaCheckupClassNm" fieldable="true"></y-label></b-col>
+              <b-col sm="8"><y-label :label="checkupResult.heaCheckupPlanNm" :fieldable="true"></y-label> <y-label :label="checkupResult.heaCheckupClassNm" :fieldable="true"></y-label></b-col>
               </b-row>
             </b-col>        
           </b-row>          
@@ -200,9 +200,9 @@ export default {
         deptCdOrg: '',
         deptNmOrg: '',
         heaCheckedYmd: '',
-        heaWorkableCd: '',
+        heaWorkableCd: null,
         heaWorkableNm: '',
-        heaFollowUpCd: '',
+        heaFollowUpCd: null,
         heaFollowUpNm: '',
         overallOpinion: ''
       },
@@ -281,7 +281,7 @@ export default {
       this.$http.request((_result) => {
         this.checkupResult = _result.data;
       }, (_error) => {
-        window.getApp.$emit('APP_REQUEST_ERROR', _error);
+        window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
       });
     },
     getHeaWorkableCdItems () {
@@ -291,7 +291,7 @@ export default {
         _result.data.splice(0, 0, { 'code': null, 'codeNm': '선택하세요' });
         this.heaWorkableCdItems = _result.data;
       }, (_error) => {
-        window.getApp.$emit('APP_REQUEST_ERROR', _error);
+        window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
       });
     },
     getHeaFollowUpCdItems () {
@@ -301,7 +301,7 @@ export default {
         _result.data.splice(0, 0, { 'code': null, 'codeNm': '선택하세요' });
         this.heaFollowUpCdItems = _result.data;
       }, (_error) => {
-        window.getApp.$emit('APP_REQUEST_ERROR', _error);
+        window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
       });
     },
     
@@ -363,7 +363,7 @@ export default {
     */
     btnClickedErrorCallback (_result) {
       this.isEditSubmit = false;
-      window.getApp.$emit('APP_REQUEST_ERROR', _result);
+      window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
       // TODO : 여기에 추가 로직 삽입(로직 삽입시 지워주세요)
     },
     /** /Button Event **/

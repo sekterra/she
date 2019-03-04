@@ -68,18 +68,16 @@
               >
               </y-text>
             </b-col>
-            <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
-              <y-number
-              :width="8"
-              :editable="editable"
-              :maxlength="5"
-              :hasSeperator="false"
-              ui="bootstrap"
-              label="출력순서"
-              name="sortOrder"
-              v-model="ewtrSupl.sortOrder"
-              >
-              </y-number>
+            <b-col sm="12" md="12" lg="12" xl="12" class="col-xxl-6">
+              <y-textarea
+                :width="10"
+                :editable="editable"
+                :maxlength="150"
+                ui="bootstrap"
+                label="비고"
+                name="remark"
+                v-model="ewtrSupl.remark"
+                :rows="2" />
             </b-col>
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <y-switch
@@ -96,6 +94,19 @@
                 :required="true"
               >
             </y-switch>
+            </b-col>
+            <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
+              <y-number
+              :width="8"
+              :editable="editable"
+              :maxlength="5"
+              :hasSeperator="false"
+              ui="bootstrap"
+              label="정렬순서"
+              name="sortOrder"
+              v-model="ewtrSupl.sortOrder"
+              >
+              </y-number>
             </b-col>
           </b-row>
           <div class="float-right mt-3">
@@ -150,6 +161,7 @@ export default {
       ewtrSupl: {
         ewtrSuplClassCd: null,
         ewtrSuplNm: '',
+        remark: '',
         sortOrder: '',
         useYn: 'Y',
       },
@@ -199,10 +211,15 @@ export default {
       
       // 그리드 헤더 설정
       this.gridOptions.header = [
-        { text: '공급수 분류명', name: 'ewtrSuplClassNm', width: '25%', align: 'left' },
-        { text: '공급수명', name: 'ewtrSuplNm', width: '25%', align: 'left' },
-        { text: '출력순서', name: 'sortOrder', width: '8%', align: 'center' },
-        { text: '사용여부', name: 'useYnNm', width: '8%', align: 'center' },
+        { text: '공급수 분류명', name: 'ewtrSuplClassNm', width: '250px', align: 'left' },
+        { text: '공급수명', name: 'ewtrSuplNm', width: '250px', align: 'left' },
+        { text: '비고', name: 'remark', width: '300px', align: 'left' },
+        { text: '사용여부', name: 'useYnNm', width: '100px', align: 'center' },
+        { text: '정렬순서', name: 'sortOrder', width: '100px', align: 'center' },
+        { text: '등록일', name: 'createDt', width: '200px', align: 'center' },
+        { text: '등록자', name: 'createUserNm', width: '120px', align: 'center' },
+        { text: '수정일', name: 'updateDt', width: '200px', align: 'center' },
+        { text: '수정자', name: 'updateUserNm', width: '120px', align: 'center' }
       ];
 
       this.editUrl = transactionConfig.env.water.baseInfo.supply.edit.url;
@@ -218,7 +235,7 @@ export default {
       this.$http.request((_result) => {
         this.gridOptions.data = this.$_.clone(_result.data);
       }, (_error) => {
-        window.getApp.$emit('APP_REQUEST_ERROR', _error);
+        window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
       });
     },
     getDetail (data) {
@@ -230,7 +247,7 @@ export default {
         this.updateMode = true;
         this.ewtrSupl = this.$_.clone(_result.data);
       }, (_error) => {
-        window.getApp.$emit('APP_REQUEST_ERROR', _error);
+        window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
       });
     },
     getSupplyClassItems () {
@@ -240,7 +257,7 @@ export default {
         _result.data.splice(0, 0, { 'code': null, 'codeNm': '선택하세요' });
         this.supplyClassItems = _result.data;
       }, (_error) => {
-        window.getApp.$emit('APP_REQUEST_ERROR', _error);
+        window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
       });
     },
     
@@ -253,7 +270,7 @@ export default {
         if (_result) {
           window.getApp.$emit('CONFIRM', {
             title: '확인',
-            message: '등록하시겠습니까?',
+            message: '공급수 정보를 저장하시겠습니까?',
             type: 'info',
             confirmCallback: () => {
               this.isInsert = true;
@@ -271,7 +288,7 @@ export default {
         if (_result) {
           window.getApp.$emit('CONFIRM', {
             title: '확인',
-            message: '수정하시겠습니까?',
+            message: '공급수 정보를 수정하시겠습니까?',
             type: 'info', 
             confirmCallback: () => {
               this.isEdit = true;
@@ -334,7 +351,7 @@ export default {
       this.updateMode = true;
       window.getApp.$emit('ALERT', {
         title: '안내',
-        message: '등록되었습니다.',
+        message: '공급수 정보를 정상적으로 저장하였습니다.',
         type: 'success',
       });
     },
@@ -343,7 +360,7 @@ export default {
       this.isEdit = false;
       window.getApp.$emit('ALERT', {
         title: '안내',
-        message: '수정되었습니다.',
+        message: '공급수 정보를 정상적으로 수정하였습니다.',
         type: 'success',
       });
     },
@@ -355,7 +372,7 @@ export default {
     btnClickedErrorCallback (_result) {
       this.isInsert = false;
       this.isEdit = false;
-      window.getApp.$emit('APP_REQUEST_ERROR', _result);
+      window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
     },
     /** end button 관련 이벤트 **/
   }

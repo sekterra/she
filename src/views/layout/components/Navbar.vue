@@ -1,6 +1,7 @@
 <template>
   <div class="navbar">
-    <hamburger :toggle-click="toggleSideBar" :is-active="sidebar.opened" class="hamburger-container"/>
+    <div class="menuSide" @click="toggleSideBar"></div>
+    <!-- <hamburger :toggle-click="toggleSideBar" :is-active="sidebar.opened" class="hamburger-container"/> -->
 
     <el-menu
       :default-active="activeIndex2"
@@ -13,50 +14,112 @@
       <el-submenu index="1" class="top-menu">
         <template slot="title">
           <b-row align-v="center" class="text-center" style="height: 100%;">
-            <b-col sm="3"><h5><strong>보건</strong></h5></b-col>
-            <b-col sm="3"><h5><strong>안전</strong></h5></b-col>
-            <b-col sm="3"><h5><strong>환경</strong></h5></b-col>
-            <b-col sm="3"><h5><strong>시스템 관리</strong></h5></b-col>
+            <b-col sm="2"><h5><strong>안전</strong></h5></b-col>
+            <b-col sm="2"><h5><strong>보건</strong></h5></b-col>
+            <b-col sm="2"><h5><strong>환경</strong></h5></b-col>
+            <b-col sm="2"><h5><strong>위험성평가</strong></h5></b-col>
+            <b-col sm="2"><h5><strong>기초정보</strong></h5></b-col>
+            <b-col sm="2"><h5><strong>시스템 관리</strong></h5></b-col>
           </b-row>
         </template>
         <el-menu-item index="1-1" class="sub-menu">
           <b-row align-h="center" class="text-center">
-            <b-col sm="3" @click.stop="route('/hea/user/userCheckupReserve')">보건홈</b-col>
-            <b-col sm="3">준비중</b-col>
-            <b-col sm="3">준비중</b-col>
-            <b-col sm="3">공정</b-col>
+            <b-col sm="2" @click.stop="route('/hea/user/userCheckupReserve')">보건홈</b-col>
+            <b-col sm="2" @click.stop="route('/saf/wkod/wkodRequest')">작업허가서</b-col>
+            <b-col sm="2">준비중</b-col>
+            <b-col sm="2">준비중</b-col>
+            <b-col sm="2">준비중</b-col>
+            <b-col sm="2">공정</b-col>
           </b-row>
         </el-menu-item>
         <el-menu-item index="1-1" class="sub-menu">
           <b-row align-h="center" class="text-center">
-            <b-col sm="3" @click.stop="route('/hea/baseInfo/baseInfoTest')">기준정보</b-col>
-            <b-col sm="3"></b-col>
-            <b-col sm="3"></b-col>
-            <b-col sm="3"></b-col>
+            <b-col sm="2" @click.stop="route('/hea/baseInfo/baseInfoTest')">기준정보</b-col>
+            <b-col sm="2" @click.stop="route('/saf/check/checkResultPlanList')">안전점검관리</b-col>
+            <b-col sm="2"></b-col>
+            <b-col sm="2"></b-col>
+            <b-col sm="2"></b-col>
+            <b-col sm="2"></b-col>
           </b-row>
         </el-menu-item>
         <el-menu-item index="1-1" class="sub-menu">
           <b-row align-h="center" class="text-center">
-            <b-col sm="3" @click.stop="route('/hea/checkup/checkupPlan')">검진</b-col>
-            <b-col sm="3"></b-col>
-            <b-col sm="3"></b-col>
-            <b-col sm="3"></b-col>
+            <b-col sm="2" @click.stop="route('/hea/checkup/checkupPlan')">검진</b-col>
+            <b-col sm="2" @click.stop="route('/saf/accident/nearmiss')">사고관리</b-col>
+            <b-col sm="2"></b-col>
+            <b-col sm="2"></b-col>
+            <b-col sm="2"></b-col>
+            <b-col sm="2"></b-col>
           </b-row>
         </el-menu-item>
         <el-menu-item index="1-1" class="sub-menu">
           <b-row align-h="center" class="text-center">
-            <b-col sm="3" @click.stop="route('/hea/infirmary/generalBusiness')">건강관리실</b-col>
-            <b-col sm="3"></b-col>
-            <b-col sm="3"></b-col>
-            <b-col sm="3"></b-col>
+            <b-col sm="2" @click.stop="route('/hea/infirmary/generalBusiness')">건강관리실</b-col>
+            <b-col sm="2" @click.stop="route('/saf/facility/facilityCheckResultPlanList')">설비점검</b-col>
+            <b-col sm="2"></b-col>
+            <b-col sm="2"></b-col>
+            <b-col sm="2"></b-col>
+            <b-col sm="2"></b-col>
           </b-row>
         </el-menu-item>
         <el-menu-item index="1-1" class="sub-menu">
           <b-row align-h="center" class="text-center">
-            <b-col sm="3" @click.stop="route('/hea/workingEnvManage/hazard')">유해인자</b-col>
-            <b-col sm="3"></b-col>
-            <b-col sm="3"></b-col>
-            <b-col sm="3"></b-col>
+            <b-col sm="2" @click.stop="route('/hea/workingEnvManage/hazard')">유해인자</b-col>
+            <b-col sm="2" @click.stop="route('/saf/imprAct/imprAct')">개선관리</b-col>
+            <b-col sm="2"></b-col>
+            <b-col sm="2"></b-col>
+            <b-col sm="2"></b-col>
+            <b-col sm="2"></b-col>
+          </b-row>
+        </el-menu-item>
+        <el-menu-item index="1-1" class="sub-menu">
+          <b-row align-h="center" class="text-center">
+            <b-col sm="2"></b-col>
+            <b-col sm="2" @click.stop="route('/saf/spe/spe')">보호구관리</b-col>
+            <b-col sm="2"></b-col>
+            <b-col sm="2"></b-col>
+            <b-col sm="2"></b-col>
+            <b-col sm="2"></b-col>
+          </b-row>
+        </el-menu-item>
+        <el-menu-item index="1-1" class="sub-menu">
+          <b-row align-h="center" class="text-center">
+            <b-col sm="2"></b-col>
+            <b-col sm="2" @click.stop="route('/saf/safetyEducation/edueResult')">교육</b-col>
+            <b-col sm="2"></b-col>
+            <b-col sm="2"></b-col>
+            <b-col sm="2"></b-col>
+            <b-col sm="2"></b-col>
+          </b-row>
+        </el-menu-item>
+        <el-menu-item index="1-1" class="sub-menu">
+          <b-row align-h="center" class="text-center">
+            <b-col sm="2"></b-col>
+            <b-col sm="2" @click.stop="route('/saf/noaccident/noAccidentResult')">사업장 무재해</b-col>
+            <b-col sm="2"></b-col>
+            <b-col sm="2"></b-col>
+            <b-col sm="2"></b-col>
+            <b-col sm="2"></b-col>
+          </b-row>
+        </el-menu-item>
+        <el-menu-item index="1-1" class="sub-menu">
+          <b-row align-h="center" class="text-center">
+            <b-col sm="2"></b-col>
+            <b-col sm="2" @click.stop="route('/saf/baseinfo/wkodChkItem')">기준정보</b-col>
+            <b-col sm="2"></b-col>
+            <b-col sm="2"></b-col>
+            <b-col sm="2"></b-col>
+            <b-col sm="2"></b-col>
+          </b-row>
+        </el-menu-item>
+        <el-menu-item index="1-1" class="sub-menu">
+          <b-row align-h="center" class="text-center">
+            <b-col sm="2"></b-col>
+            <b-col sm="2"></b-col>
+            <b-col sm="2"></b-col>
+            <b-col sm="2"></b-col>
+            <b-col sm="2"></b-col>
+            <b-col sm="2"></b-col>
           </b-row>
         </el-menu-item>
       </el-submenu>
@@ -169,7 +232,7 @@ export default {
   },
   methods: {
     toggleSideBar() {
-      this.$store.dispatch('toggleSideBar')
+      this.$store.dispatch('toggleSideBar');
     },
     logout() {
       this.$store.dispatch('LogOut').then(() => {
@@ -177,6 +240,8 @@ export default {
       })
     },
     route(_url) {
+      console.log(_url);
+      console.log(this.$router);
       this.$comm.movePage(this.$router, _url);
     }
   }
@@ -254,9 +319,30 @@ export default {
 }
 
 .top-menu {
-  width: 50vw;
+  width: 60vw;
 }
 .sub-menu {
-  width: 50vw;
+  width: 60vw;
+}
+
+.menuSide {
+  width:30px;
+  height:30px;
+  background: url('./image/yullin.png');
+  background-repeat: no-repeat;
+  background-position: center center;
+  cursor: pointer;
+}
+.openSidebar .menuSide:hover {
+  background: url('./image/left_btn.png');
+  background-repeat: no-repeat;
+  background-position: center center;
+  cursor: pointer;
+}
+.hideSidebar .menuSide:hover {
+  background: url('./image/right_btn.png');
+  background-repeat: no-repeat;
+  background-position: center center;
+  cursor: pointer;
 }
 </style>

@@ -15,22 +15,22 @@ const manageRouter = {
   // TODO : 2 Level
   children: [
     // 기초 정보 메뉴
-    {
-      path: 'process',
-      component: () => import('@/router/routeLevel'), 
-      name: 'process',
-      meta: { title: '작업공정' },
-      redirect: '/manage/process/process',
-      // TODO : 3 Level
-      children: [
-        {
-          path: 'process',
-          component: () => import('@/pages/manage/process/process'),
-          name: 'process',
-          meta: { title: '작업공정', navi: '시스템관리 > ' }
-        }
-      ]
-    },
+    // {
+    //   path: 'process',
+    //   component: () => import('@/router/routeLevel'), 
+    //   name: 'process',
+    //   meta: { title: '작업공정' },
+    //   redirect: '/manage/process/process',
+    //   // TODO : 3 Level
+    //   children: [
+    //     {
+    //       path: 'process',
+    //       component: () => import('@/pages/manage/process/process'),
+    //       name: 'process',
+    //       meta: { title: '작업공정', navi: '시스템관리 > ' }
+    //     }
+    //   ]
+    // },
     // 메뉴 관리
     {
       path: 'menuManage',

@@ -13,13 +13,13 @@
     </template>
     <template v-else>
       <div class="custom-tree-container">
-        <div class="block"> 
+        <div class="block default-height"> 
           <p v-if="title">{{title}}</p>
           <el-tree
             :data="treeNodes"
             :node-key="itemValue"
             :label="itemText"
-            default-expand-all
+            :default-expand-all="defaultExpandAll"
             draggable
             :allow-drop="allowDrop"
             :allow-drag="allowDrag"
@@ -104,6 +104,10 @@ export default {
     title: {
       type: String,
       default: ''
+    },
+    defaultExpandAll: {
+      type: Boolean,
+      default: false
     }
   },
   // TODO: 화살표 함수(=>)는 data에 사용하지 말 것
@@ -253,5 +257,10 @@ export default {
 
   .warning {
     color: #EBB563
+  }
+
+  .default-height {
+    max-height: 300px;
+    overflow-y: auto;
   }
 </style>

@@ -9,53 +9,27 @@
 <template>
   <b-container fluid>
     <b-row>
-      <!-- 유형별 설비 상세 -->
       <b-col sm="12">
         <b-row>
           <b-col sm="12">
             <y-label label="유형별 설비 등록" icon="user-edit" color-class="cutstom-title-color"/>
             <div slot="buttonGroup" class="float-right mb-1">  
               <y-btn
-                v-if="editable"
-                title="초기화"
-                @btnClicked="btnClearClickedCallback" 
-              />
-              <y-btn
-                v-if="editable&&insertMode"
                 :action-url="insertUrl"
                 :param="facilityMst"
                 :is-submit="isInsert"
-                title="신규등록"
+                title="저장"
                 color="orange"
-                action-type="POST"
+                :action-type="actionType"
                 beforeSubmit = "beforeInsert"
                 @beforeInsert="beforeInsert"
                 @btnClicked="btnInsertClickedCallback" 
                 @btnClickedErrorCallback="btnClickedErrorCallback"
               />
-              <y-btn
-                v-if="editable&&updateMode"
-                :action-url="editUrl"
-                :param="facilityMst"
-                :is-submit="isEdit"
-                title="수정"
-                color="orange"
-                action-type="PUT"
-                beforeSubmit = "beforeEdit"
-                @beforeEdit="beforeEdit"
-                @btnClicked="btnEditClickedCallback" 
-                @btnClickedErrorCallback="btnClickedErrorCallback"
-              />
               <y-btn 
-                v-if="editable&&updateMode"
-                :action-url="deleteUrl"
-                :param="deleteValue"
-                :is-submit="isDelete"
+                v-if="this.facilityMst.safFacilityCd !== ''"
                 title="삭제"
                 color="red"
-                action-type="DELETE"
-                beforeSubmit = "beforeDelete"
-                @beforeDelete="beforeDelete"
                 @btnClicked="btnDeleteClickedCallback" 
                 @btnClickedErrorCallback="btnClickedErrorCallback"
               />
@@ -72,6 +46,7 @@
               <y-select
                 :width="baseWidth"
                 :required="true"
+                :disabled="disabled"
                 :comboItems="comboFacilityTypeItems"
                 itemText="safFacilityTypeNm"
                 itemValue="safFacilityTypeCd"
@@ -87,7 +62,6 @@
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <y-select
                 :width="baseWidth"
-                :editable="editable"
                 :required="true"
                 :comboItems="processNoItems"
                 itemText="processNm"
@@ -104,8 +78,9 @@
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <y-text
                 :width="baseWidth"
-                :editable="editable"
                 :required="true"
+                :disabled="disabled"
+                :maxlength="20"
                 ui="bootstrap"
                 type="search"
                 label="설비코드"
@@ -119,23 +94,23 @@
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <y-text
                 :width="baseWidth"
-                :editable="editable"
                 :required="true"
+                :maxlength="100"
                 ui="bootstrap"
                 type="search"
                 label="설비명"
-                name="safFacilityNm"
-                v-model="facilityMst.safFacilityNm"
+                name="facilityNm"
+                v-model="facilityMst.facilityNm"
                 v-validate="'required'"
-                :state="validateState('safFacilityNm')"
+                :state="validateState('facilityNm')"
               >
               </y-text>
             </b-col>
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <y-text
                 :width="baseWidth"
-                :editable="editable"
                 :required="true"
+                :maxlength="50"
                 ui="bootstrap"
                 type="search"
                 label="설비관리번호"
@@ -149,8 +124,8 @@
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <y-text
                 :width="baseWidth"
-                :editable="editable"
                 :required="true"
+                :maxlength="100"
                 ui="bootstrap"
                 type="search"
                 label="설치위치"
@@ -180,7 +155,6 @@
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <y-datepicker
                 :width="8"
-                :editable="editable"
                 :required="true"
                 label="설치일자"
                 name="installYmd"
@@ -193,7 +167,6 @@
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <y-text
                 :width="baseWidth"
-                :editable="editable"
                 ui="bootstrap"
                 type="search"
                 label="설치업체"
@@ -207,7 +180,6 @@
                 <b-col sm="8" md="8" lg="8" xl="8" class="col-xxl-8">
                   <y-text
                     :width="6"
-                    :editable="editable"
                     ui="bootstrap"
                     type="search"
                     label="용량/단위"
@@ -219,7 +191,6 @@
                 <b-col sm="4" md="4" lg="4" xl="4" class="col-xxl-4">
                   <y-text
                     :width="12"
-                    :editable="editable"
                     ui="bootstrap"
                     type="search"
                     name="volUnit"
@@ -232,12 +203,14 @@
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <y-text
                 :width="baseWidth"
-                :editable="editable"
+                :clearable="true"
                 ui="bootstrap"
                 type="search"
                 label="안전관리자"
                 name="safMgrPsn"
                 v-model="facilityMst.safMgrPsn"
+                :appendIcon="[{ 'icon': 'search', callbackName: 'searchUser' }]"
+                @searchUser="btnSearchUserClicked"
               >
               </y-text>
             </b-col>
@@ -246,7 +219,6 @@
                 <b-col sm="8" md="8" lg="8" xl="8" class="col-xxl-8">
                   <y-switch
                     :width="6"
-                    :editable="editable"
                     true-value="Y"
                     false-value="N"
                     ui="bootstrap"
@@ -260,12 +232,20 @@
                 </b-col>
                 <b-col sm="4" md="4" lg="4" xl="4" class="col-xxl-4">
                   <y-text
+                    v-if="!disabledYy"
                     :width="12"
-                    :editable="editable"
+                    :disabled="disabledYy"
                     ui="bootstrap"
                     type="search"
                     name="disuseYy"
                     v-model="facilityMst.disuseYy"
+                  >
+                  </y-text>
+                  <y-text
+                    v-if="disabledYy"
+                    :width="12"
+                    :disabled="true"
+                    ui="bootstrap"
                   >
                   </y-text>
                 </b-col>
@@ -274,7 +254,6 @@
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <y-switch
                 :width="baseWidth"
-                :editable="editable"
                 true-value="Y"
                 false-value="N"
                 ui="bootstrap"
@@ -289,7 +268,6 @@
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <y-switch
                 :width="baseWidth"
-                :editable="editable"
                 true-value="Y"
                 false-value="N"
                 ui="bootstrap"
@@ -301,10 +279,54 @@
                 >
               </y-switch>
             </b-col>
+            <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
+              <y-select
+                v-if="!disabledLaw"
+                :width="8"
+                :comboItems="lawChkCyeItems"
+                itemText="codeNm"
+                itemValue="code"
+                ui="bootstrap"
+                label="법정점검 주기"
+                name="lawChkCyeCd"
+                v-model="facilityMst.lawChkCyeCd"
+              >
+              </y-select>
+              <y-text
+                v-if="disabledLaw"
+                :width="8"
+                :disabled="true"
+                ui="bootstrap"
+                label="법정점검 주기"
+              >
+              </y-text>
+            </b-col>
+            <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
+              <y-select
+                v-if="!disabledSelf"
+                :width="8"
+                :disabled="disabledSelf"
+                :comboItems="selfChkCyeItems"
+                itemText="codeNm"
+                itemValue="code"
+                ui="bootstrap"
+                label="자체점검 주기"
+                name="selfChkCyeCd"
+                v-model="facilityMst.selfChkCyeCd"
+              >
+              </y-select>
+              <y-text
+                v-if="disabledSelf"
+                :width="8"
+                :disabled="true"
+                ui="bootstrap"
+                label="자체점검 주기"
+              >
+              </y-text>
+            </b-col>
             <b-col sm="12" md="12" lg="12" xl="12" class="col-xxl-6">
               <y-textarea
                 :width="10"
-                :editable="editable"
                 ui="bootstrap"
                 label="비고"
                 name="remark"
@@ -331,31 +353,37 @@
           {{ item.title }}
         </span>
         <keep-alive>
-          <component :is="component" v-if="component" :selectedFacilityCd="safFacilityCd" />
+          <component :is="component" v-if="component" :facilityMst.sync="facilityMst" />
         </keep-alive>
       </el-tab-pane>
     </el-tabs>
-    <!-- <b-row>
+
+    <b-row>
       <b-col sm="12">
         <div class="float-right mt-3">
-          
+          <y-btn
+            title="저장"
+            color="orange"
+            @btnClicked="beforeInsert" 
+            @btnClickedErrorCallback="btnClickedErrorCallback"
+          />
+          <y-btn 
+            v-if="this.facilityMst.safFacilityCd !== ''"
+            title="삭제"
+            color="red"
+            @btnClicked="btnDeleteClickedCallback" 
+            @btnClickedErrorCallback="btnClickedErrorCallback"
+          />
+          <y-btn
+            title="닫기"
+            @btnClicked="btnClosePopup" 
+          />
         </div>
       </b-col>
-    </b-row> -->
+    </b-row>
 
     <!-- 팝업 설정 -->
-    <el-dialog
-      :title="popupOptions.title"
-      :visible.sync="popupOptions.visible"
-      :fullscreen="false"
-      :append-to-body="true"
-      :close-on-click-modal="false"
-      :close-on-press-escape="false"
-      :show-close="false"
-      :width="popupOptions.width"
-      :top="popupOptions.top">
-      <component :is="popupOptions.target" :popupParam="popupOptions.param" @closePopup="popupOptions.closeCallback" />
-    </el-dialog>
+    <y-popup :param="popupOptions"></y-popup>
   </b-container>
 </template>
 
@@ -363,22 +391,23 @@
 import selectConfig from '@/js/selectConfig';
 import transactionConfig from '@/js/transactionConfig';
 export default {
-  /** attributes: name, components, props, data **/
   name: 'create-facility-mst',
   props: {
     popupParam: {
       type: Object,
       default: {
-        safFacilityCd: 0,
-        pageNm: '',
+        safFacilityCd: '',
       },
     },
   },
-  // TODO: 화살표 함수(=>)는 data에 사용하지 말 것
-  //    data: () => { return { a: this.myProp }}) 화살표 함수가 부모 컨텍스트를 바인딩하기 때문에 this는 예상과 달리 Vue 인스턴스가 아니기 때문에 this.myProp는 undefined로 나옵니다.
-  //    참고url: https://kr.vuejs.org/v2/api/index.html#data
   data () {
     return {
+      tabItems: [
+        { title: '설비항목', url: './facilityTypeItem' },
+        { title: '첨부파일', url: 'fileUploadPage' },
+      ],
+      component: null,
+      tabIndex: 0,
       popupOptions: {
         target: null,
         title: '',
@@ -388,18 +417,12 @@ export default {
         param: {},
         closeCallback: null,
       },
-      tabItems: [
-        { title: '설비항목', url: './facilityTypeItem' },
-        { title: '첨부파일', url: 'fileUploadPage' },
-      ],
-      component: null,
-      tabIndex: 0,
       facilityMst: {
         safFacilityTypeCd: null,
         processNo: null,
         deptCd: null,
         safFacilityCd: '',
-        safFacilityNm: '',
+        facilityNm: '',
         facilityMgrNum: '',
         installLocate: '',
         installYmd: '',
@@ -411,36 +434,59 @@ export default {
         disuseYy: '',
         lawChkYn: '',
         selfChkYn: '',
+        lawChkCyeCd: '',
+        selfChkCyeCd: '',
         remark: '',
+        facilityTypeItemVals: [],
       },
       baseWidth: 8,
-      editable: true,
-      insertMode: false,
-      updateMode: false,
+      actionType: 'POST',
+      disabled: false,
+      disabledYy: true,
+      disabledLaw: true,
+      disabledSelf: true,
       comboFacilityTypeItems: [], // 설비유형 
       processNoItems: [], // 공정
       comboDeptItems: [], // 관리부서
+      lawChkCyeItems: [],  // 법정점검 주기
+      selfChkCyeItems: [],  // 자체점검 주기
       insertUrl: '',
-      editUrl: '',
-      deleteUrl: '',
       isInsert: false,
-      isEdit: false,  
-      isDelete: false,  
-      deleteValue: null,
     };
   },
   watch: {
     tabIndex () {
       this.loadComponent();
-    }
-  },
-  /** Vue lifecycle: created, mounted, destroyed, etc **/
-  
-  created () {
+    },
+    'facilityMst.disuseYn': {
+      handler: function (val, oldVal) {
+        if (val === 'Y') {
+          this.disabledYy = false;
+        } else {
+          this.disabledYy = true;
+        }
+      },
+    },
+    'facilityMst.lawChkYn': {
+      handler: function (val, oldVal) {
+        if (val === 'Y') {
+          this.disabledLaw = false;
+        } else {
+          this.disabledLaw = true;
+        }
+      },
+    },
+    'facilityMst.selfChkYn': {
+      handler: function (val, oldVal) {
+        if (val === 'Y') {
+          this.disabledSelf = false;
+        } else {
+          this.disabledSelf = true;
+        }
+      },
+    },
   },
   beforeMount () {
-    // TODO : data를 초기화 시켜줌(검색 조건 유지가 필요할 때는 삭제할 것)
-    // 이유 : vue.js는 SPA기반으로 동작하기 때문에 페이지를 이동하더라도 기존 입력된 정보가 그대로 남아 있는 문제가 있음
     Object.assign(this.$data, this.$options.data());
     this.init();
   },
@@ -448,28 +494,40 @@ export default {
     this.loadComponent();
   },
   beforeDestroy () {
-    this.init();
   },
-  /** methods **/
   methods: {
-    /** 초기화 관련 함수 **/
     init () {
       // URL 셋팅
       this.insertUrl = transactionConfig.saf.facilityMst.insert.url;
-      this.editUrl = transactionConfig.saf.facilityMst.edit.url;
 
       this.getFacilityTypeItems(); // 설비유형
       this.getProcessNoItems(); // 공정
       this.getDeptItems();  // 관리부서
-      this.insertMode = true;
+      this.getLawChkCyeItems(); // 법정점검 주기
+      this.getSelfChkCyeItems(); // 자체점검 주기
+      this.getFacilityMst();  // 유형별 설비 상세
 
-      // 수정 또는 신규등록 버튼 Mode
+      setTimeout(() => {
+      }, 200);
+
+      // 저장 버튼 Mode
       this.facilityMst.safFacilityCd = this.popupParam.safFacilityCd;
-      if (this.popupParam.safFacilityCd !== 0) {
-        this.updateMode = true;
+      if (this.popupParam.safFacilityCd !== '') {
+        this.disabled = true;
       } else {
-        this.insertMode = true;
+        this.disabled = false;
       }
+    },
+    // 유형별 설비 상세
+    getFacilityMst () {
+      if (!this.popupParam.safFacilityCd) return;
+      this.$http.url = this.$format(selectConfig.saf.facilityMst.get.url, this.popupParam.safFacilityCd);
+      this.$http.type = 'get';
+      this.$http.request((_result) => {
+        this.facilityMst = _result.data;
+      }, (_error) => {
+        window.getApp.$emit('APP_REQUEST_ERROR', _error);
+      });
     },
     // 설비유형
     getFacilityTypeItems () {
@@ -479,9 +537,8 @@ export default {
         'useYn': 'Y'
       };
       this.$http.request((_result) => {
-        _result.data.splice(0, 0, { 'safFacilityTypeCd': '', 'safFacilityTypeNm': '선택하세요' });
+        _result.data.splice(0, 0, { 'safFacilityTypeCd': null, 'safFacilityTypeNm': '선택하세요' });
         this.comboFacilityTypeItems = _result.data;
-        this.facilityMst.safFacilityTypeCd = '';
       }, (_error) => {
         window.getApp.$emit('APP_REQUEST_ERROR', _error);
       });
@@ -494,9 +551,8 @@ export default {
         'useYn': 'Y'
       };
       this.$http.request((_result) => {
-        _result.data.splice(0, 0, { 'processNo': '', 'processNm': '선택하세요' });
+        _result.data.splice(0, 0, { 'processNo': null, 'processNm': '선택하세요' });
         this.processNoItems = _result.data;
-        this.facilityMst.processNo = '';
       }, (_error) => {
         window.getApp.$emit('APP_REQUEST_ERROR', _error);
       });
@@ -506,11 +562,30 @@ export default {
       this.$http.url = selectConfig.manage.dept.list.url;
       this.$http.type = 'GET';
       this.$http.request((_result) => {
-        _result.data.splice(0, 0, { 'deptCd': '', 'deptNm': '선택하세요' });
+        _result.data.splice(0, 0, { 'deptCd': null, 'deptNm': '선택하세요' });
         this.comboDeptItems = _result.data;
-        this.facilityMst.deptCd = '';
       }, (_error) => {
         window.getApp.$emit('APP_REQUEST_ERROR', _error);
+      });
+    },
+    // 법정점검 주기
+    getLawChkCyeItems () {
+      this.$http.url = this.$format(selectConfig.codeMaster.getSelect.url, 'SAF_LAW_CHK_CYE');
+      this.$http.type = 'get';
+      this.$http.request((_result) => {
+        this.lawChkCyeItems = this.$_.clone(_result.data);
+        this.lawChkCyeItems.splice(0, 0, { 'code': '', 'codeNm': '선택하세요' });
+      }, (_error) => {
+      });
+    },
+    // 자체점검 주기
+    getSelfChkCyeItems () {
+      this.$http.url = this.$format(selectConfig.codeMaster.getSelect.url, 'SAF_SELF_CHK_CYE');
+      this.$http.type = 'get';
+      this.$http.request((_result) => {
+        this.selfChkCyeItems = this.$_.clone(_result.data);
+        this.selfChkCyeItems.splice(0, 0, { 'code': '', 'codeNm': '선택하세요' });
+      }, (_error) => {
       });
     },
     // 탭
@@ -520,17 +595,35 @@ export default {
       if (path === 'fileUploadPage') this.component = () => import('@/pages/saf/imprAct/fileUploadPage');
       else this.component = () => import(`${path}`);
     },
-    /** /초기화 관련 함수 **/
     beforeInsert () {
       this.$validator.validateAll().then((_result) => {
         if (_result) {
           window.getApp.$emit('CONFIRM', {
             title: '확인',
-            message: '등록하시겠습니까?',
+            message: '저장하시겠습니까?',
             type: 'info',
             // 확인 callback 함수
             confirmCallback: () => {
+              if (this.disabled === true) {
+                if (this.disabledYy === true) {
+                  this.facilityMst.disuseYy = null;
+                }
+                if (this.disabledLaw === true) {
+                  this.facilityMst.lawChkCyeCd = null;
+                }
+                if (this.disabledSelf === true) {
+                  this.facilityMst.selfChkCyeCd = null;
+                }
+                this.actionType = 'PUT';
+                this.insertUrl = transactionConfig.saf.facilityMst.edit.url;
+              } else {
+                this.actionType = 'POST';
+                this.insertUrl = transactionConfig.saf.facilityMst.insert.url;
+              }
               this.isInsert = true;
+            },
+            cancelCallback: () => {
+              this.isInsert = false;
             }
           });
         }
@@ -545,107 +638,85 @@ export default {
         window.getApp.$emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
       });
     },
-    beforeEdit () {
-    },
-    beforeDelete () {
-      window.getApp.$emit('CONFIRM', {
-        title: '확인',
-        message: '삭제하시겠습니까?',
-        type: 'info',  
-        confirmCallback: () => {
-          this.deleteValue = {
-            'data': Object.values(this.$_.clone(this.selectedValue))
-          };
-          this.isDelete = true;
-        }
-      });
-    },
-    /** Call API service
-    * Naming Rule: get, post, put 등의 RESTFul verb를 접두사로 사용하고 그 뒤에 관련 모델명을 Camel case로 추가하세요.
-    * Naming Rule: get의 경우 복수의 데이터조회(리스트 데이터 등)시에는 복수를 나타내는 접미사 "s"를 붙여주세요.
-    * ex) getExamData () {}
-    * ex) getExamDatas () {}
-    */
-    
-    /** /Call API service **/
-    
-    /** validation checking(필요없으면 지워주세요) **/
-    checkValidation () {
-      this.$validator.validateAll().then((_result) => {
-        this.isSubmit = _result;
-        // TODO : 전역 성공 메시지 처리
-        // 이벤트는 ./event.js 파일에 선언되어 있음
-        if (!this.isSubmit) window.getApp.emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
-      }).catch(() => {
-        this.isSubmit = false;
-      });
-    },
     validateState (_ref) {
       if (this.veeBag[_ref] && (this.veeBag[_ref].dirty || this.veeBag[_ref].validated)) {
         return !this.errors.has(_ref);
       }
       return null;
     },
-    /** /validation checking **/
-    
-    /** Component Events, Callbacks (버튼 제외) **/
-    
-    /** /Component, Callbacks (버튼 제외) **/
-    
     /** Button Event **/
     // 팝업 닫기
     btnClosePopup () {
       // 부모창에 값 전달
       this.$emit('closePopup', { 'success': true });
     },
-    // 초기화
-    btnClearClickedCallback () {
-      Object.assign(this.$data.facilityMst, this.$options.data().facilityMst);
-      this.$validator.reset();
-      window.getApp.$emit('APP_REQUEST_SUCCESS', '초기화 버튼이 클릭 되었습니다.');
+    // 사용자 검색
+    btnSearchUserClicked (_item) {
+      this.popupOptions.target = () => import(`${'../../manage/user/userSearch.vue'}`);
+      this.popupOptions.title = '사용자검색';
+      this.popupOptions.visible = true;
+      this.popupOptions.width = '60%';
+      this.popupOptions.top = '100px';
+      this.popupOptions.closeCallback = this.closePopupSearchUser;
+    }, 
+    // 사용자 검색 팝업 닫기
+    closePopupSearchUser (data) {
+      this.popupOptions.target = null;
+      this.popupOptions.visible = false;
+      if (data.user) {
+        this.facilityMst.safMgrPsn = data.user.userNm;
+      }
     },
     // 신규등록
     btnInsertClickedCallback (_result) {
+      if (_result.data === 0) {
+        window.getApp.$emit('ALERT', {
+          title: '안내',
+          message: '이미 존재하는 설비코드입니다.',
+          type: 'warning',
+        });
+      } else {
+        window.getApp.$emit('ALERT', {
+          title: '안내',
+          message: '저장되었습니다.',
+          type: 'success',
+        });
+        this.btnClosePopup();
+      }
       this.isInsert = false;
-      window.getApp.$emit('ALERT', {
-        title: '안내',
-        message: '등록되었습니다.',
-        type: 'success',
-      });
-    },
-    // 수정
-    btnEditClickedCallback (_result) {
-      this.isEdit = false;
-      window.getApp.$emit('ALERT', {
-        title: '안내',
-        message: '수정되었습니다.',
-        type: 'success',
-      });
     },
     // 삭제
     btnDeleteClickedCallback (_result) {
-      this.getDataList();
-      this.isDelete = false;
-      window.getApp.$emit('ALERT', {
-        title: '안내',
-        message: '삭제되었습니다.',
-        type: 'success',
+      window.getApp.$emit('CONFIRM', {
+        title: '확인',
+        message: '삭제하시겠습니까?',
+        type: 'info',  
+        // 확인 callback 함수
+        confirmCallback: () => {
+          this.$http.url = this.$format(transactionConfig.saf.facilityMst.delete.url, this.facilityMst.safFacilityCd);
+          this.$http.type = 'DELETE';
+          this.$http.request((_result) => {
+            window.getApp.$emit('ALERT', {
+              title: '안내',
+              message: '삭제되었습니다.',
+              type: 'success',
+            });
+            this.btnClosePopup();
+          }, (_error) => {
+            window.getApp.$emit('APP_REQUEST_ERROR', _error);
+          });
+        },
+        // 취소 callback 함수
+        cancelCallback: () => {
+        }
       });
     },
-    /**
-    * 버튼 에러 처리용 공통함수
-    */
+    // 버튼 에러 처리
     btnClickedErrorCallback (_result) {
       this.isInsert = false;
-      this.isEdit = false;
-      this.editable = false;
       window.getApp.emit('APP_REQUEST_ERROR', _result);
     },
     /** /Button Event **/
-    
-    /** 기타 function **/
-    
-    /** /기타 function **/
   }
 };
 </script>

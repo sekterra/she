@@ -1,6 +1,6 @@
 <!--
-  목적 : 취급물질 관리 팝업
-  Detail : 취급물질 관리 팝업 화면
+  목적 : 유해인자 조회 팝업
+  Detail : 유해인자 조회 팝업 화면
   *
   examples:
   *
@@ -25,32 +25,47 @@
                 @btnClicked="btnSearchClickedCallback" 
               />
               <y-btn
+                title="저장"
+                color="orange"
+                @btnClicked="closePopup('SAVE')" 
+              />
+              <y-btn
                 title="닫기"
-                @btnClicked="closePopup" 
+                @btnClicked="closePopup('CLOSE')" 
               />
             </div>
           </div>
           <b-row>
-            <b-col sm="12" md="12" lg="12" xl="12" class="col-xxl-12">
+            <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-4">
               <y-select
                 :width="8"
-                :comboItems="comboWkodMatClassItems"
+                :comboItems="comboHazardGradCdItems"
                 itemText="codeNm"
                 itemValue="code"
                 ui="bootstrap"
-                label="취급물질분류"
-                name="wkodMatClass"
-                v-model="searchParam.wkodMatClass"
+                label="유해인자분류"
+                name="hazardGradCd"
+                v-model="searchParam.hazardGradCd"
               >
               </y-select>
             </b-col>
-            <b-col sm="12" md="12" lg="12" xl="12" class="col-xxl-12">
+            <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-4">
               <y-text
               :width="8"
               ui="bootstrap"
-              label="취급물질명"
+              label="유해인자명(한글)"
               name="wkodMatNm"
-              v-model="searchParam.wkodMatNm"
+              v-model="searchParam.hazardNmKo"
+              >
+              </y-text>
+            </b-col>
+            <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-4">
+              <y-text
+              :width="8"
+              ui="bootstrap"
+              label="유해인자명(영문)"
+              name="wkodMatNm"
+              v-model="searchParam.hazardNmEn"
               >
               </y-text>
             </b-col>
@@ -65,12 +80,12 @@
           <b-col sm="12" class="px-0">
             <y-data-table 
               ref="requestDatatable"
-              checkKey="matMstNo"
+              checkKey="hazardCd"
               :headers="gridOptions.header"
               :items="gridOptions.data"
               :checkItemData="selectHandleChemContentRow"
               height="400px"
-              label="취급물질"
+              label="유해인자 목록"
               v-model="handleChemContentRow"
               >
               <el-table-column
@@ -92,7 +107,7 @@ import selectConfig from '@/js/selectConfig';
 import transactionConfig from '@/js/transactionConfig';
 export default {
   /* attributes: name, components, props, data */
-  name: 'wkod-mat-mst-dialog',
+  name: 'hazard-dialog',
   props: {
     popupParam: {
       type: Object,
@@ -105,18 +120,19 @@ export default {
   data () {
     return {
       searchParam: {
-        wkodMatClass: '',
-        wkodMatNm: '',
-        searchFlag: '',
+        hazardGradCd: null,
+        hazardNmKo: '',
+        hazardNmEn: '',
       },
       gridOptions: {
         header: [],
         data: [],
         height: 300
       },
-      comboWkodMatClassItems: [],
+      comboHazardGradCdItems: [],
       selectHandleChemContentRow: [],
       handleChemContentRow: [],
+      oldHandleChemContentRow: [],
       searchUrl: '',
     }
   },
@@ -128,40 +144,41 @@ export default {
   beforeMount () {
     Object.assign(this.$data, this.$options.data());
     this.init();
-    this.getComboItems('SAF_WKOD_MAT_CLASS'); // 작업종류
-    this.getList();
   },
   mounted () {
   },
-  beforeDestory () {
+  beforeDestroy () {
   },
   //* methods */
   methods: {
     init () {
-      setTimeout(() => {
-        // Url Setting
-        this.searchUrl = selectConfig.saf.wkodMatMst.list.url;
-      }, 1000);
+      // Url Setting
+      this.searchUrl = selectConfig.hazard.list.url;
       
+      this.oldHandleChemContentRow = this.popupParam.selectHandleChemContentRow;
       // 그리드 헤더 설정
       this.gridOptions.header = [
-        { text: '취급물질분류', name: 'wkodMatClassNm', width: '25%', align: 'center' },
-        { text: '취급물질명', name: 'wkodMatNm', width: '35%', }
+        { text: '유해인자 분류', name: 'hazardGradNm', width: '25%', align: 'center' },
+        { text: '유해인자명(한글)', name: 'hazardNmKo', width: '35%', },
+        { text: '유해인자명(영문)', name: 'hazardNmEn', width: '35%', }
       ];
+
+      this.getComboItems('HEA_HAZARD_CLASS'); // 작업종류
+      this.getList();
     },
     // combo box list
     getComboItems (codeGroupCd) {
       this.$http.url = this.$format(selectConfig.codeMaster.getSelect.url, codeGroupCd);
       this.$http.type = 'GET';
       this.$http.request((_result) => {
-        this.comboWkodMatClassItems = this.$_.clone(_result.data);
-        this.comboWkodMatClassItems.splice(0, 0, { 'code': '', 'codeNm': '전체' });
+        this.comboHazardGradCdItems = this.$_.clone(_result.data);
+        this.comboHazardGradCdItems.splice(0, 0, { 'code': null, 'codeNm': '전체' });
       }, (_error) => {
         this.$emit('APP_REQUEST_ERROR', _error);
       });
     },
     getList () {
-      this.$http.url = selectConfig.saf.wkodMatMst.list.url;
+      this.$http.url = this.searchUrl;
       this.$http.type = 'GET';
       this.$http.param = this.searchParam;
       this.$http.request((_result) => {
@@ -180,12 +197,15 @@ export default {
     getConfirm () {
     },
     closePopup (data) {
+      if (data === 'CLOSE') this.handleChemContentRow = this.oldHandleChemContentRow;
+      console.log(this.handleChemContentRow);
+      
       this.$emit('closePopup', this.handleChemContentRow);
     },
     /** button 관련 이벤트 **/
     btnSearchClickedCallback (_result) {
       this.getList();
-      window.getApp.$emit('APP_REQUEST_SUCCESS', '조회 버튼이 클릭되었습니다.');
+      // window.getApp.$emit('APP_REQUEST_SUCCESS', '조회 버튼이 클릭되었습니다.');
     },
     /** end button 관련 이벤트 **/
   }

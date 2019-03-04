@@ -11,18 +11,31 @@
     <b-row>
       <b-col sm="12">
         <b-row>
-          <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
-              <y-text
-                :width="baseWidth"
-                :editable="editable"
-                ui="bootstrap"
-                type="search"
-                label="관리항목"
-                name="itemValue"
-                v-model="facilityTypeItem.itemValue"
+          <b-col sm="7" class="px-0">
+            <y-data-table 
+              gridType="edit"
+              :excel-down="true"
+              :print="true"
+              :rows="3"
+              ref="dataTable"
+              :height="gridOptions.height"
+              :headers="gridOptions.header"
+              :items="gridOptions.data"
               >
-              </y-text>
-            </b-col>
+            </y-data-table>
+          </b-col>
+          <!-- <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
+            <y-text
+              :width="baseWidth"
+              :editable="editable"
+              ui="bootstrap"
+              type="search"
+              label="관리항목"
+              name="itemValue"
+              v-model="facilityTypeItem.itemValue"
+            >
+            </y-text>
+          </b-col> -->
         </b-row>
       </b-col>
     </b-row>
@@ -30,23 +43,58 @@
 </template>
 
 <script>
+import selectConfig from '@/js/selectConfig';
 export default {
   /** attributes: name, components, props, data **/
   name: 'facility-type-item',
   props: {
+    facilityMst: {
+      type: Object,
+      default: {
+        safFacilityTypeCd: null,
+        safFacilityCd: '',
+        facilityTypeItemVals: [],
+      },
+    },
   },
   // TODO: 화살표 함수(=>)는 data에 사용하지 말 것
   //    data: () => { return { a: this.myProp }}) 화살표 함수가 부모 컨텍스트를 바인딩하기 때문에 this는 예상과 달리 Vue 인스턴스가 아니기 때문에 this.myProp는 undefined로 나옵니다.
   //    참고url: https://kr.vuejs.org/v2/api/index.html#data
   data () {
     return {
+      gridOptions: {
+        header: [],
+        data: [],
+        height: '210'
+      },
       facilityTypeItem: {
         itemValue: ''
       },
       baseWidth: 8,
       editable: true,
+      searchUrl: '',
       isSubmit: false,  // 버튼을 submit 할 것인지 판단하는 변수로써 버튼의 개수만큼 필요합니다.
     };
+  },
+  watch: {
+    'facilityMst.safFacilityTypeCd': function (val, oldVal) {
+      this.getDataList();
+    },
+    // 'facilityMst.safFacilityCd': function (val, oldVal) {
+    //   if (this.facilityMst.disabled === t) {
+    //     this.getDataList();
+    //   }
+    // },
+    'gridOptions.data': {
+      handler: function (val, oldVal) {
+        this.facilityMst.facilityTypeItemVals = [];
+        this.$_.forEach(this.gridOptions.data, (item) => {
+          if (item.itemValue) this.facilityMst.facilityTypeItemVals.push(item);
+        });
+        // this.facilityMst.facilityTypeItemVals = this.gridOptions.data;
+      },
+      deep: true
+    },
   },
   /** Vue lifecycle: created, mounted, destroyed, etc **/
   beforeCreate () {
@@ -68,7 +116,36 @@ export default {
   methods: {
     /** 초기화 관련 함수 **/
     init () {
-      // TODO : 여기에 초기 설정용 함수를 호출하거나 로직을 입력하세요.
+      // URL 셋팅
+      this.searchUrl = selectConfig.saf.facilityTypeItem.list.url;
+
+      setTimeout(() => {
+        this.getDataList();
+      }, 200);
+
+      // 설비항목 출고 grid 헤더 설정
+      this.gridOptions.header = [
+        { text: '관리항목', name: 'safFacilityTypeItemNm', width: '130px', align: 'center' },
+        { text: '결과값', name: 'itemValue', width: '130px', align: 'right', type: 'text' },
+      ];
+    },
+    getDataList () {
+      if (this.facilityMst.safFacilityCd !== null
+        && this.facilityMst.safFacilityTypeCd !== null) {
+
+        this.$http.url = this.searchUrl;
+        this.$http.type = 'GET';
+        this.$http.param = {
+          safFacilityCd: this.facilityMst.safFacilityCd,
+          safFacilityTypeCd: this.facilityMst.safFacilityTypeCd
+        };
+        this.$http.request((_result) => {
+          this.gridOptions.data = _result.data;
+          this.facilityMst.facilityTypeItemVals = _result.data;
+        }, (_error) => {
+          window.getApp.$emit('APP_REQUEST_ERROR', _error);
+        });
+      }
     },
     /** /초기화 관련 함수 **/
     

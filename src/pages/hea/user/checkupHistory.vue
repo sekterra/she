@@ -175,7 +175,6 @@ export default {
     // 검색
     btnSearchCallback () {
       this.getDataList();
-      window.getApp.$emit('APP_REQUEST_SUCCESS', '검색 버튼이 클릭 되었습니다.');
     },
     // 검색박스숨기기
     btnSearchVisibleClicked () {      

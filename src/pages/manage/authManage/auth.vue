@@ -19,6 +19,7 @@
                 v-for="(item, i) in steps"
                 :key="item.label"
                 :title="item.label"
+                icon="el-icon-edit"
                 @click.native="e => nextStep(e, i)"
                 >
                 </el-step>
@@ -111,3 +112,11 @@ export default {
   }
 };
 </script>
+
+<style>
+.el-steps--simple {
+    padding: 8px 8%;
+    border-radius: 4px;
+    background: #f5f7fa;
+}
+</style>

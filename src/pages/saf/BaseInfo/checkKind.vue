@@ -16,7 +16,7 @@
             <div class="float-right">
               <y-btn
                 :title="searchArea.title"
-                color="orange"
+                color="green"
                 @btnClicked="btnSearchVisibleClicked"
               />
               <y-btn
@@ -35,7 +35,7 @@
               <y-text
                 :width="8"
                 ui="bootstrap"
-                label="항목명"
+                label="안전점검종류명"
                 name="chkItemNm"
                 v-model="searchParam.safCheckKindNm"
               ></y-text>
@@ -56,8 +56,9 @@
             :items="gridOptions.data"
             :excel-down="true"
             :print="true"
+            :useRownum="false"
             @selectedRow="selectedRow"
-            label="점검종류"
+            label="안전점검 종류 목록"
           ></y-data-table>
         </b-col>
       </b-col>
@@ -77,8 +78,9 @@
               <y-text
                 :width="8"
                 :required="true"
+                :maxlength="30"
                 ui="bootstrap"
-                label="항목명"
+                label="안전점검종류명"
                 name="safCheckKindNm"
                 v-validate="'required'"
                 v-model="checkKind.safCheckKindNm"
@@ -145,7 +147,7 @@
                 :maxlength="5"
                 :hasSeperator="false"
                 ui="bootstrap"
-                label="정렬 순서"
+                label="정렬순서"
                 name="sortOrder"
                 v-model="checkKind.sortOrder"
               ></y-number>
@@ -199,7 +201,7 @@ export default {
       planUseYn: "",
       itemUseYn: "",
       facilityUseYn: "",
-      sortOrder: "",
+      sortOrder: 0,
       useYn: ""
     },
     searchParam: {
@@ -227,7 +229,7 @@ export default {
   //* Vue lifecycle: created, mounted, destroyed, etc */
   beforeCreate () {},
   created () {},
-  update () {},
+  updated () {},
   beforeMount () {
     Object.assign(this.$data, this.$options.data());
     this.init();
@@ -254,18 +256,22 @@ export default {
           { useYn: "Y", useName: "사용" },
           { useYn: "N", useName: "미사용" }
         ];
+        
       }, 1000);
 
       // 그리드 헤더 설정
       this.gridOptions.header = [
         { text: "안전점검종류명", name: "safCheckKindNm", width: "180px" },
-        { text: "점검계획사용여부", name: "planUseYn", width: "180px" },
-        { text: "점검항목사용여부", name: "itemUseYn", width: "180px" },
-        { text: "설비점검해당여부", name: "facilityUseYn", width: "180px", align: "center" },
-        { text: "출력순서", name: "sortOrder", width: "100px", align: "center" },
-        { text: "사용여부", name: "useYn", width: "100px", align: "center" }
+        { text: "점검계획사용여부", name: "planUseYnNm", width: "180px" },
+        { text: "점검항목사용여부", name: "itemUseYnNm", width: "180px" },
+        { text: "설비점검해당여부", name: "facilityUseYnNm", width: "180px", align: "center" },
+        { text: "사용여부", name: "useYnNm", width: "100px", align: "center" },
+        { text: "정렬순서", name: "sortOrder", width: "100px", align: "center" },
+        
       ];
       this.setGridSize();
+
+      this.getList();
     },
     // 입력 setting
     selectedRow (data) {
@@ -315,7 +321,7 @@ export default {
     beforeInsert () {
       window.getApp.$emit('CONFIRM', {
         title: '확인',
-        message: '수정하시겠습니까?',
+        message: '등록하시겠습니까?',
         // TODO : 필요시 추가하세요.
         type: 'info',  // success / info / warning / error
         // 확인 callback 함수
@@ -332,8 +338,9 @@ export default {
         this.isEdit = _result;
         // TODO : 전역 성공 메시지 처리
         // 이벤트는 ./event.js 파일에 선언되어 있음
-        if (!this.isEdit) window.getApp.$emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
+        if (!this.isEdit) window.getApp.$emit('APP_VALID_ERROR', '필수 입력값을 입력해 주세요.');
       }).catch(() => {
+        window.getApp.$emit('APP_VALID_ERROR', '유효성 검사도  에러가 발생하였습니다.');
         this.isEdit = false;
       });
     },
@@ -342,8 +349,9 @@ export default {
         this.isInsert = _result;
         // TODO : 전역 성공 메시지 처리
         // 이벤트는 ./event.js 파일에 선언되어 있음
-        if (!this.isInsert) window.getApp.$emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
+        if (!this.isInsert) window.getApp.$emit('APP_VALID_ERROR', '필수 입력값을 입력해 주세요.');
       }).catch(() => {
+        window.getApp.$emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
         this.isInsert = false;
       });
     },
@@ -410,24 +418,41 @@ export default {
     },
     btnSaveClickedCallback (result) {
       this.getList();
-
-      window.getApp.$emit('ALERT', {
-        title: '안내',
-        message: '수정되었습니다.',
-        type: 'success',  // success / info / warning / error
-      });
+      if (result.data === 0) {
+        window.getApp.$emit('ALERT', {
+          title: '안내',
+          message: '안전점검종류명이 중복 됩니다.',
+          type: 'warning',  // success / info / warning / error
+        });
+      }
+      else {
+        window.getApp.$emit('ALERT', {
+          title: '안내',
+          message: '저장되었습니다.',
+          type: 'success',  // success / info / warning / error
+        });
+      } 
       this.isEdit = false;
       // this.$emit('APP_REQUEST_SUCCESS', '수정 버튼이 클릭 되었습니다.');
     },
     btnInsertClickedCallback (result) {
-      // this.disease.heaDiseaseCd = _result.data;
       this.getList();
-
-      window.getApp.$emit('ALERT', {
-        title: '안내',
-        message: '저장되었습니다.',
-        type: 'success',  // success / info / warning / error
-      });
+      if (result.data === 0) {
+        window.getApp.$emit('ALERT', {
+          title: '안내',
+          message: '안전점검종류명이 중복 됩니다.',
+          type: 'warning',  // success / info / warning / error
+        });
+      }
+      else {
+        window.getApp.$emit('ALERT', {
+          title: '안내',
+          message: '저장되었습니다.',
+          type: 'success',  // success / info / warning / error
+        });
+        this.checkKind.safCheckKindNo = this.$_.clone(result.data);
+      } 
+  
       this.isInsert = false;
       this.editable = true;
     },

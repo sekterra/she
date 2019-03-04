@@ -22,12 +22,13 @@
                   :width="10"
                   :maxlength="60"
                   :required="true"
+                  :disabled="this.facilityCheckResultDetail.checkStepCd === 'CHS04' || this.facilityCheckResultDetail.checkStepCd === 'CHS03'"
                   ui="bootstrap"
                   label="설비점검결과요약"
-                  name="checkResult"
-                  v-model="facilityItemResult.checkResult"
+                  name="safFacilityCheckResult"
+                  v-model="facilityCheckResultDetail.safFacilityCheckResult"
                   v-validate="'required'"
-                  :state="validateState('checkResult')"
+                  :state="validateState('safFacilityCheckResult')"
                 />
               </b-col>
             </b-row>
@@ -36,14 +37,13 @@
               <b-col sm="12">
                 <b-col sm="12" class="px-0">
                   <y-data-table 
-                    ref="dataTable"
+                    ref="dataFaciliyItemResultTable"
                     :height="gridOptions.height"
                     :headers="gridOptions.header"
                     :items="gridOptions.data"
                     :excel-down="true"
                     :print="true"
-                    :useRownum="false"
-                    label="설비점검항목별 결과"
+                    label="설비점검항목별 결과 목록"
                     >
                   </y-data-table>
                 </b-col>
@@ -62,15 +62,19 @@ export default {
   /* attributes: name, components, props, data */
   name: 'y-facility-item-result',
   props: {
-    safFacilityCheckResultNo: 0,
+    facilityCheckResultDetail: { 
+      type: Object,
+      default: {
+        safFacilityCheckResultNo: 0,
+        safFacilityCheckCd: '',
+        safFacilityCheckResult: null,
+        facilityItemResults: [],
+        checkStepCd: '',
+      },
+    },
+    
   },
   data: () => ({
-    facilityItemResult: {
-      safFacilityCheckResultNo: 0,
-      // safCheckItemNo: 0,
-      checkResult: '',
-      remark: '',
-    },
     gridOptions: {
       header: [],
       data: [],
@@ -82,9 +86,17 @@ export default {
     searchUrl: '',
   }),
   watch: {
-    'safFacilityCheckResultNo': function (newValue, oldValue) {
-      this.facilityItemResult.safFacilityCheckResultNo = this.$_.clone(this.safFacilityCheckResultNo);
+    'facilityCheckResultDetail.safFacilityCheckResultNo': function (newValue, oldValue) {
       this.getList();
+    },
+    'facilityCheckResultDetail.safFacilityCheckCd': function (newValue, oldValue) {
+      this.getList();
+    },
+    'gridOptions.data': {
+      handler: function (val, oldVal) {
+        this.facilityCheckResultDetail.facilityItemResults = this.gridOptions.data;
+      },
+      deep: true
     },
   },
   //* Vue lifecycle: created, mounted, destroyed, etc */
@@ -106,22 +118,33 @@ export default {
       // Url Setting
       this.searchUrl = selectConfig.saf.facilityItemResult.list.url;      
       // 그리드 헤더 설정
+      var tableComponentDisable = (this.facilityCheckResultDetail.checkStepCd === 'CHS04' || this.facilityCheckResultDetail.checkStepCd === 'CHS03');
       this.gridOptions.header = [
-        { text: '정렬순서', name: 'sortOrder', width: '100px', align: 'center' },
         { text: '점검항목', name: 'safFacilityCheckNm', width: '200px', },
-        { text: '점검결과', name: 'checkResult', width: '150px' },
-        { text: '비고', name: 'remark', width: '350px', align: 'center' },
       ];
+
+      if (this.facilityCheckResultDetail.checkStepCd === 'CHS04' || this.facilityCheckResultDetail.checkStepCd === 'CHS03')
+      {
+        this.gridOptions.header.splice(1, 0, { text: '점검결과', name: 'checkResult', width: '150px', });
+        this.gridOptions.header.splice(2, 0, { text: '비고', name: 'remark', width: '350px', });
+      }
+      else
+      {
+        this.gridOptions.header.splice(1, 0, { text: '점검결과', name: 'checkResult', width: '150px', type: 'text', });
+        this.gridOptions.header.splice(2, 0, { text: '비고', name: 'remark', width: '350px', type: 'textarea' });
+      }
     },
     /** 안전점검결과 목록 조회 **/
     getList () {
       this.$http.url = this.searchUrl;
       this.$http.type = 'GET';
       this.$http.param = {
-        'safCheckRsltNo': this.safCheckRsltNo,
+        'safFacilityCheckResultNo': this.facilityCheckResultDetail.safFacilityCheckResultNo,
+        'safFacilityCheckCd': this.facilityCheckResultDetail.safFacilityCheckCd,
       };
       this.$http.request((_result) => {
         this.gridOptions.data = this.$_.clone(_result.data);
+        // this.facilityCheckResultDetail.facilityItemResults = this.gridOptions.data;
       }, (_error) => {
         window.getApp.$emit('APP_REQUEST_ERROR', _error);
       });

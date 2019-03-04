@@ -100,6 +100,7 @@
             :excel-down="true"
             :print="true"
             :use-paging="true"
+            :useRownum="false"
             v-model="selectedValue"
             label="검진종류 - 선택 검진항목 목록"
             ref="dataTable"
@@ -154,7 +155,7 @@
               </b-row>
             </b-col>
             <b-col sm="1" md="1" lg="1" xl="1" class="col-xxl-1"></b-col>
-            <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
+            <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-6">
               <b-row>
                 <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
                   <y-select
@@ -492,11 +493,11 @@ export default {
       this.deleteUrl = transactionConfig.checkupOrgTestItem.delete.url;
       // 그리드 헤더 설정
       this.gridOptions.header = [
-        { text: '검진기관', name: 'heaCheckupOrgNm', width: '25%', align: 'left' },
-        { text: '검진년도', name: 'year', width: '15%', align: 'center' }, 
-        { text: '검진유형', name: 'heaCheckupTypeNm', width: '17%' },
-        { text: '검진검사', name: 'heaTestClassNm', width: '15%' },
-        { text: '검진항목', name: 'heaTestItemNm', width: '20%' },
+        { text: '검진기관', name: 'heaCheckupOrgNm', width: '200px', align: 'left' },
+        { text: '검진년도', name: 'year', width: '80px', align: 'center' }, 
+        { text: '검진유형', name: 'heaCheckupTypeNm', width: '150px' },
+        { text: '검진검사', name: 'heaTestClassNm', width: '130px' },
+        { text: '검진항목', name: 'heaTestItemNm', width: '150px' },
       ];
       // 선택된 검진항목 목록 그리드 헤더 설정
       this.gridTestItemLeftOptions.header = [
@@ -508,11 +509,15 @@ export default {
         { text: '검진검사', name: 'heaTestClassNm', width: '150px', align: 'left' },
         { text: '검진항목', name: 'heaTestItemNm', width: '200px', align: 'left', filter: 'true' },
       ];
-      this.getComboItems('HEA_CHECKUP_TYPE'); // 검진유형
-      this.getComboItems('HEA_TEST_CLASS'); // 검진검사
-      this.getComboCheckupOrgItems(); // 검진검사
-      this.getList(); // 검진종류-선택 검진항목 목록 조회
-      this.setGridSize(); // 그리드 사이즈 조절
+      setTimeout(() => {
+        this.checkupOrgOptional.year = this.$comm.moment(this.$comm.getToday()).format('YYYY');
+        this.searchParam.year = this.$comm.moment(this.$comm.getToday()).format('YYYY');
+        this.getComboItems('HEA_CHECKUP_TYPE'); // 검진유형
+        this.getComboItems('HEA_TEST_CLASS'); // 검진검사
+        this.getComboCheckupOrgItems(); // 검진검사
+        this.getList(); // 검진종류-선택 검진항목 목록 조회
+        this.setGridSize(); // 그리드 사이즈 조절
+      }, 300);
     },
     /**
      * 공통 마스터 정보 조회 (검진유형, 검진검사)
@@ -528,8 +533,7 @@ export default {
           this.heaTestClassCd = '';
         } else {
           this.comboCheckupTypeItems = this.$_.clone(_result.data);
-          this.comboCheckupTypeItems.splice(0, 0, { 'code': '', 'codeNm': '선택하세요' });
-          this.checkupOrgOptional.heaCheckupTypeCd = '';
+          this.comboCheckupTypeItems.splice(0, 0, { 'code': null, 'codeNm': '선택하세요' });
           this.comboCheckupTypeSearchItems = this.$_.clone(_result.data);
           this.comboCheckupTypeSearchItems.splice(0, 0, { 'code': '', 'codeNm': '전체' });
           this.searchParam.heaCheckupTypeCd = '';
@@ -546,8 +550,7 @@ export default {
       this.$http.type = 'GET';
       this.$http.request((_result) => {
         this.comboCheckupOrganItems = this.$_.clone(_result.data);
-        this.comboCheckupOrganItems.splice(0, 0, { 'heaCheckupOrgNo': '', 'heaCheckupOrgNm': '선택하세요' });
-        this.checkupOrgOptional.heaCheckupOrgNo = '';
+        this.comboCheckupOrganItems.splice(0, 0, { 'heaCheckupOrgNo': null, 'heaCheckupOrgNm': '선택하세요' });
         this.comboCheckupOrganSearchItems = this.$_.clone(_result.data);
         this.comboCheckupOrganSearchItems.splice(0, 0, { 'heaCheckupOrgNo': 0, 'heaCheckupOrgNm': '전체' });
         this.searchParam.heaCheckupOrgNo = 0;

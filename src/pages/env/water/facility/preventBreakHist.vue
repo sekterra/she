@@ -13,14 +13,29 @@
     <b-row class="mt-3">
       <b-col sm="12">
         <b-col sm="12" class="px-0">
+          <div slot="buttonGroup" class="float-right mb-1">
+            <y-btn
+                v-if="editable"
+                title="삭제"
+                color="red"
+                @btnClicked="btnDeleteClicked"
+              />
+          </div>
           <y-data-table 
             label="고장이력정보 목록"
             ref="dataTable"
             :height="gridOptions.height"
             :headers="gridOptions.header"
             :items="gridOptions.data"
+            v-model="selectedValue"
             @selectedRow="getDetail"
             >
+            <el-table-column
+              type="selection"
+              slot="selection"
+              align="center"
+              width="55">
+            </el-table-column> 
           </y-data-table>
         </b-col>
       </b-col>
@@ -66,17 +81,53 @@
               >
               </y-datepicker>
             </b-col>
-            <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
-              <y-text
-              :width="8"
-              :editable="editable"
-              :maxlength="15"
-              ui="bootstrap"
-              label="고장시간"
-              name="downTime"
-              v-model="ewtrPreventFacBreakHist.downTime"
-              >
-              </y-text>
+            <b-col sm="4" md="4" lg="4" xl="4" class="col-xxl-2">
+              <b-row>
+                &nbsp;&nbsp;
+                <b-col sm="4" md="4" lg="4" xl="4" class="col-xxl-4 px-1">
+                  <y-label 
+                    label="고장발생시간" 
+                  />
+                </b-col>
+                <b-col sm="2" md="2" lg="2" xl="2" class="col-xxl-2 px-1">
+                  <y-label 
+                    label="" 
+                  />
+                </b-col>
+                <b-col sm="5" md="5" lg="5" xl="5" class="col-xxl-5 px-1">
+                  <y-select
+                    :width="12"
+                    :comboItems="comboHourItems"
+                    itemText="hourNm"
+                    itemValue="hour"
+                    ui="bootstrap"
+                    name="fromDownTime"
+                    v-model="ewtrPreventFacBreakHist.fromDownTime"
+                  >
+                  </y-select>
+                </b-col>
+              </b-row>
+            </b-col>
+            <b-col sm="2" md="2" lg="2" xl="2" class="col-xxl-1">
+              <b-row>
+                <b-col sm="2" md="2" lg="2" xl="2" class="col-xxl-2 px-1">
+                  <y-label 
+                    label="~" 
+                  />
+                </b-col>
+                <b-col sm="10" md="10" lg="10" xl="10" class="col-xxl-10 px-1">
+                  <y-select
+                    :width="12"
+                    :comboItems="comboHourItems"
+                    itemText="hourNm"
+                    itemValue="hour"
+                    ui="bootstrap"
+                    name="toDownTime"
+                    v-model="ewtrPreventFacBreakHist.toDownTime"
+                  >
+                  </y-select>
+                </b-col>
+              </b-row>
             </b-col>
             <b-col sm="12" md="12" lg="12" xl="12" class="col-xxl-6">
               <y-textarea
@@ -166,12 +217,13 @@ export default {
   data () {
     return {
       ewtrPreventFacBreakHist: {
-        ewtrPreventFacNo: 0,
+        ewtrPreventFacNo: null,
         measureYmd: '',
-        downTime: '',
         downCond: '',
         action: '',
         remark: '',
+        fromDownTime: 0,
+        toDownTime: 0,
       },
       gridOptions: {
         header: [],
@@ -185,13 +237,17 @@ export default {
       isEdit: false,
       editUrl: '',
       insertUrl: '',
+      deleteUrl: '',
+      comboHourItems: [], // 시
+      comboMinuteItems: [], // 분
+      selectedValue: [],
     };
   },
   watch: {
     selectedPreventFacNo: function (newValue, oldValue) {
+      this.btnClearClickedCallback();
       this.ewtrPreventFacBreakHist.ewtrPreventFacNo = this.selectedPreventFacNo;
       this.getList();
-      this.btnClearClickedCallback();
     },
   },
   //* Vue lifecycle: created, mounted, destroyed, etc */
@@ -204,12 +260,8 @@ export default {
     this.init();
   },
   mounted () {
-    // 윈도우 resize event
-    window.addEventListener('resize', this.setGridSize);
   },
   beforeDestroy () {
-    // 윈도우 resize event 제거
-    window.removeEventListener('resize', this.setGridSize);
   },
   //* methods */
   methods: {
@@ -220,19 +272,34 @@ export default {
       }, 200);
       // 그리드 헤더 설정
       this.gridOptions.header = [
-        { text: '방지시설명', name: 'ewtrPreventFacNm', width: '20%', align: 'left' },
-        { text: '고장발생일', name: 'measureYmd', width: '20%', align: 'center' },
-        { text: '고장시간', name: 'downTime', width: '10%', align: 'center' },
-        { text: '고장상태', name: 'downCond', width: '25%', align: 'left' },
-        { text: '조치사항', name: 'action', width: '25%', align: 'left' },
-        { text: '특기사항', name: 'remark', width: '25%', align: 'left' },
+        { text: '방지시설명', name: 'ewtrPreventFacNm', width: '200px', align: 'left' },
+        { text: '고장발생일', name: 'measureYmd', width: '150px', align: 'center' },
+        { text: '고장시간', name: 'downTime', width: '150px', align: 'center' },
+        { text: '고장상태', name: 'downCond', width: '180px', align: 'left' },
+        { text: '조치사항', name: 'action', width: '180px', align: 'left' },
+        { text: '특기사항', name: 'remark', width: '180px', align: 'left' },
+        { text: '등록일', name: 'createDt', width: '200px', align: 'center' },
+        { text: '등록자', name: 'createUserNm', width: '120px', align: 'center' },
+        { text: '수정일', name: 'updateDt', width: '200px', align: 'center' },
+        { text: '수정자', name: 'updateUserNm', width: '120px', align: 'center' }
       ];
 
       this.editUrl = transactionConfig.env.water.facility.preventFacBreakHist.edit.url;
       this.insertUrl = transactionConfig.env.water.facility.preventFacBreakHist.insert.url;
+      this.deleteUrl = transactionConfig.env.water.facility.preventFacBreakHist.delete.url;
 
-      this.getList();
-      this.setGridSize();
+      if (this.selectedPreventFacNo !== 0) {
+        this.ewtrPreventFacBreakHist.ewtrPreventFacNo = this.selectedPreventFacNo;
+        this.getList();
+      }
+
+      var i = 0;
+      for (; i < 24; i++) {
+        this.comboHourItems.push({
+          hourNm: i + '시',
+          hour: i
+        });
+      }
     },
 
     getList () {
@@ -244,7 +311,7 @@ export default {
       this.$http.request((_result) => {
         this.gridOptions.data = this.$_.clone(_result.data);
       }, (_error) => {
-        window.getApp.$emit('APP_REQUEST_ERROR', _error);
+        window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
       });
     },
     getDetail (data) {
@@ -256,7 +323,7 @@ export default {
         this.updateMode = true;
         this.ewtrPreventFacBreakHist = this.$_.clone(_result.data);
       }, (_error) => {
-        window.getApp.$emit('APP_REQUEST_ERROR', _error);
+        window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
       });
     },
     getPreventFacNoItems () {
@@ -269,7 +336,7 @@ export default {
         _result.data.splice(0, 0, { 'ewtrPreventFacNo': null, 'ewtrPreventFacNm': '선택하세요' });
         this.preventFacNoItems = _result.data;
       }, (_error) => {
-        window.getApp.$emit('APP_REQUEST_ERROR', _error);
+        window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
       });
     },
 
@@ -279,7 +346,7 @@ export default {
         if (_result) {
           window.getApp.$emit('CONFIRM', {
             title: '확인',
-            message: '등록하시겠습니까?',
+            message: '고장이력 정보를 저장하시겠습니까?',
             type: 'info',
             confirmCallback: () => {
               this.isInsert = true;
@@ -296,7 +363,7 @@ export default {
         if (_result) {
           window.getApp.$emit('CONFIRM', {
             title: '확인',
-            message: '수정하시겠습니까?',
+            message: '고장이력 정보를 수정하시겠습니까?',
             type: 'info', 
             confirmCallback: () => {
               this.isEdit = true;
@@ -318,49 +385,76 @@ export default {
       return null;
     },
     
-    /**
-     * 그리드 리사이징
-     */
-    setGridSize () {
-      var defaultHeight = 300;
-      window.getApp.$emit('LOADING_SHOW');
-      setTimeout(() => { 
-        this.gridOptions.height = window.innerHeight - this.$refs.insertBox.clientHeight - 260;
-        window.getApp.$emit('LOADING_HIDE');
-      }, 600);
-    },
-    
     /** button 관련 이벤트 **/
     btnInsertClickedCallback (_result) {
       this.ewtrPreventFacBreakHist.ewtrPreventFacBreakHistNo = _result.data;
       this.getList();
       this.isInsert = false;
       this.updateMode = true;
+      this.$emit('changePrevention');
       window.getApp.$emit('ALERT', {
         title: '안내',
-        message: '등록되었습니다.',
+        message: '고장이력 정보를 정상적으로 저장하였습니다.',
         type: 'success',
       });
     },
     btnEditClickedCallback (_result) {
       this.getList();
       this.isEdit = false;
+      this.$emit('changePrevention');
       window.getApp.$emit('ALERT', {
         title: '안내',
-        message: '수정되었습니다.',
+        message: '고장이력 정보를 정상적으로 수정하였습니다.',
         type: 'success',
       });
     },
     btnClearClickedCallback () {
+      var temp = this.ewtrPreventFacBreakHist.ewtrPreventFacNo;
       Object.assign(this.$data.ewtrPreventFacBreakHist, this.$options.data().ewtrPreventFacBreakHist);
       this.$validator.reset();
+      this.ewtrPreventFacBreakHist.ewtrPreventFacNo = temp;
       this.updateMode = false;
     },
     btnClickedErrorCallback (_result) {
       this.isInsert = false;
       this.isEdit = false;
-      window.getApp.$emit('APP_REQUEST_ERROR', _result);
+      window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
     },
+    btnDeleteClicked () {
+      if (this.selectedValue.length > 0) {
+        window.getApp.$emit('CONFIRM', {
+          title: '확인',
+          message: '선택된 고장이력 정보를 삭제하시겠습니까?',
+          type: 'info',
+          confirmCallback: () => {
+            this.$http.url = this.deleteUrl;
+            this.$http.type = 'delete';
+            this.$http.param = {
+              'data': Object.values(this.$_.clone(this.selectedValue))
+            };
+            this.$http.request((_result) => {
+              this.btnClearClickedCallback({});
+              this.getList();
+              window.getApp.$emit('ALERT', {
+                title: '안내',
+                message: '고장이력정보를 정상적으로 삭제하였습니다.',
+                type: 'success',
+              });
+            }, (_error) => {
+              window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
+            });
+          }
+        });
+      }
+      else {
+        window.getApp.$emit('ALERT', {
+          title: '안내',
+          message: '고장이력정보를 선택하세요.',
+          type: 'warning'
+        });
+      }
+    }
+
     /** end button 관련 이벤트 **/
   }
 };

@@ -63,21 +63,15 @@
             </b-col>
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <y-text
-                :width="8"
-                :editable="editable"
-                :maxlength="30"
-                :clearable="true"
-                ui="bootstrap"
-                name="regulatorWorker"
-                label="단속기관 점검자"
-                disabled="disabled"
-                v-model="ewtrGuidedHist.regulatorWorker"
-                :appendIcon="[{ 'icon': 'search', callbackName: 'searchUser' }]"
-                @searchUser="btnSearchUserClicked"
-                :required="true"
-                v-validate="'required'"
-                :state="validateState('regulatorWorker')"
-                />
+              :width="8"
+              :editable="editable"
+              :maxlength="30"
+              ui="bootstrap"
+              label="단속기관 점검자"
+              name="regulatorWorker"
+              v-model="ewtrGuidedHist.regulatorWorker"
+              >
+              </y-text>
             </b-col>
             <b-col sm="12" md="12" lg="12" xl="12" class="col-xxl-6">
               <y-textarea
@@ -140,18 +134,6 @@
         </b-card>
       </b-col>
     </b-row>
-    <el-dialog
-      :title="popupOptions.title"
-      :visible.sync="popupOptions.visible"
-      :fullscreen="false"
-      :append-to-body="true"
-      :close-on-click-modal="false"
-      :close-on-press-escape="false"
-      :show-close="false"
-      :width="popupOptions.width"
-      :top="popupOptions.top">
-      <component :is="popupOptions.target" :popupParam="popupOptions.param" @closePopup="popupOptions.closeCallback" />
-    </el-dialog>
   </b-container>
 </template>
 
@@ -165,15 +147,6 @@ export default {
   },
   data () {
     return {
-      popupOptions: {
-        target: null,
-        title: '',
-        visible: false,
-        width: '60%',
-        top: '100px',
-        param: {},
-        closeCallback: null,
-      },
       ewtrGuidedHist: {
         measureYmd: '',
         regulatorWorker: '',
@@ -218,11 +191,15 @@ export default {
       
       // 그리드 헤더 설정
       this.gridOptions.header = [
-        { text: '발생일', name: 'measureYmd', width: '20%', align: 'center' },
-        { text: '단속기관', name: 'regulator', width: '20%', align: 'left' },
-        { text: '단속기관 점검자', name: 'regulatorWorker', width: '15%', align: 'center' },
-        { text: '위반사항', name: 'violation', width: '30%', align: 'left' },
-        { text: '조치사항', name: 'action', width: '30%', align: 'left' },
+        { text: '발생일', name: 'measureYmd', width: '200px', align: 'center' },
+        { text: '단속기관', name: 'regulator', width: '200px', align: 'left' },
+        { text: '단속기관 점검자', name: 'regulatorWorker', width: '200px', align: 'center' },
+        { text: '위반사항', name: 'violation', width: '300px', align: 'left' },
+        { text: '조치사항', name: 'action', width: '300px', align: 'left' },
+        { text: '등록일', name: 'createDt', width: '200px', align: 'center' },
+        { text: '등록자', name: 'createUserNm', width: '120px', align: 'center' },
+        { text: '수정일', name: 'updateDt', width: '200px', align: 'center' },
+        { text: '수정자', name: 'updateUserNm', width: '120px', align: 'center' }
       ];
 
       this.editUrl = transactionConfig.env.water.facility.guided.edit.url;
@@ -238,7 +215,7 @@ export default {
       this.$http.request((_result) => {
         this.gridOptions.data = this.$_.clone(_result.data);
       }, (_error) => {
-        window.getApp.$emit('APP_REQUEST_ERROR', _error);
+        window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
       });
     },
     getDetail (data) {
@@ -250,26 +227,17 @@ export default {
         this.updateMode = true;
         this.ewtrGuidedHist = this.$_.clone(_result.data);
       }, (_error) => {
-        window.getApp.$emit('APP_REQUEST_ERROR', _error);
+        window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
       });
     },
 
     /** 신규등록 하기전 UI단 유효성 검사 **/
     beforeInsert () {
-      if (this.ewtrGuidedHist.regulatorWorker === '')
-      {
-        window.getApp.$emit('ALERT', {
-          title: '안내',
-          message: '단속기관 점검자를 선택해 주세요.',
-          type: 'warning',
-        });
-        return;
-      }
       this.$validator.validateAll().then((_result) => {
         if (_result) {
           window.getApp.$emit('CONFIRM', {
             title: '확인',
-            message: '등록하시겠습니까?',
+            message: '지도점검 정보를 저장하시겠습니까?',
             type: 'info',
             confirmCallback: () => {
               this.isInsert = true;
@@ -282,20 +250,11 @@ export default {
     },
     /** 수정 하기전 UI단 유효성 검사 **/
     beforeEdit () {
-      if (this.ewtrGuidedHist.regulatorWorker === '')
-      {
-        window.getApp.$emit('ALERT', {
-          title: '안내',
-          message: '점검자를 선택해 주세요.',
-          type: 'warning',
-        });
-        return;
-      }
       this.$validator.validateAll().then((_result) => {
         if (_result) {
           window.getApp.$emit('CONFIRM', {
             title: '확인',
-            message: '수정하시겠습니까?',
+            message: '지도점검 정보를 수정하시겠습니까?',
             type: 'info', 
             confirmCallback: () => {
               this.isEdit = true;
@@ -337,7 +296,7 @@ export default {
       this.updateMode = true;
       window.getApp.$emit('ALERT', {
         title: '안내',
-        message: '등록되었습니다.',
+        message: '지도점검 정보를 정상적으로 저장하였습니다.',
         type: 'success',
       });
     },
@@ -346,7 +305,7 @@ export default {
       this.isEdit = false;
       window.getApp.$emit('ALERT', {
         title: '안내',
-        message: '수정되었습니다.',
+        message: '지도점검 정보를 정상적으로 수정하였습니다.',
         type: 'success',
       });
     },
@@ -358,22 +317,7 @@ export default {
     btnClickedErrorCallback (_result) {
       this.isInsert = false;
       this.isEdit = false;
-      window.getApp.$emit('APP_REQUEST_ERROR', _result);
-    },
-    btnSearchUserClicked (_item) {
-      this.popupOptions.target = () => import(`${'../../../manage/user/userSearch.vue'}`);
-      this.popupOptions.title = '사용자검색';
-      this.popupOptions.visible = true;
-      this.popupOptions.width = '60%';
-      this.popupOptions.top = '100px';
-      this.popupOptions.closeCallback = this.closePopupSearchUser;
-    }, 
-    closePopupSearchUser (data) {
-      this.popupOptions.target = null;
-      this.popupOptions.visible = false;
-      if (data.user) {
-        this.ewtrGuidedHist.regulatorWorker = data.user.userNm;
-      }
+      window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
     },
     /** end button 관련 이벤트 **/
   }

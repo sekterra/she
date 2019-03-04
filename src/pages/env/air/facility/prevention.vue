@@ -16,6 +16,7 @@
               <y-select
                 :width="8"
                 :editable="editable"
+                :required="true"
                 :comboItems="eairOutletNoItems"
                 itemText="eairOutletNm"
                 itemValue="eairOutletNo"
@@ -32,6 +33,7 @@
               <y-select
                 :width="8"
                 :editable="editable"
+                :required="true"
                 :comboItems="eairPreventFacClassCdItems"
                 itemText="codeNm"
                 itemValue="code"
@@ -48,6 +50,7 @@
               <y-text
                 :width="8"
                 :editable="editable"
+                :required="true"
                 :maxlength="30"
                 ui="bootstrap"
                 label="방지시설명"
@@ -69,18 +72,6 @@
                 />
             </b-col>            
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
-              <y-number
-                :width="8"
-                :editable="editable"
-                :maxlength="5"
-                :hasSeperator="false"
-                ui="bootstrap"
-                label="출력순서"
-                name="sortOrder"
-                v-model="prevention.sortOrder"
-              />
-            </b-col>
-            <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
                 <y-switch
                   :width="8"
                   :editable="editable"
@@ -93,6 +84,18 @@
                   unselectText="미사용"
                   v-model="prevention.useYn"
                   />
+            </b-col>
+            <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
+              <y-number
+                :width="8"
+                :editable="editable"
+                :maxlength="5"
+                :hasSeperator="false"
+                ui="bootstrap"
+                label="정렬순서"
+                name="sortOrder"
+                v-model="prevention.sortOrder"
+              />
             </b-col>
           </b-row>
           <div class="float-right mt-3">
@@ -149,7 +152,7 @@ export default {
       prevention: {
         eairPreventFacNo: 0,
         eairPreventFacNm: '',
-        eairPreventFacClassCd: '',
+        eairPreventFacClassCd: null,
         eairPreventFacClassNm: '',
         eairOutletNo: null,
         eairOutletNm: '',
@@ -252,7 +255,7 @@ export default {
       this.$http.url = this.$format(selectConfig.manage.codeMaster.getSelect.url, 'EAIR_PREVENT_FAC_CLASS');
       this.$http.type = 'get';
       this.$http.request((_result) => {
-        _result.data.splice(0, 0, { 'code': '', 'codeNm': '선택하세요' });
+        _result.data.splice(0, 0, { 'code': null, 'codeNm': '선택하세요' });
         this.eairPreventFacClassCdItems = _result.data;
       }, (_error) => {
         window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');

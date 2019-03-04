@@ -12,6 +12,30 @@
         <b-row>
           <b-col sm="12">
             <y-label label="설비점검계획" icon="user-edit" color-class="cutstom-title-color" />
+            <div slot="buttonGroup" class="float-right mb-1">
+              <y-btn 
+                :action-url="insertUrl"
+                :param="facilityCheckResult"
+                :is-submit="isInsert"
+                title="저장"
+                color="orange"
+                action-type="POST"
+                beforeSubmit = "beforeInsert"
+                @beforeInsert="beforeInsert"
+                @btnClicked="btnInsertClickedCallback" 
+                @btnClickedErrorCallback="btnClickedErrorCallback"
+              />
+              <y-btn 
+                color="red"
+                title="삭제"
+                @btnClicked="btnDeleteClickedCallback" 
+                @btnClickedErrorCallback="btnClickedErrorCallback"
+              />
+              <y-btn
+                title="닫기"
+                @btnClicked="closePopup" 
+              />
+            </div>
           </b-col>
         </b-row>
         <b-card >
@@ -25,10 +49,10 @@
                 itemValue="code"
                 ui="bootstrap"
                 label="설비점검종류"
-                name="safCheckTypeCd"
-                v-model="facilityCheckResult.safCheckTypeCd"
+                name="safFacilityCheckCd"
+                v-model="facilityCheckResult.safFacilityCheckCd"
                 v-validate="'required'"
-                :state="validateState('safCheckTypeCd')"
+                :state="validateState('safFacilityCheckCd')"
               >
             </y-select>
             </b-col>
@@ -137,6 +161,8 @@
                   :items="gridOptions.data"
                   :excel-down="true"
                   :print="true"
+                  :checkItemData="checkItemData"
+                  checkKey="safFacilityCd"
                   v-model="facilityMstValue"
                   label="설비 목록"
                   >
@@ -150,25 +176,30 @@
               </b-col>
             </b-col>
           </b-row>          
-          <div class="float-right mt-3" >
-            <y-btn
-              title="초기화"
-              @btnClicked="btnClearClickedCallback" 
-            />
-            <y-btn 
-              :action-url="insertUrl"
-              :param="facilityCheckResult"
-              :is-submit="isInsert"
-              title="신규등록"
-              color="orange"
-              action-type="POST"
-              beforeSubmit = "beforeInsert"
-              @beforeInsert="beforeInsert"
-              @btnClicked="btnInsertClickedCallback" 
-              @btnClickedErrorCallback="btnClickedErrorCallback"
-            />
-          </div>
         </b-card>
+      </b-col>
+    </b-row>
+    <b-row>
+      <b-col sm="12">  
+        <div class="float-right mt-2">
+          <y-btn 
+            title="저장"
+            color="orange"
+            @btnClicked="beforeInsert" 
+            @btnClickedErrorCallback="btnClickedErrorCallback"
+          />
+          <y-btn 
+            color="red"
+            title="삭제"
+            @btnClicked="btnDeleteClickedCallback" 
+            @btnClickedErrorCallback="btnClickedErrorCallback"
+          />
+          <y-btn
+              title="닫기"
+              size="mini"
+              @btnClicked="closePopup" 
+          />
+        </div>  
       </b-col>
     </b-row>
   </b-container>
@@ -181,18 +212,28 @@ export default {
   /* attributes: name, components, props, data */
   name: 'y-facility-check-result-plan',
   props: {
+    popupParam: {
+      type: Object,
+      default: {
+        safFacilityCheckResultNo: 0, // 설비점검번호
+        safFacilityCheckCd: null, // 설비점검종류
+        safFacilityCheckSchYmd: '', // 설비점검예정일
+        safFacilityCheckPlanNo: 0, // 설비점검계획번호
+      },
+    },
   },
   data: () => ({
     facilityCheckResult: {
-      safCheckTypeCd: '', // 설비점검종류
+      safFacilityCheckCd: null, // 설비점검종류
       safFacilityCheckSchYmd: '', // 설비점검예정일
       safFacilityCds: [], // 안전설비코드
+      safFacilityCheckResultNos: [],
     },
     searchParam: {
       safFacilityTypeCd: '', // 설비유형코드
       deptCd: '', // 관리부서 코드
       facilityNm: '', // 설비명
-      processNo: '', // 공정
+      processNo: 0, // 공정
     },
     searchArea: {
       title: '검색박스숨기기',
@@ -201,8 +242,10 @@ export default {
     gridOptions: {
       header: [],
       data: [],
-      height: '300'
+      height: '350'
     },
+    checkItemTempData: [],
+    checkItemData: [],
     baseWidth: 9,
     editable: false,
     isInsert: false,
@@ -224,12 +267,8 @@ export default {
     this.init();
   },
   mounted () {
-    // 윈도우 resize event
-    window.addEventListener('resize', this.setGridSize);
   },
   beforeDestroy () {
-    // 윈도우 resize event 제거-SPA 기반이므로 제거하지 않으면 다른페이지에서 해당 이벤트가 호출됨
-    window.removeEventListener('resize', this.setGridSize);
   },
   //* methods */
   methods: {
@@ -239,9 +278,9 @@ export default {
       this.insertUrl = transactionConfig.saf.facilityCheckResult.insert.url;
       // 그리드 헤더 설정
       this.gridOptions.header = [
-        { text: '설비유형', name: 'safFacilityTypeNm', width: '150px', },
-        { text: '설비코드', name: 'safFacilityCd', width: '130px', },
-        { text: '설비명', name: 'facilityNm', width: '150px', },
+        { text: '설비유형', name: 'safFacilityTypeNm', width: '150px', align: 'center' },
+        { text: '설비코드', name: 'safFacilityCd', width: '130px', align: 'center' },
+        { text: '설비명', name: 'facilityNm', width: '250px', },
         { text: '관리부서', name: 'deptNm', width: '150px' },
         { text: '최근설비법정점검일', name: 'lawChkYmd', width: '160px', align: 'center' },
         { text: '설비법정점검예정일', name: 'lawChkSchYmd', width: '160px', align: 'center' },
@@ -251,9 +290,46 @@ export default {
       this.getComboItems('SAF_FACILITY_CHECK'); // 설비점검종류
       this.getProcessNoItems(); // 공정
       this.getComboFacilityTypeItems(); // 설비유형
-      this.getComboCheckKindItems(); // 설비점검종류
       this.getComboDeptItems(); // 관리부서
-      this.setGridSize(); // 그리드 사이즈 조절
+
+      if (this.popupParam.safFacilityCheckResultNo > 0)
+      {
+        this.facilityCheckResult.safFacilityCheckResultNo = this.popupParam.safFacilityCheckResultNo;
+        this.facilityCheckResult.safFacilityCheckCd = this.popupParam.safFacilityCheckCd;
+        // this.facilityCheckResult.safFacilityCheckSchYmd = this.popupParam.safFacilityCheckSchYmd;
+        this.facilityCheckResult.safFacilityCheckPlanNo = this.popupParam.safFacilityCheckPlanNo;
+
+        this.getList();
+      }
+
+      setTimeout(() => {
+        this.facilityCheckResult.safFacilityCheckSchYmd = this.popupParam.safFacilityCheckSchYmd ? this.popupParam.safFacilityCheckSchYmd : this.$comm.getToday();
+      }, 300);
+    },
+    /** 설비점검결과 목록 조회 **/
+    getFacilityList () {
+      this.$http.url = selectConfig.saf.facilityCheckResult.list.url;
+      this.$http.type = 'GET';
+      this.$http.param = {
+        safFacilityCheckPlanNo: this.popupParam.safFacilityCheckPlanNo,
+      };
+      this.$http.request((_result) => {
+        this.facilityCheckResult.safFacilityCheckResultNos = this.$_.clone(this.$_.map(_result.data, 'safFacilityCheckResultNos'));
+        // 설비 목록중 선택되어진 설비 체크
+        this.checkItemTempData = this.$_.uniq(this.$_.map(_result.data, 'safFacilityCd'));
+        if (this.checkItemTempData)
+        {
+          this.checkItemData = [];
+          this.$_.forEach(this.gridOptions.data, (item) => {
+            if (this.$_.indexOf(this.checkItemTempData, item.safFacilityCd) > -1)
+            {
+              this.checkItemData.push(item);
+            }
+          });
+        }
+      }, (_error) => {
+        window.getApp.$emit('APP_REQUEST_ERROR', _error);
+      });
     },
     /**
      * 공통 마스터 정보 조회 (설비점검종류)
@@ -266,8 +342,8 @@ export default {
         if (codeGroupCd === 'SAF_FACILITY_CHECK') 
         {
           this.comboCheckTypeItems = this.$_.clone(_result.data);
-          this.comboCheckTypeItems.splice(0, 0, { 'code': '', 'codeNm': '전체' });
-          this.searchParam.safCheckTypeCd = '';
+          this.comboCheckTypeItems.splice(0, 0, { 'code': null, 'codeNm': '선택하세요' });
+          // this.facilityCheckResult.safFacilityCheckCd = '';
         }
       }, (_error) => {
         window.getApp.$emit('APP_REQUEST_ERROR', _error);
@@ -296,10 +372,13 @@ export default {
     getComboFacilityTypeItems () {
       this.$http.url = selectConfig.saf.refInfoFacilityType.list.url;
       this.$http.type = 'GET';
+      this.$http.param = {
+        'useYn': 'Y',
+      };
       this.$http.request((_result) => {
         this.comboFacilityTypeItems = this.$_.clone(_result.data);
         this.comboFacilityTypeItems.splice(0, 0, { 'safFacilityTypeCd': '', 'safFacilityTypeNm': '전체' });
-        this.searchParam.safFacilityTypeCd = '';
+        // this.searchParam.safFacilityTypeCd = '';
       }, (_error) => {
         window.getApp.$emit('APP_REQUEST_ERROR', _error);
       });
@@ -313,7 +392,7 @@ export default {
       this.$http.request((_result) => {
         this.comboDeptItems = this.$_.clone(_result.data);
         this.comboDeptItems.splice(0, 0, { 'deptCd': '', 'deptNm': '전체' });
-        this.searchParam.deptCd = '';
+        // this.searchParam.deptCd = '';
       }, (_error) => {
         window.getApp.$emit('APP_REQUEST_ERROR', _error);
       });
@@ -325,6 +404,8 @@ export default {
       this.$http.param = this.searchParam;
       this.$http.request((_result) => {
         this.gridOptions.data = this.$_.clone(_result.data);
+
+        if (this.popupParam.safFacilityCheckResultNo > 0) this.getFacilityList();
       }, (_error) => {
         window.getApp.$emit('APP_REQUEST_ERROR', _error);
       });
@@ -361,7 +442,6 @@ export default {
             },
             // 취소 callback 함수
             cancelCallback: () => {
-              window.getApp.$emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
               this.isInsert = false;
             }
           });
@@ -375,6 +455,7 @@ export default {
           });
         }
       }).catch(() => {
+        window.getApp.$emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
         this.isInsert = false;
       });
     },
@@ -388,16 +469,12 @@ export default {
       return null;
     },
     /**
-     * 그리드 리사이징
+     *  팝업 안 보이도록 closePopup emit
+     *  팝업 close
+     * data : 팝업창에서 return하는 데이터
      */
-    setGridSize () {
-      var defaultHeight = 320;
-      window.getApp.$emit('LOADING_SHOW');
-      setTimeout(() => { 
-        var calculatedHeight = window.innerHeight - this.$refs.searchBox.clientHeight - 380;
-        this.gridOptions.height = calculatedHeight <= 380 ? defaultHeight : calculatedHeight;
-        window.getApp.$emit('LOADING_HIDE');
-      }, 600);
+    closePopup (data) {
+      this.$emit('closePopup', {});
     },
     /** button 관련 이벤트 **/
     /**
@@ -409,7 +486,6 @@ export default {
       else this.searchArea.title = '검색박스보이기';
 
       window.getApp.$emit('LOADING_PASS_COUNT', 1);
-      this.setGridSize();
     },
     /**
      * 수정 버튼 안보여지도록 처리
@@ -433,19 +509,60 @@ export default {
         type: 'success',  // success / info / warning / error
       });
       this.isInsert = false;
+      this.closePopup();
     },
     btnSearchClickedCallback () {
       this.getList();
     },
+    // /**
+    //  * 데이터 및 이벤트 초기화, 수정버튼 안보여지도록 처리
+    //  *  초기화 버튼 callback
+    //  */
+    // btnClearClickedCallback () {
+    //   Object.assign(this.$data.facilityCheckResult, this.$options.data().facilityCheckResult);
+    //   // Object.assign(this.$data.searchParam, this.$options.data().searchParam);
+    //   this.facilityMstValue = [];
+    //   this.$validator.reset();
+    // },
     /**
-     * 데이터 및 이벤트 초기화, 수정버튼 안보여지도록 처리
-     *  초기화 버튼 callback
+     * 안전점검계획 삭제
+     *  삭제 버튼 callback
+     * _result : backend에서 return하는 데이터
      */
-    btnClearClickedCallback () {
-      Object.assign(this.$data.facilityCheckResult, this.$options.data().facilityCheckResult);
-      // Object.assign(this.$data.searchParam, this.$options.data().searchParam);
-      this.facilityMstValue = [];
-      this.$validator.reset();
+    btnDeleteClickedCallback (_result) {
+      window.getApp.$emit('CONFIRM', {
+        title: '확인',
+        message: '삭제하시겠습니까?',
+        // TODO : 필요시 추가하세요.
+        type: 'info',  // success / info / warning / error
+        // 확인 callback 함수
+        confirmCallback: () => {
+          var keys = [];
+          this.$_.forEach(this.facilityCheckResult.safFacilityCheckResultNos, (item) => {
+            keys.push({
+              'safCheckRsltNo': item,
+            });
+          });
+          this.$http.url = transactionConfig.saf.facilityCheckResult.deletes.url;
+          this.$http.type = 'DELETE';
+          this.$http.param = {
+            'data': Object.values(this.$_.clone(keys))
+          };
+          this.$http.request((_result) => {
+            window.getApp.$emit('ALERT', {
+              title: '안내',
+              message: '삭제되었습니다.',
+              type: 'success',  // success / info / warning / error
+            });
+            this.closePopup(null);
+          }, (_error) => {
+            window.getApp.$emit('APP_REQUEST_ERROR', _error);
+          });
+        },
+        // 취소 callback 함수
+        cancelCallback: () => {
+        }
+      });
     },
     /** end button 관련 이벤트 **/
   }

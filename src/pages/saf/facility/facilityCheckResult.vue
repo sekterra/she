@@ -75,8 +75,8 @@
                 itemValue="code"
                 ui="bootstrap"
                 label="설비점검종류"
-                name="safCheckTypeCd"
-                v-model="searchParam.safCheckTypeCd"
+                name="safFacilityCheckCd"
+                v-model="searchParam.safFacilityCheckCd"
               >
             </y-select>
             </b-col>
@@ -109,6 +109,7 @@
             :items="gridOptions.data"
             :excel-down="true"
             :print="true"
+            :use-paging="true"
             label="설비점검결과 목록"
             @tableLinkClicked="tableLinkFacilityNmClicked"
             >
@@ -116,18 +117,7 @@
         </b-col>
       </b-col>
     </b-row>          
-    <el-dialog
-      :title="popupOptions.title"
-      :visible.sync="popupOptions.visible"
-      :fullscreen="false"
-      :close-on-click-modal="false"
-      :close-on-press-escape="false"
-      :show-close="false"
-      :width="popupOptions.width"
-      :top="popupOptions.top"
-      @close="closePopup" >
-      <component :is="popupOptions.target" :popupParam="popupOptions.param" @closePopup="closePopup" />
-    </el-dialog>
+    <y-popup :param="popupOptions"></y-popup>
   </b-container>
 </template>
 
@@ -141,7 +131,7 @@ export default {
   },
   data: () => ({
     searchParam: {
-      safCheckTypeCd: '', // 설비점검종류
+      safFacilityCheckCd: '', // 설비점검종류
       safFacilityTypeCd: '', // 설비유형코드
       facilityNm: '', // 설비명
       checkStepCd: '', // 점검진행상태
@@ -165,6 +155,7 @@ export default {
       param: null,
       width: '90%',
       top: '10px',
+      closeCallback: null
     },
     baseWidth: 9,
     editable: false,
@@ -198,8 +189,8 @@ export default {
       this.searchUrl = selectConfig.saf.facilityCheckResult.list.url;
       // 그리드 헤더 설정
       this.gridOptions.header = [
-        { text: '진행단계', name: 'checkStepNm', width: '130px', },
-        { text: '점검종류', name: 'safCheckTypeNm', width: '110px', align: 'center' },
+        { text: '진행단계', name: 'checkStepNm', width: '130px', align: 'center' },
+        { text: '점검종류', name: 'safFacilityCheckNm', width: '110px', align: 'center' },
         { text: '점검예정일', name: 'safFacilityCheckSchYmd', width: '150px', align: 'center' },
         { text: '점검일', name: 'safFacilityCheckYmd', width: '150px', align: 'center' },
         { text: '설비유형', name: 'safFacilityTypeNm', width: '110px', align: 'center' },
@@ -239,7 +230,7 @@ export default {
         {
           this.comboCheckTypeItems = this.$_.clone(_result.data);
           this.comboCheckTypeItems.splice(0, 0, { 'code': '', 'codeNm': '전체' });
-          this.searchParam.safCheckTypeCd = '';
+          this.searchParam.safFacilityCheckCd = '';
         }
       }, (_error) => {
         window.getApp.$emit('APP_REQUEST_ERROR', _error);
@@ -270,19 +261,22 @@ export default {
      */
     tableLinkFacilityNmClicked (header, data) {
       this.popupOptions.target = () => import(`${'./facilityCheckResultDetail.vue'}`);
-      this.popupOptions.title = '설비점검결과 등록';
+      this.popupOptions.title = '설비점검결과';
       this.popupOptions.param = {
         safFacilityCheckResultNo: data.safFacilityCheckResultNo, // 설비점검결과번호
-        safCheckTypeCd: data.safCheckTypeCd, // 설비점검종류 코드
-        safCheckTypeNm: data.safCheckTypeNm, // 설비점검종류
+        safFacilityCheckCd: data.safFacilityCheckCd, // 설비점검종류 코드
+        safFacilityCheckNm: data.safFacilityCheckNm, // 설비점검종류
         safFacilityCheckYmd: data.safFacilityCheckYmd, // 설비점검일
         safFacilityCheckSchYmd: data.safFacilityCheckSchYmd, // 설비점검예정일
         safFacilityTypeCd: data.safFacilityTypeCd, // 안전설비유형코드
         safFacilityTypeNm: data.safFacilityTypeNm, // 안전설비유형명
         safFacilityCd: data.safFacilityCd, // 안전설비코드
         facilityNm: data.facilityNm, // 설비명
+        checkStepCd: data.checkStepCd, // 점검진행상태
+        safFacilityCheckResult: data.safFacilityCheckResult, // 설비점검결과요약
       };
       this.popupOptions.visible = true;
+      this.popupOptions.closeCallback = this.closePopup;
     },
     /** 설비점검결과 목록 조회 **/
     getList () {
@@ -306,6 +300,7 @@ export default {
       if (data === null || data === undefined) return;
       this.popupOptions.target = null;
       this.popupOptions.visible = false;
+      this.getList();
     },
     /**
      * 그리드 리사이징
@@ -314,7 +309,7 @@ export default {
       var defaultHeight = 300;
       window.getApp.$emit('LOADING_SHOW');
       setTimeout(() => { 
-        var calculatedHeight = window.innerHeight - this.$refs.searchBox.clientHeight - 250;
+        var calculatedHeight = window.innerHeight - this.$refs.searchBox.clientHeight - 310;
         this.gridOptions.height = calculatedHeight <= 250 ? defaultHeight : calculatedHeight;
         window.getApp.$emit('LOADING_HIDE');
       }, 600);

@@ -16,12 +16,14 @@
             <b-col sm="12" class="px-0">
               <div slot="buttonGroup" class="float-right mb-1">
                 <y-btn 
+                  v-if="disabled"
                   title="추가"
                   color="blue"
                   @btnClicked="btnInAdd" 
                   @btnClickedErrorCallback="btnClickedErrorCallback"
                 />
                 <y-btn 
+                  v-if="disabled"
                   title="삭제"
                   color="red"
                   @btnClicked="btnInDelete" 
@@ -36,7 +38,7 @@
                 :excel-down="true"
                 :print="true"
                 v-model="selectedInValue"
-                label="점검팀원"
+                label="점검팀원 목록"
                 >
                 <el-table-column
                   type="selection"
@@ -54,12 +56,14 @@
             <b-col sm="12" class="px-0">
               <div slot="buttonGroup" class="float-right mb-1">
                 <y-btn 
+                  v-if="disabled"
                   title="추가"
                   color="blue"
                   @btnClicked="btnOutAdd" 
                   @btnClickedErrorCallback="btnClickedErrorCallback"
                 />
                 <y-btn 
+                  v-if="disabled"
                   title="삭제"
                   color="red"
                   @btnClicked="btnOutDelete" 
@@ -74,7 +78,7 @@
                 :excel-down="true"
                 :print="true"
                 v-model="selectedOutValue"
-                label="점검팀(외부)"
+                label="점검팀(외부) 목록"
                 >
                 <el-table-column
                   type="selection"
@@ -88,18 +92,7 @@
         </b-row>
       </b-col>
     </b-row>
-    <el-dialog
-      :title="popupOptions.title"
-      :visible.sync="popupOptions.visible"
-      :fullscreen="false"
-      :append-to-body="true"
-      :width="popupOptions.width"        
-      :close-on-click-modal="false"
-      :close-on-press-escape="false"
-      :show-close="false"
-      :top="popupOptions.top" >
-      <component :is="popupOptions.target" :popupParam="popupOptions.param" @closePopup="popupOptions.closeCallback" />
-    </el-dialog>
+    <y-popup :param="popupOptions"></y-popup>
   </b-container>
 </template>
 
@@ -116,6 +109,7 @@ export default {
         safCheckRsltNo: 0,
         innerTeamData: [],
         outerTeamData: [],
+        checkStepCd: '',
       },
     },
   },
@@ -145,13 +139,18 @@ export default {
     isInsert: false,
     isEdit: false,
     searchUrl: '',
+    disabled: false,
   }),
   watch: {
     'checkResultDetail.safCheckRsltNo': function (newValue, oldValue) {
       this.gridInspectorInOptions.data = [];
       this.gridInspectorOutOptions.data = [];
-      this.getList('CLS01'); // 점검팀원 리스트 조회
-      this.getList('CLS02'); // 점검팀(외부) 리스트 조회
+      if (this.checkResultDetail.safCheckRsltNo > 0)
+      {
+        this.searchUrl = selectConfig.saf.checkInspector.list.url;
+        this.getList('CLS01'); // 점검팀원 리스트 조회
+        this.getList('CLS02'); // 점검팀(외부) 리스트 조회
+      }
     },
     'gridInspectorInOptions.data': {
       handler: function (val, oldVal) {
@@ -182,24 +181,48 @@ export default {
   //* methods */
   methods: {
     init () {
+      this.disabled = (this.checkResultDetail.checkStepCd === 'CHS01' || this.checkResultDetail.checkStepCd === 'CHS02' || this.checkResultDetail.checkStepCd === '');
       this.gridInspectorInOptions.data = [];
       this.gridInspectorOutOptions.data = [];
-      this.getList('CLS01'); // 점검팀원 리스트 조회
-      this.getList('CLS02'); // 점검팀(외부) 리스트 조회
       // Url Setting
       this.searchUrl = selectConfig.saf.checkInspector.list.url;
-      // 점검팀원 그리드 헤더 설정
-      this.gridInspectorInOptions.header = [
-        { text: '성명', name: 'userNm', width: '120px', },
-        { text: '소속', name: 'deptNm', width: '150px', },
-        { text: '비고', name: 'remark', width: '200px', type: 'textarea' },
-      ];
-      // 점검팀(외부) 그리드 헤더 설정
-      this.gridInspectorOutOptions.header = [
-        { text: '성명', name: 'userNm', width: '120px', type: 'text' },
-        { text: '소속', name: 'deptNm', width: '150px', type: 'text' },
-        { text: '비고', name: 'remark', width: '200px', type: 'textarea' },
-      ];
+      if (this.checkResultDetail.safCheckRsltNo > 0)
+      {
+        this.getList('CLS01'); // 점검팀원 리스트 조회
+        this.getList('CLS02'); // 점검팀(외부) 리스트 조회
+      }
+
+      // 점검팀원 그리드 헤더  점검팀(외부) 그리드 헤더 설정
+      if (!this.disabled)
+      {
+        this.gridInspectorInOptions.header = [
+          { text: '성명', name: 'userNm', width: '120px', },
+          { text: '소속', name: 'deptNm', width: '150px', },
+          { text: '비고', name: 'remark', width: '200px', },
+        ];
+        this.gridInspectorOutOptions.header = [
+          { text: '성명', name: 'userNm', width: '120px', },
+          { text: '소속', name: 'deptNm', width: '150px', },
+          { text: '비고', name: 'remark', width: '200px', },
+        ];
+        this.gridInspectorInOptions.height = '280';
+        this.gridInspectorOutOptions.height = '280';
+      }
+      else
+      {
+        this.gridInspectorInOptions.header = [
+          { text: '성명', name: 'userNm', width: '120px', },
+          { text: '소속', name: 'deptNm', width: '150px', },
+          { text: '비고', name: 'remark', width: '200px', type: 'textarea' },
+        ];
+        this.gridInspectorOutOptions.header = [
+          { text: '성명', name: 'userNm', width: '120px', type: 'text' },
+          { text: '소속', name: 'deptNm', width: '150px', type: 'text' },
+          { text: '비고', name: 'remark', width: '200px', type: 'textarea' },
+        ];
+        this.gridInspectorInOptions.height = '370';
+        this.gridInspectorOutOptions.height = '370';
+      }
     },
     /** 점검팀원 목록, 점검팀(외부) 목록 조회 **/
     getList (classCd) {

@@ -33,13 +33,14 @@
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <y-datepicker
                 :width="8"
-                :editable="editable"
-                :range="true"
-                label="처방기간"
-                name="duration"
-                v-model="searchParam.duration"
-              >
-              </y-datepicker>
+                :editable="editable"          
+                type="month"
+                label="연월"
+                name="yearMonth"
+                default="today"
+                placeholder=""
+                v-model="searchParam.yearMonth"
+              />
             </b-col>
           </b-row>
         </b-card>
@@ -47,18 +48,9 @@
     </b-row>
 
     <!-- 검색 결과 테이블 -->
-    <b-row class="mt-3">
+    <b-row class="mt-3 h-100">
       <b-col sm="12">
         <b-col sm="12" class="px-0">
-          <div class="float-right">
-            <y-btn
-              v-if="editable"
-              title="신규등록"
-              color="orange"
-              @btnClicked="btnPopupClickedCallback" 
-            />
-          </div>
-          <b-row class="mb-3"></b-row>
           <y-data-table 
             label="운영일지 목록"
             ref="dataTable"
@@ -71,22 +63,13 @@
         </b-col>
       </b-col>
     </b-row>
-    <el-dialog
-      :title="popupOptions.title"
-      :visible.sync="popupOptions.visible"
-      :fullscreen="false"
-      :width="popupOptions.width"        
-      :close-on-click-modal="false"
-      :close-on-press-escape="false"
-      :show-close="false"
-      :top="popupOptions.top" >
-      <component :is="popupOptions.target" :popupParam="popupOptions.param" @closePopup="popupOptions.closeCallback" />
-    </el-dialog>
+    <y-popup :param="popupOptions"></y-popup>
   </b-container>
 </template>
 
 <script>
 import selectConfig from '@/js/selectConfig';
+import transactionConfig from '@/js/transactionConfig';
 export default {
   /* attributes: name, components, props, data */
   name: 'op-log',
@@ -102,7 +85,7 @@ export default {
         height: 300
       },
       searchParam: {
-        duration: null,
+        yearMonth: '',
       },
       searchArea: {
         title: '검색박스숨기기',
@@ -141,11 +124,16 @@ export default {
   methods: {
     /** 초기화 관련 함수 **/
     init () {
+      this.searchParam.yearMonth = this.$comm.moment().format('YYYY-MM-DD');
+      // 선택항목 설정
+      setTimeout(() => {
+        this.searchParam.yearMonth = this.$comm.moment().format('YYYY-MM-DD');
+      }, 200);
       
       // 그리드 헤더 설정
       this.gridOptions.header = [
-        { text: '작성구분', name: 'envOpLogStCdNm', width: '10%', align: 'center' },
-        { text: '일시', name: 'measureYmd', width: '20%', align: 'center', url: 'true' },
+        { text: '작성구분', name: 'envOpLogStCdNm', width: '10%', align: 'center', textCalculate: this.getTextColor },
+        { text: '작성일자', name: 'ymd', width: '20%', align: 'center', url: 'true' },
         { text: '날씨', name: 'weather', width: '10%', align: 'center' },
         { text: '온도', name: 'temp', width: '10%', align: 'center' },
         { text: '부서', name: 'deptNm', width: '15%', align: 'center' },
@@ -157,13 +145,23 @@ export default {
       this.getList();
       this.setGridSize();
     },
+    getTextColor (_row, _name) {
+      var text = _row[_name];
+      if (_name === 'envOpLogStCdNm') {
+        if (_row[_name] === '미작성') {
+          text = '<font style="color:#fc1c1c;">' + text + '</font>';
+        }
+      }
+      return text;
+    },
     getList () {
       this.$http.url = this.searchUrl;
       this.$http.type = 'GET';
+      this.$http.param = this.searchParam;
       this.$http.request((_result) => {
         this.gridOptions.data = this.$_.clone(_result.data);
       }, (_error) => {
-        window.getApp.$emit('APP_REQUEST_ERROR', _error);
+        window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
       });
     },
     /**
@@ -188,37 +186,43 @@ export default {
       this.setGridSize();
     },
 
-    // 팝업
-    btnPopupClickedCallback () {
-      this.popupOptions.target = () => import(`${'./operationLogBase.vue'}`);
-      this.popupOptions.title = '운영일지 상세';
-      this.popupOptions.visible = true;
-      this.popupOptions.width = '80%';
-      this.popupOptions.top = '10px';
-      this.popupOptions.param = {
-        'paramMeasureYmd': ''
-      };
-      this.popupOptions.closeCallback = this.closePopupUsage;
-    },
     tableLinkClicked (header, data) {
       if (data === null) return;
-
+      this.getDetail(data);
+    },
+    getDetail (data) {
+      if (data.envOpLogStCd == null) {
+        this.$http.url = transactionConfig.env.water.operationLog.operationLog.insert.url;
+        this.$http.type = 'post';
+        this.$http.param = {
+          'measureYmd': data.ymd
+        };
+        this.$http.request((_result) => {          
+          this.openPopup(data);
+        }, (_error) => {
+          window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
+        });
+      } else {
+        this.openPopup(data);
+      }
+    },
+    openPopup (data) {
       this.popupOptions.target = () => import(`${'./operationLogBase.vue'}`);
-      this.popupOptions.title = '운영일지 상세';
+      this.popupOptions.title = '수질 운영일지(' + data.ymd + ')';
       this.popupOptions.param = {
-        'paramMeasureYmd': data.measureYmd
+        'measureEditable': data.measureEditable,
+        'paramMeasureYmd': data.ymd
       };
       this.popupOptions.visible = true;
       this.popupOptions.width = '80%';
       this.popupOptions.top = '10px';
-      this.popupOptions.closeCallback = this.closePopupUsage;
+      this.popupOptions.closeCallback = this.closePopup;
     },
-    closePopupUsage (data) {
+    closePopup (data) {
       this.popupOptions.target = null;
       this.popupOptions.visible = false;
       this.getList();
     },
-
   }
 };
 </script>

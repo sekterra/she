@@ -8,17 +8,17 @@
     </transition>
   </section>
   <y-popup 
-      :id="popup.id"
-      :label="popup.label"
-      :editable="popup.editable"
-      :type="popup.type"
-      :is-popup-open="popup.isPopupOpen"
-      :path="popup.path"
-      :childProps="popup.childProps"
-      :fullscreen="popup.fullscreen"
-      :closeButtonText="popup.closeButtonText"
-      :confirmButtonText="popup.confirmButtonText"
-      :get-popup-data-func-name="popup.getPopupDataFuncName"
+    :id="popup.id"
+    :label="popup.label"
+    :editable="popup.editable"
+    :type="popup.type"
+    :is-popup-open="popup.isPopupOpen"
+    :path="popup.path"
+    :childProps="popup.childProps"
+    :fullscreen="popup.fullscreen"
+    :closeButtonText="popup.closeButtonText"
+    :confirmButtonText="popup.confirmButtonText"
+    :get-popup-data-func-name="popup.getPopupDataFuncName"
     />
     </div>
 </template>

@@ -20,30 +20,14 @@
                 @btnClicked="btnSearchVisibleClicked" 
               />
               <y-btn
-                :action-url="searchUrl"
-                :param="searchParam"
                 title="검색"
                 color="green"
-                action-type="get"
                 @btnClicked="btnSearchClickedCallback" 
                 @btnClickedErrorCallback="btnClickedErrorCallback"
               />
             </div>
           </div>
           <b-row v-if="searchArea.show">
-            <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
-              <y-select
-                :width="8"
-                :comboItems="comboFacilityTypeItems"
-                itemText="safFacilityTypeNm"
-                itemValue="safFacilityTypeCd"
-                ui="bootstrap"
-                name="deptCd"
-                label="설비유형"
-                v-model="searchParam.safFacilityTypeCd"
-              >
-              </y-select>
-            </b-col>
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <y-select
                 :width="8"
@@ -56,6 +40,18 @@
                 v-model="searchParam.deptCd"
               >
               </y-select>
+            </b-col>
+            <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
+              <y-select
+                :width="8"
+                :comboItems="processNoItems"
+                itemText="processNm"
+                itemValue="processNo"
+                ui="bootstrap"
+                label="공정"
+                name="processNo"
+                v-model="searchParam.processNo"
+              />
             </b-col>
           </b-row>
         </b-card>
@@ -73,12 +69,17 @@
             :items="gridOptions.data"
             :excel-down="true"
             :print="true"
-            label="설비 목록"
+            :use-paging="true"
+            label="유형별 설비 현황"
+            @selectedRow="selectedRow"
             >
           </y-data-table>
         </b-col>
       </b-col>
     </b-row>
+
+    <!-- 팝업 설정 -->
+    <y-popup :param="popupOptions"></y-popup>
   </b-container>
 </template>
 
@@ -86,14 +87,13 @@
 import selectConfig from '@/js/selectConfig';
 import transactionConfig from '@/js/transactionConfig';
 export default {
-  /* attributes: name, components, props, data */
   name: 'y-facility-mst',
   props: {
   },
   data: () => ({
     searchParam: {
-      safFacilityTypeCd: '', // 설비유형코드
       deptCd: '', // 관리부서 코드
+      processNo: 0, // 공정
     },
     searchArea: {
       title: '검색박스숨기기',
@@ -104,19 +104,20 @@ export default {
       data: [],
       height: '300'
     },
+    popupOptions: {
+      target: null,
+      title: '',
+      visible: false,
+      width: '60%',
+      top: '10px',
+      param: {},
+      closeCallback: null,
+    },
     baseWidth: 9,
-    editable: false,
-    isInsert: false,
-    isEdit: false,
-    comboFacilityTypeItems: [], // 설비유형 
     comboDeptItems: [], // 관리부서
+    processNoItems: [], // 공정
     searchUrl: '',
   }),
-  //* Vue lifecycle: created, mounted, destroyed, etc */
-  beforeCreate () {
-  },
-  created () {
-  },
   beforeMount () {
     Object.assign(this.$data, this.$options.data());
     this.init();
@@ -133,35 +134,21 @@ export default {
   methods: {
     init () {
       // Url Setting
-      this.searchUrl = selectConfig.saf.facilityMst.list.url;      
+      this.searchUrl = selectConfig.saf.facilityMstStatus.list.url;      
 
       // 그리드 헤더 설정
       this.gridOptions.header = [
-        { text: '설비유형', name: 'safFacilityTypeNm', width: '150px', },
-        { text: '관리부서', name: 'deptNm', width: '150px', },
-        { text: '소방설비', name: 'safFacilityCd', width: '130px', },
-        { text: '고압설비', name: 'safFacilityNm', width: '150px', },
-        { text: '위험물설비', name: 'deptCd', width: '150px', },
+        { text: '관리부서', name: 'deptNm', width: '150px', align: 'left' },
+        { text: '공정', name: 'processNm', width: '150px', align: 'left' },
+        { text: '소방설비', name: 'fctype001', width: '130px', align: 'right' },
+        { text: '고압설비', name: 'fctype002', width: '150px', align: 'right' },
+        { text: '위험물설비', name: 'fctype003', width: '150px', align: 'right' },
+        { text: '유해위험기계기구', name: 'fctype004', width: '150px', align: 'right' },
       ];
-      this.getFacilityTypeItems(); // 설비유형
       this.getDeptItems(); // 관리부서
-      // this.getList(); // 안전점검결과 목록 조회
+      this.getProcessNoItems(); // 공정
+      this.getList(); // 안전점검결과 목록 조회
       this.setGridSize(); // 그리드 사이즈 조절
-    },
-    // 설비유형 조회
-    getFacilityTypeItems () {
-      this.$http.url = selectConfig.saf.refInfoFacilityType.list.url;
-      this.$http.type = 'get';
-      this.$http.param = {
-        'useYn': 'Y'
-      };
-      this.$http.request((_result) => {
-        _result.data.splice(0, 0, { 'safFacilityTypeCd': 0, 'safFacilityTypeNm': '전체' });
-        this.comboFacilityTypeItems = _result.data;
-        this.searchParam.safFacilityTypeCd = 0;
-      }, (_error) => {
-        window.getApp.$emit('APP_REQUEST_ERROR', _error);
-      });
     },
     // 관리부서 조회
     getDeptItems () {
@@ -172,6 +159,21 @@ export default {
         this.comboDeptItems = _result.data;
       }, (_error) => {
         this.$emit('APP_REQUEST_ERROR', _error);
+      });
+    },
+    // 공정
+    getProcessNoItems () {
+      this.$http.url = selectConfig.manage.process.list.url;
+      this.$http.type = 'get';
+      this.$http.param = {
+        'useYn': 'Y'
+      };
+      this.$http.request((_result) => {
+        _result.data.splice(0, 0, { 'processNo': 0, 'processNm': '전체' });
+        this.processNoItems = _result.data;
+        this.searchParam.processNo = 0;
+      }, (_error) => {
+        window.getApp.$emit('APP_REQUEST_ERROR', _error);
       });
     },
     /** 안전점검결과 목록 조회 **/
@@ -185,6 +187,11 @@ export default {
         window.getApp.$emit('APP_REQUEST_ERROR', _error);
       });
     },
+    // 그리드 row click 이벤트
+    selectedRow (data) {
+      if (data === null) return;
+      this.btnPopupClickedCallback(data);
+    },
     /**
      * 그리드 리사이징
      */
@@ -192,7 +199,7 @@ export default {
       var defaultHeight = 300;
       window.getApp.$emit('LOADING_SHOW');
       setTimeout(() => { 
-        var calculatedHeight = window.innerHeight - this.$refs.searchBox.clientHeight - 250;
+        var calculatedHeight = window.innerHeight - this.$refs.searchBox.clientHeight - 320;
         this.gridOptions.height = calculatedHeight <= 250 ? defaultHeight : calculatedHeight;
         window.getApp.$emit('LOADING_HIDE');
       }, 600);
@@ -213,11 +220,28 @@ export default {
     btnSearchClickedCallback () {
       this.getList();
     },
-    /**
-     * 수정 버튼 안보여지도록 처리
-     *  버튼 http 통신 중 error 발생 callback
-     * _result : error return하는 데이터
-     */
+    // 유형별 설비현황 상세 팝업
+    btnPopupClickedCallback (data) {
+      this.popupOptions.target = () => import(`${'./facilityMstStatusDetail.vue'}`);
+      this.popupOptions.title = '유형별 설비현황 상세';
+      this.popupOptions.visible = true;
+      this.popupOptions.width = '85%';
+      this.popupOptions.top = '10px';
+      this.popupOptions.param = {
+        'deptCd': data ? data.deptCd : '',
+        'deptNm': data ? data.deptNm : '',
+        'processNo': data ? data.processNo : 0,
+        'processNm': data ? data.processNm : '',
+      };
+      this.popupOptions.closeCallback = this.closePopup;
+    },
+    // 팝업 닫기
+    closePopup (data) {
+      this.popupOptions.target = null;
+      this.popupOptions.visible = false;
+      this.getDataList();
+    },
+    // 버튼 에러 처리용 공통함수
     btnClickedErrorCallback (_result) {
       window.getApp.$emit('APP_REQUEST_ERROR', _result);
     },

@@ -181,7 +181,7 @@ export default {
         { text: '질환종류', name: 'heaDiseaseClassNm', width: '15%', },
         { text: '질환명', name: 'heaDiseaseNm', width: '10%', },
         { text: '비고', name: 'remark', width: '50%' },
-        { text: '출력순서', name: 'sortOrder', width: '10%', align: 'center' },
+        { text: '정렬순서', name: 'sortOrder', width: '10%', align: 'center' },
         { text: '사용여부', name: 'useYn', width: '10%', align: 'center' }
       ];
     },

@@ -476,6 +476,7 @@
     <b-row>
       <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
         <y-file-upload
+        :attach-file-grp="attachFileGrp"
         @fileUploadComplete="fileUploadComplete"
         >
         </y-file-upload>
@@ -589,6 +590,12 @@ export default {
       heaCheckedOrgNos: [3, 5],
       diseaseClassCd: '',
       diseaseCd: '',
+    },
+    // 첨부파일 그룹
+    attachFileGrp: {
+      taskClassNm: 'test',
+      taskKey: 'test',
+      createUserId: 'tester',
     }
   }),
   computed: {
@@ -611,15 +618,15 @@ export default {
     window.getApp.$on('POPUP_SEND_DATA', this.popupSelectChanged);
 
     // alert 사용 예시
-    window.getApp.$emit('ALERT', {
-      title: 'alert title',
-      message: 'alert message',
-      type: 'warning',  // success / info / warning / error
-      // TODO : 필요시 추가하세요.
-      // callback: () => {
-      //   window.alert('');
-      // }
-    });
+    // window.getApp.$emit('ALERT', {
+    //   title: 'alert title',
+    //   message: 'alert message',
+    //   type: 'warning',  // success / info / warning / error
+    //   // TODO : 필요시 추가하세요.
+    //   // callback: () => {
+    //   //   window.alert('');
+    //   // }
+    // });
 
     // confirm 사용 예시
     // window.getApp.$emit('CONFIRM', {
@@ -661,6 +668,7 @@ export default {
     }, 3000);
   },
   beforeDestroy () {
+    // TODO : 팝업을 사용할 경우 반드시 추가할 것, 추가하지 않으면 이벤트가 중복 발생
     window.getApp.$off('POPUP_SEND_DATA', this.popupSelectChanged);
   },
   destroyed () {
@@ -670,7 +678,7 @@ export default {
     init () {
       var from = this.$comm.getToday();
       var to = this.$comm.getCalculatedDate(from, '2m', 'YYYY-MM-DD', 'YYYY-MM-DD');
-      this.demo.date = to;
+      this.demo.date = from;
       // 그리드 멀티 헤더 설정(예시)
       this.gridMultiHeaderOptions = [
         { text: 'Date', name: 'date', width: '150', fixed: true },
@@ -748,6 +756,8 @@ export default {
           { deptPk: '2', deptName: 'SDG팀' },
           { deptPk: '3', deptName: '영업팀' },
         ];
+
+        this.demo.radioValue = '2';
       }, 3000);
     },
     getComboItems (codeGroupCd) {

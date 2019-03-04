@@ -360,8 +360,7 @@ export default {
         if (codeGroupCd === 'HEA_CHECKUP_CLASS') 
         {
           this.comboCheckupTypeItems = this.$_.clone(_result.data);
-          this.comboCheckupTypeItems.splice(0, 0, { 'code': '', 'codeNm': '선택하세요' });
-          this.checkupTestItem.heaCheckupClassCd = '';
+          this.comboCheckupTypeItems.splice(0, 0, { 'code': null, 'codeNm': '선택하세요' });
         }
         else
         {
@@ -657,7 +656,7 @@ export default {
       this.insertable = true;
       Object.assign(this.$data.checkupTestItem, this.$options.data().checkupTestItem);
       this.heaTestClassCd = '';
-      this.checkupTestItem.heaCheckupClassCd = '';
+      this.checkupTestItem.heaCheckupClassCd = null;
       this.selectedItems = [];
       this.$validator.reset();
       // window.getApp.$emit('APP_REQUEST_SUCCESS', '초기화 버튼이 클릭 되었습니다.');

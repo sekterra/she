@@ -152,7 +152,7 @@ export default {
         _result.data.splice(0, 0, { 'heaDrugNo': '0', 'heaDrugNm': '전체' });
         this.drugItems = _result.data;
       }, (_error) => {
-        window.getApp.$emit('APP_REQUEST_ERROR', _error);
+        window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
       });
     },
 
@@ -164,7 +164,7 @@ export default {
       this.$http.request((_result) => {
         this.gridOptions.data = _result.data;
       }, (_error) => {
-        window.getApp.$emit('APP_REQUEST_ERROR', _error);
+        window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
       });
     },
     /**

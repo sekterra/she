@@ -9,12 +9,11 @@
 <template>
   <div id="">
     <b-container fluid>
-      <b-row>
-        <!-- 검색영역 -->
+      <!-- <b-row>
         <b-col sm="12">
           검색영역
         </b-col>
-      </b-row>
+      </b-row> -->
       <b-row>
         <!-- 권한 그룹 영역 -->
         <b-col sm="3">
@@ -36,6 +35,7 @@
             :items="menuGridOptions.data"
             :checkable="true"
             :height="500"
+            expand-column-width="300px"
             expand-column-name="menuNm"
             data-key="menuId"
             label="권한그룹별 메뉴 목록"

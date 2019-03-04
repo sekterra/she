@@ -80,6 +80,7 @@ examples:
               :size="size"
               :state="state"
               :maxlength="maxlength"
+              :type="type"
               :disabled="disabled"
               :class="{clear: false}"
               @input="input">
@@ -287,6 +288,10 @@ export default {
       type: Boolean,
       default: false
     },
+    type: {
+      type: String,
+      default: 'text'
+    }
   },
   data () {
     return {

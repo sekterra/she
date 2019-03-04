@@ -63,17 +63,7 @@
         </b-col>
       </b-col>
     </b-row>
-    <el-dialog
-      :title="popupOptions.title"
-      :visible.sync="popupOptions.visible"
-      :fullscreen="false"
-      :width="popupOptions.width"        
-      :close-on-click-modal="false"
-      :close-on-press-escape="false"
-      :show-close="false"
-      :top="popupOptions.top" >
-      <component :is="popupOptions.target" :popupParam="popupOptions.param" @closePopup="closePopup" />
-    </el-dialog>
+    <y-popup :param="popupOptions"></y-popup>
   </b-container>
 </template>
 
@@ -103,7 +93,8 @@ export default {
         visible: false,
         width: '65%',
         top: '10px',
-        param: {}
+        param: {},
+        closeCallback: null
       },
       baseWidth: 8,
       editable: true,
@@ -185,6 +176,7 @@ export default {
         'heaInfirmaryUsageNo': data.heaInfirmaryUsageNo
       };
       this.popupOptions.visible = true;
+      this.popupOptions.closeCallback = this.closePopup;
     },
     // 팝업 닫기
     closePopup (data) {

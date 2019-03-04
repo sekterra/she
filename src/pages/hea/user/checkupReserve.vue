@@ -46,7 +46,7 @@
             :print="true"
             :rows="7"
             v-model="selectedValue"
-            label="예약 검진 알림"
+            label="예약 검진 알림 목록"
             @tableLinkClicked="tableLinkClicked"
             >
           </y-data-table>
@@ -132,7 +132,7 @@
             </b-col>
             <b-col sm="12" md="12" lg="12" xl="12" class="col-xxl-10">
               <y-data-table 
-              label="월별 예약인원"
+              label="월별 예약인원 목록"
               :headers="reserveGridHeaderOptions"
               :items="reserveGridData"
               :editable="editable"
@@ -174,16 +174,7 @@
         </b-card>
       </b-col>
     </b-row>
-    <el-dialog
-      :title="popupOptions.title"
-      :visible.sync="popupOptions.visible"
-      :fullscreen="false"
-      :close-on-click-modal="false"
-      :close-on-press-escape="false"
-      :show-close="false"
-      @close="closePopup" >
-      <component :is="popupOptions.target" :popupParam="popupOptions.param" @closePopup="closePopup" />
-    </el-dialog>
+    <y-popup :param="popupOptions"></y-popup>
   </b-container>
 </template>
 
@@ -217,7 +208,8 @@ export default {
         target: null,
         title: '',
         visible: false,
-        param: null
+        param: null,
+        closeCallback: null
       },
       optionTestItem: {
         selectOptCount: 0,
@@ -340,19 +332,19 @@ export default {
 
       setTimeout(() => {
         this.comboCheckupOrgItems = [
-          { heaCheckupOrgNo: '', heaCheckupOrgNm: '선택하세요' },
+          { heaCheckupOrgNo: null, heaCheckupOrgNm: '선택하세요' },
         ];
-        this.checkupResult.heaCheckupOrgNo = '';
       }, 100);
       
       // 그리드 헤더 설정
       this.gridHeaderOptions = [
-        { text: '예약관리', name: 'reserveManage', width: '150px', align: 'center', type: 'link' },
-        { text: '검진계획명', name: 'heaCheckupPlanNm', width: '180px', },
+        { text: '예약관리', name: 'reserveManage', width: '130px', align: 'center', type: 'link' },
+        { text: '검진계획명', name: 'heaCheckupPlanNm', width: '250px', },
         { text: '검진종류', name: 'heaCheckupClassNm', width: '150px', },
         { text: '검진계획기간', name: 'heaCheckupPlanPeriod', width: '200px', align: 'center' },
-        { text: '예약병원', name: 'heaCheckupOrgNm', width: '200px' },
+        { text: '예약병원', name: 'heaCheckupOrgNm', width: '150px' },
         { text: '예약일자', name: 'reserveYmd', width: '130px', align: 'center' },
+        { text: '예약마감일자', name: 'finishYmd', width: '130px', align: 'center' },
         { text: '검진일자', name: 'heaCheckedYmd', width: '130px', align: 'center' }
       ];
       // 사용자 헤더 설정
@@ -405,6 +397,10 @@ export default {
       {
         this.insertable = true;
       }
+      
+      // 오늘날이 검진 마감일을 넘을시 수정 불가
+      if (this.$comm.getDatediff(this.$comm.moment(data.finishYmd), this.$comm.moment(this.$comm.getToday())) > 0) this.editable = false;
+      else this.editable = true;
 
       this.checkupResult.consentYn = 'Y';
       this.currentHeaCheckupPlanNo = data.heaCheckupPlanNo;
@@ -477,7 +473,7 @@ export default {
           else
           {
             setTimeout(() => {
-              this.checkupResult.heaCheckupOrgNo = '';
+              this.checkupResult.heaCheckupOrgNo = null;
             }, 300);
           }
         }
@@ -707,6 +703,7 @@ export default {
           heaCheckedOrgNo: data.heaCheckedOrgNo
         };
         this.popupOptions.visible = true;
+        this.popupOptions.closeCallback = this.closePopup;
       }
       else
       {

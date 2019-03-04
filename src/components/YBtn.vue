@@ -54,7 +54,7 @@ export default {
       default: ''
     },
     param: {
-      type: Object,
+      type: [Object, Array],
       default: null
     },
     isValidByParent: {
@@ -115,6 +115,9 @@ export default {
       }
       else if (this.color === 'green') {
         return 'success';
+      }
+      else if (this.color === 'black') {
+        return '';
       }
       else {
         return 'info';
@@ -210,6 +213,8 @@ export default {
   .default-buntton {
     font-weight: bold;
     font-size: 14px;
+    background: black;
+    color: white;
   }
 </style>
 

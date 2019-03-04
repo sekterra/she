@@ -83,6 +83,7 @@
               <y-select
                 :width="8"
                 :editable="editable"
+                :required="true"
                 :disabled="!createMode"
                 :comboItems="detailCodeGroupCdItems"
                 itemText="codeGroupNm"
@@ -90,8 +91,9 @@
                 ui="bootstrap"
                 name="codeGroupCd"
                 label="코드그룹"
-                v-validate="'required'"
                 v-model="codeMaster.codeGroupCd"
+                v-validate="'required'"
+                :state="validateState('codeGroupCd')"
               >
               </y-select>
             </b-col>
@@ -99,6 +101,7 @@
               <y-text
                 :width="8"
                 :editable="editable"
+                :required="true"
                 :maxlength="codeGroup.codeLength"
                 :disabled="!createMode"
                 ui="bootstrap"
@@ -113,6 +116,7 @@
               <y-text
                 :width="8"
                 :editable="editable"
+                :required="true"
                 :maxlength="30"
                 ui="bootstrap"
                 label="코드명"
@@ -132,18 +136,6 @@
                 name="codeAbbr"                
                 v-model="codeMaster.codeAbbr"
                 />
-            </b-col>
-            <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
-              <y-number
-                :width="8"
-                :editable="editable"
-                :maxlength="5"
-                :hasSeperator="false"
-                ui="bootstrap"
-                label="출력순서"
-                name="sortOrder"
-                v-model="codeMaster.sortOrder"
-              />
             </b-col>
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
                 <y-switch
@@ -202,6 +194,18 @@
                 name="attr3"                
                 v-model="codeMaster.attr3"
                 />
+            </b-col>
+            <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
+              <y-number
+                :width="8"
+                :editable="editable"
+                :maxlength="5"
+                :hasSeperator="false"
+                ui="bootstrap"
+                label="정렬순서"
+                name="sortOrder"
+                v-model="codeMaster.sortOrder"
+              />
             </b-col>
           </b-row>
           <div class="float-right mt-3">
@@ -338,12 +342,12 @@ export default {
         { text: '코드', name: 'code', width: '120px', align: 'center' },
         { text: '코드명', name: 'codeNm', width: '250px' },
         { text: '약어', name: 'codeAbbr', width: '160px', align: 'center' },        
-        { text: '출력순서', name: 'sortOrder', width: '100px', align: 'center' },
-        { text: '사용여부', name: 'useYn', width: '100px', align: 'center' },
         { text: '비고', name: 'codeNm', width: '500px' },        
         { text: '추가속성1', name: 'attr1', width: '200px' },
         { text: '추가속성2', name: 'attr2', width: '200px' },
         { text: '추가속성3', name: 'attr3', width: '200px' },
+        { text: '사용여부', name: 'useYn', width: '100px', align: 'center' },
+        { text: '정렬순서', name: 'sortOrder', width: '100px', align: 'center' },
         { text: '등록일', name: 'createDt', width: '160px', align: 'center' },
         { text: '등록자', name: 'createUserNm', width: '120px', align: 'center' },
         { text: '수정일', name: 'updateDt', width: '160px', align: 'center' },

@@ -17,7 +17,8 @@
               :items="gridOptions.data"
               :excel-down="true"
               :print="true"
-              label="검진기관"
+              :useRownum="false"
+              label="검진기관 목록"
               ref="dataTable"
               @selectedRow="selectedRow"
               >
@@ -112,7 +113,7 @@
               :hasSeperator="false"
               ui="bootstrap"
               name="sortOrder"
-              label="출력순서"
+              label="정렬순서"
               v-model="checkupOrgan.sortOrder"
               >
               </y-number>
@@ -251,8 +252,8 @@ export default {
         { text: '담당자', name: 'chargerNm', width: '120px', align: 'center' },
         { text: '전화번호', name: 'telNo', width: '160px', align: 'center' },
         { text: 'E-Mail', name: 'email', width: '200px' },
-        { text: '출력순서', name: 'sortOrder', width: '100px', align: 'center' },
         { text: '사용여부', name: 'useYnNm', width: '100px', align: 'center' },
+        { text: '정렬순서', name: 'sortOrder', width: '100px', align: 'center' },
       ];
       this.getList(); // 검진기관 목록 조회
       this.setGridSize(); // 그리드 사이즈 조절

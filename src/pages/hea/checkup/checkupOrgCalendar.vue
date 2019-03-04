@@ -182,7 +182,7 @@ export default {
       this.$http.request((_result) => {
         this.gridData = _result.data;
       }, (_error) => {
-        window.getApp.$emit('APP_REQUEST_ERROR', _error);
+        window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
       });
     }, 
     changeCheckupUsers (data) {
@@ -212,7 +212,7 @@ export default {
       this.gridData = _result.data;
     },
     btnClickedErrorCallback (_result) {
-      window.getApp.$emit('APP_REQUEST_ERROR', _result);
+      window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
     },    
     /** end button 관련 이벤트 **/
   }

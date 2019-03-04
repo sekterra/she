@@ -75,6 +75,12 @@ comm.getToday = function (_isLocalSet) {
   return moment().format(dateFormat);
 };
 
+comm.getTodayDateTime = function () {
+  var today = null;
+  var dateFormat = 'YYYY-MM-DD HH:mm:ss';
+  return moment().format(dateFormat);
+};
+
 /**
  * 현재날짜를 기준으로 과거 일자를 가져오는 함수
   * @param {} _gapOfDate : 현재일 기준 이전 날짜, 기본값 : 1y (예) 10d - 10일전, 10m - 10개월 전, 10y - 10년전

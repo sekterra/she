@@ -33,6 +33,7 @@
             :active-value="trueValue"
             :inactive-value="falseValue"
             :color="color"
+            :disabled="disabled"
             @change="input"
             >
           </el-switch>
@@ -120,14 +121,18 @@ export default {
     required: {
       type: Boolean,
       default: false
-    }
+    },
+    disabled: {
+      type: Boolean,
+      default: false
+    },
   },
   // TODO: 화살표 함수(=>)는 data에 사용하지 말 것
   //    data: () => { return { a: this.myProp }}) 화살표 함수가 부모 컨텍스트를 바인딩하기 때문에 this는 예상과 달리 Vue 인스턴스가 아니기 때문에 this.myProp는 undefined로 나옵니다.
   //    참고url: https://kr.vuejs.org/v2/api/index.html#data
   data () {
     return {
-      vValue: ''
+      vValue: null
     };
   },
   computed: {
@@ -144,7 +149,7 @@ export default {
     },
     // select box에서 선택되어진 text 값
     text () {
-      if (this.vValue === this.trueValue) return this.selectText;
+      if (String(this.vValue) === this.trueValue) return this.selectText;
       else return this.unselectText;
     }
   },
@@ -175,7 +180,7 @@ export default {
     /** 초기화 관련 함수 **/
     init () {
       // TODO : 여기에 초기 설정용 함수를 호출하거나 로직을 입력하세요.
-      this.vValue = this.value; // this.getValue(this.value);
+      this.vValue = String(this.value); // this.getValue(this.value);
     },
     /** /초기화 관련 함수 **/
     

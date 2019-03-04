@@ -14,7 +14,7 @@
           <div slot="buttonGroup" class="float-right mb-1">
             <y-btn
                 v-if="editable"
-                title="마지막이력 삭제"
+                title="삭제"
                 color="red"
                 @btnClicked="btnDeleteClicked"
               />
@@ -25,8 +25,16 @@
             :height="gridOptions.height"
             :headers="gridOptions.header"
             :items="gridOptions.data" 
+            v-model="selectedValue"
             @selectedRow="getDetail"
-            />
+            >
+            <el-table-column
+              type="selection"
+              slot="selection"
+              align="center"
+              width="55">
+            </el-table-column> 
+          </y-data-table>
           </b-col>
       </b-col>      
     </b-row>
@@ -54,19 +62,19 @@
               <y-datepicker
                 :width="8"
                 :editable="editable"
-                :disabled="detailMode"
+                :required="true"
                 label="적용일"
                 name="startYmd"
                 v-model="preventChgHist.startYmd"
                 v-validate="'required'"
-                :state="validateState('eairOutletNo')"
+                :state="validateState('startYmd')"
                 />
             </b-col>
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <y-number
                 :width="8"
                 :editable="editable"
-                :disabled="detailMode"
+                :required="true"
                 :maxlength="10"
                 :hasSeperator="false"
                 :pointNumber="2"
@@ -74,13 +82,15 @@
                 label="처리용량(㎡/min)"
                 name="dispoCap"
                 v-model="preventChgHist.dispoCap"
+                v-validate="'required'"
+                :state="validateState('dispoCap')"
                 />
             </b-col>
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <y-select
                 :width="8"
                 :editable="editable"
-                :disabled="detailMode"
+                :required="true"
                 :comboItems="eairPolluCdItems"
                 itemText="codeNm"
                 itemValue="code"
@@ -88,13 +98,15 @@
                 name="eairPolluCd"
                 label="처리오염물질"
                 v-model="preventChgHist.eairPolluCd"
+                v-validate="'required'"
+                :state="validateState('eairPolluCd')"
               />
             </b-col>
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <y-number
                 :width="8"
                 :editable="editable"
-                :disabled="detailMode"
+                :required="true"
                 :maxlength="10"
                 :hasSeperator="false"
                 :pointNumber="2"
@@ -102,13 +114,15 @@
                 label="처리농도(mg/S㎥)"
                 name="dispoConc"
                 v-model="preventChgHist.dispoConc"
+                v-validate="'required'"
+                :state="validateState('dispoConc')"
                 />
             </b-col>
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <y-number
                 :width="8"
                 :editable="editable"
-                :disabled="detailMode"
+                :required="true"
                 :maxlength="10"
                 :hasSeperator="false"
                 :pointNumber="2"
@@ -116,13 +130,14 @@
                 label="처리효율(%)"
                 name="dispoEff"
                 v-model="preventChgHist.dispoEff"
+                v-validate="'required'"
+                :state="validateState('dispoEff')"
                 />
             </b-col>
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <y-select
                 :width="8"
                 :editable="editable"
-                :disabled="detailMode"
                 :comboItems="eairChemCdItems"
                 itemText="codeNm"
                 itemValue="code"
@@ -136,7 +151,6 @@
               <y-number
                 :width="8"
                 :editable="editable"
-                :disabled="detailMode"
                 :maxlength="10"
                 :hasSeperator="false"
                 :pointNumber="2"
@@ -150,12 +164,14 @@
               <y-text
                 :width="10"
                 :editable="editable"
-                :disabled="detailMode"
+                :required="true"
                 :maxlength="30"
                 ui="bootstrap"
-                label="종료사유"
+                label="변경사유"
                 name="endCause"                
                 v-model="preventChgHist.endCause"
+                v-validate="'required'"
+                :state="validateState('endCause')"
                 />
             </b-col>
           </b-row>
@@ -166,7 +182,7 @@
               @btnClicked="btnClearClickedCallback" 
               />
             <y-btn
-              v-if="editable&&!detailMode&&prevention.eairPreventFacNo>0"
+              v-if="editable"
               :action-url="insertUrl"
               :param="preventChgHist"
               :is-submit="isCreateSubmit"
@@ -178,6 +194,19 @@
               @btnClicked="btnCreateClickedCallback" 
               @btnClickedErrorCallback="btnClickedErrorCallback"
               />
+              <y-btn
+              v-if="editable&&updateMode"
+              :action-url="editUrl"
+              :param="preventChgHist"
+              :is-submit="isUpdateSubmit"
+              title="수정"
+              color="orange"
+              action-type="put"
+              beforeSubmit = "beforeUpdateSubmit"
+              @beforeUpdateSubmit="beforeUpdateSubmit"
+              @btnClicked="btnUpdateClickedCallback" 
+              @btnClickedErrorCallback="btnClickedErrorCallback"
+              /> 
           </div>
         </b-card>
       </b-col>
@@ -202,9 +231,10 @@ export default {
         eairPreventFacNm: ''
       },
       preventChgHist: {
+        eairPreventFacChgHistNo: 0,
         eairPreventFacNo: 0,
         eairPreventFacNm: '',
-        eairPreventFacClassCd: '',
+        eairPreventFacClassCd: null,
         eairPreventFacClassNm: '',
         eairOutletNo: null,
         eairOutletNm: '',
@@ -212,7 +242,7 @@ export default {
         startYmd: '',
         endYmd: '',
         dispoCap: null,
-        eairPolluCd: '',
+        eairPolluCd: null,
         eairPolluNm: '',
         dispoConc: null, 
         dispoEff: null,
@@ -230,13 +260,16 @@ export default {
         height: '250'
       },
       editable: true,
-      detailMode: false,
+      updateMode: false,
       isCreateSubmit: false,
+      isUpdateSubmit: false,
 
       eairPolluCdItems: [],
       eairChemCdItems: [],
+      selectedValue: [],
 
       insertUrl: '',
+      editUrl: '',
       deleteUrl: '',
       searchUrl: '',
       detailUrl: '',
@@ -283,13 +316,16 @@ export default {
         { text: '처리농도', name: 'dispoConc', width: '100px', align: 'right' },
         { text: '처리효율', name: 'dispoEff', width: '100px', align: 'right' },
         { text: '사용약품', name: 'eairChemNm', width: '160px', align: 'center' },
-        { text: '양품사용량', name: 'chemConsum', width: '100px', align: 'right' },
-        { text: '종료사유', name: 'endCause', width: '300px' },        
+        { text: '약품사용량', name: 'chemConsum', width: '120px', align: 'right' },
+        { text: '변경사유', name: 'endCause', width: '300px' },        
         { text: '등록일', name: 'createDt', width: '200px', align: 'center' },
-        { text: '등록자', name: 'createUserNm', width: '120px', align: 'center' }
+        { text: '등록자', name: 'createUserNm', width: '120px', align: 'center' },
+        { text: '수정일', name: 'updateDt', width: '200px', align: 'center' },
+        { text: '수정자', name: 'updateUserNm', width: '120px', align: 'center' }
       ];
       
       this.insertUrl = transactionConfig.env.air.facility.preventionChangeHistory.insert.url;
+      this.editUrl = transactionConfig.env.air.facility.preventionChangeHistory.edit.url;
       this.deleteUrl = transactionConfig.env.air.facility.preventionChangeHistory.delete.url;
       this.searchUrl = selectConfig.env.air.facility.preventionChangeHistory.list.url;
       this.detailUrl = selectConfig.env.air.facility.preventionChangeHistory.get.url;
@@ -313,10 +349,10 @@ export default {
       });
     },
     getDetail (data) {
-      this.$http.url = this.$format(this.detailUrl, data.eairPreventFacNo, data.startYmd);
+      this.$http.url = this.$format(this.detailUrl, data.eairPreventFacChgHistNo);
       this.$http.type = 'get'; 
       this.$http.request((_result) => {
-        this.detailMode = true;
+        this.updateMode = true;
         this.preventChgHist = _result.data;
       }, (_error) => {
         window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
@@ -339,7 +375,7 @@ export default {
       this.$http.url = this.$format(selectConfig.manage.codeMaster.getSelect.url, 'EAIR_POLLU');
       this.$http.type = 'get';
       this.$http.request((_result) => {
-        _result.data.splice(0, 0, { 'code': '', 'codeNm': '선택하세요' });
+        _result.data.splice(0, 0, { 'code': null, 'codeNm': '선택하세요' });
         this.eairPolluCdItems = _result.data;
       }, (_error) => {
         window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
@@ -349,7 +385,7 @@ export default {
       this.$http.url = this.$format(selectConfig.manage.codeMaster.getSelect.url, 'EAIR_CHEM');
       this.$http.type = 'get';
       this.$http.request((_result) => {
-        _result.data.splice(0, 0, { 'code': '', 'codeNm': '선택하세요' });
+        _result.data.splice(0, 0, { 'code': null, 'codeNm': '선택하세요' });
         this.eairChemCdItems = _result.data;
       }, (_error) => {
         window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
@@ -363,7 +399,12 @@ export default {
         'startYmd': this.preventChgHist.startYmd
       };
       var item = this.$_.find(this.gridOptions.data, test);
-      if (item != null) {          
+      if (item != null) {      
+        if (this.updateMode
+          && this.preventChgHist.startYmd === item.startYmd) {
+          return false;
+        }
+
         window.getApp.$emit('ALERT', {
           title: '안내',
           message: '적용일이 중복됩니다.',
@@ -371,23 +412,11 @@ export default {
         });
         return true;
       }
-      else if (this.gridOptions.data.length > 0) {
-        item = this.gridOptions.data[0];
-        lastYmd = Number(item.startYmd.replace('-', '').replace('-', ''));
-        inputYmd = Number(this.preventChgHist.startYmd.replace('-', '').replace('-', ''));
-        if (lastYmd > inputYmd) {
-          window.getApp.$emit('ALERT', {
-            title: '안내',
-            message: '적용일이 중복됩니다.',
-            type: 'warning',
-          });
-          return true;          
-        }
-      }
       return false;
     },
     beforeCreateSubmit () {
-      this.detailMode = false;      
+      this.preventChgHist.eairPreventFacChgHistNo = 0;
+      this.updateMode = false;
       if (this.checkDuplicate()) return;
       this.$validator.validateAll().then((_result) => {
         if (_result) {
@@ -404,6 +433,23 @@ export default {
         window.getApp.$emit('APP_VALID_ERROR', '유효성 검사 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
       });
     },
+    beforeUpdateSubmit () {
+      if (this.checkDuplicate()) return;
+      this.$validator.validateAll().then((_result) => {
+        if (_result) {
+          window.getApp.$emit('CONFIRM', {
+            title: '확인',
+            message: '방지시설 변경 정보를 수정하시겠습니까?',
+            type: 'info',
+            confirmCallback: () => {
+              this.isUpdateSubmit = true;
+            }
+          });
+        }
+      }).catch(() => {
+        window.getApp.$emit('APP_VALID_ERROR', '유효성 검사 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
+      });
+    },
     validateState (_ref) {
       if (this.veeBag[_ref] && (this.veeBag[_ref].dirty || this.veeBag[_ref].validated)) {
         return !this.errors.has(_ref);
@@ -412,7 +458,8 @@ export default {
     },
     
     btnClearClickedCallback (_result) {
-      this.detailMode = false;
+      this.updateMode = false;
+      this.preventChgHist.eairPreventFacChgHistNo = 0;
       this.preventChgHist.eairPreventFacNo = this.prevention.eairPreventFacNo;
       this.preventChgHist.eairPreventFacNm = this.prevention.eairPreventFacNm;
       this.preventChgHist.eairPreventFacClassCd = '';
@@ -423,7 +470,7 @@ export default {
       this.preventChgHist.startYmd = '';
       this.preventChgHist.endYmd = '';
       this.preventChgHist.dispoCap = null;
-      this.preventChgHist.eairPolluCd = '';
+      this.preventChgHist.eairPolluCd = null;
       this.preventChgHist.eairPolluNm = '';
       this.preventChgHist.dispoConc = null;
       this.preventChgHist.dispoEff = null;
@@ -437,7 +484,8 @@ export default {
     },
     btnCreateClickedCallback (_result) {
       this.isCreateSubmit = false;
-      this.detailMode = true;
+      this.updateMode = true;
+      this.preventChgHist.eairPreventFacChgHistNo = _result.data;
       this.getList(); 
       window.getApp.$emit('ALERT', {
         title: '안내',
@@ -445,35 +493,51 @@ export default {
         type: 'success',
       });
     },
+    btnUpdateClickedCallback (_result) {
+      this.isUpdateSubmit = false;
+      this.getList();
+      window.getApp.$emit('ALERT', {
+        title: '안내',
+        message: '방지시설 변경 정보를 정상적으로 수정하였습니다.',
+        type: 'success',
+      });
+    },
     btnClickedErrorCallback (_result) {
       this.isCreateSubmit = false;
+      this.isUpdateSubmit = false;
       window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
     },
     btnDeleteClicked () {
-      var lastItem = null;
-      if (this.gridOptions.data.length > 0) {
+      if (this.selectedValue.length > 0) {
         window.getApp.$emit('CONFIRM', {
           title: '확인',
-          message: '마지막 방지시설 변경 정보를 삭제하시겠습니까?',
+          message: '선택된 방지시설 변경 정보를 삭제하시겠습니까?',
           type: 'info',
           confirmCallback: () => {
-            lastItem = this.gridOptions.data[0];
-            this.$http.url = this.$format(this.deleteUrl, lastItem.eairPreventFacNo, lastItem.startYmd);
+            this.$http.url = this.deleteUrl;
             this.$http.type = 'delete';
+            this.$http.param = {
+              'data': Object.values(this.$_.clone(this.selectedValue))
+            };
             this.$http.request((_result) => {
-              if (lastItem.startYmd === this.preventChgHist.startYmd) {
-                this.btnClearClickedCallback({});
-              }
+              this.btnClearClickedCallback({});
               this.getList();
               window.getApp.$emit('ALERT', {
                 title: '안내',
-                message: '마지막 방지시설 변경 정보를 정상적으로 삭제하였습니다.',
+                message: '방지시설 변경 정보를 정상적으로 삭제하였습니다.',
                 type: 'success',
               });
             }, (_error) => {
               window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
             });
           }
+        });
+      }
+      else {
+        window.getApp.$emit('ALERT', {
+          title: '안내',
+          message: '방지시설 변경 정보를 선택하세요.',
+          type: 'warning'
         });
       }
     }

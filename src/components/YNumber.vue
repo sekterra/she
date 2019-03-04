@@ -71,7 +71,8 @@ examples:
             <!-- /앞쪽에 ICON을 추가해야 할 경우 -->
 
             <b-form-input 
-              ref="input"
+              ref="input"      
+              class="custom-align"        
               v-model.trim="vValue"
               :label="label"
               :name="name"
@@ -344,13 +345,12 @@ export default {
       return this.state === null ? null : this.state;
     },
     numberValue () {
-      // this.formatOption.prefix = this.prefix;
-      // this.formatOption.suffix = this.suffix;
-      // return this.$formatNumber(this.formatOption)(this.value, { noSeparator: !this.hasSeperator });
-      if (this.value != null && this.value != '')
+      if (this.value != null && this.value != '') {
         return this.$numeral(this.value).format(this.numberFormat);
-      else 
+      }
+      else {
         return this.value;
+      }
     },
     // hasSeperator, prefix, suffix, pointNumber 속성에 따라서 숫자 포맷지정
     numberFormat () {
@@ -396,7 +396,7 @@ export default {
   created () {
   },
   beforeMount () {
-    this.vValue = this.value;
+    this.vValue = this.numberValue;
   },
   mounted () {
   },
@@ -414,12 +414,6 @@ export default {
   /* methods */
   methods: {
     input () {
-      // var truncStr = this.value;
-      // if (this.maxlength && byteLength(truncStr) > this.maxlength) {
-      //   truncStr = truncateUtf8Bytes(truncStr, this.maxlength);
-      //   // this.vValue = truncStr;
-      //   // console.log(this.vValue);
-      // }
       var value = this.limitAsByte ? this.truncValue : this.vValue;
       if (value != null) {
         if (typeof value == 'string') {
@@ -446,9 +440,9 @@ export default {
      * 입력값 초기화
      */
     clearableClicked () {
-      this.vValue = null;
+      this.vValue = 0;
       this.$emit('input', this.vValue);
-    }
+    },
   }
 };
 </script>
@@ -515,6 +509,11 @@ export default {
 .invalid {
   border-color: #dc3545;
   padding-right: 2.25rem;
+}
+
+.custom-align {
+  text-align: right;
+  padding-right: 30px;
 }
 </style>
 

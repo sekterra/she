@@ -45,12 +45,14 @@ examples:
       :eval-args="argument" 
       :expand-all="expandAll"
       :expand-column-name="expandColumnName"
+      :expand-column-width="expandColumnWidth"
       :row-class-name="tableRowClassName"
       :height="height"
       :rows="rows"
       header-cell-class-name="default-th"
       cell-class-name="default-td"
       border
+      class="base-tree-table"
       @rowClicked="rowClicked"
       @rowDoubleClicked="rowDoubleClicked"
       >
@@ -122,12 +124,17 @@ export default {
     // 화면 렌더링시 자식 노드를 모두 펼칠 것인지 여부
     expandAll: {
       type: Boolean,
-      default: true
+      default: false
     },
     // 확장 컬럼명 : 없으면 index
     expandColumnName: {
       type: String,
       default: null
+    },
+    // 확장 컬럼 크기
+    expandColumnWidth: {
+      type: [Number, String],
+      default: '200px'
     },
     // 체크박스의 true 값
     trueValue: {
@@ -234,19 +241,31 @@ export default {
         if (_row.hasOwnProperty('children')) this.changeCheckbox(_row.children, _option, _checkedValue, true);
       }
     },
+    /**
+     * 선택된 값을 가져오면서, 하위 노드가 선택되면 상위 노드도 검색해서 가져온다.
+     */
     getCheckedItems () {
       var checktedItems = this.$_.clone(this.checkedItems);
+      var items = [];
+
       this.$_.forEach(checktedItems, (_item) => {
         if (_item.hasOwnProperty('parent')) this.getParentItem(checktedItems, _item.parent);
+        if (_item.hasOwnProperty('children')) _item.children = null;
         delete _item.parent;
         delete _item.children;
       });
       return checktedItems;
     },
+    /**
+     * 현재 노드의 부모노드 검색
+     */
     getParentItem (_checkedItems, _parent) {
       if (!this.isDuplicatedItem(_checkedItems, _parent)) _checkedItems.unshift(_parent);
       if (_parent.hasOwnProperty('parent')) this.getParentItem(_checkedItems, _parent.parent);
     },
+    /**
+     * 중복 노드 확인
+     */
     isDuplicatedItem (_items, _addItem) {
       var hasItem = false;
       this.$_.forEach(_items, (_item) => {
@@ -303,5 +322,9 @@ export default {
 }
 .selected-row:hover  td {
   background-color: #a5cca5 !important;
+}
+
+.base-tree-table .el-table__body-wrapper{
+  overflow-y: auto;
 }
 </style>

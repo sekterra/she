@@ -8,6 +8,51 @@
   -->
 <template>
   <b-container fluid>
+    <b-row ref="searchBox">
+      <b-col sm="12">
+        <b-card header-class="default-card" body-class="default-body-card" class="py-0">
+          <div slot="header" >
+              <y-label label="검색" />
+            <div class="float-right">
+              <y-btn
+                :title="searchArea.title"
+                color="green"                
+                @btnClicked="btnSearchVisibleClicked" 
+              />
+              <y-btn
+                title="검색"
+                color="green"
+                @btnClicked="btnSearchClicked"
+              />
+            </div>
+          </div>
+          <b-row v-if="searchArea.show">
+            <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
+              <y-select
+                :width="8"
+                :comboItems="searchEairOutletNoItems"
+                itemText="eairOutletNm"
+                itemValue="eairOutletNo"
+                ui="bootstrap"
+                name="searchEairOutletNo"
+                label="배출구"
+                v-model="searchParam.eairOutletNo"
+              />
+            </b-col>
+            <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
+              <y-text
+              :width="8"
+                ui="bootstrap"
+                label="배출시설명"
+                name="searchEairDischFacNm"
+                v-model="searchParam.eairDischFacNm"
+                />
+            </b-col>
+          </b-row>
+        </b-card>
+      </b-col>
+    </b-row>
+
     <b-row>
       <b-col sm="12">
         <b-col sm="12" class="px-0">
@@ -36,6 +81,7 @@
               <y-select
                 :width="8"
                 :editable="editable"
+                :required="true"
                 :comboItems="eairOutletNoItems"
                 itemText="eairOutletNm"
                 itemValue="eairOutletNo"
@@ -52,6 +98,7 @@
               <y-text
                 :width="8"
                 :editable="editable"
+                :required="true"
                 :maxlength="30"
                 ui="bootstrap"
                 label="배출시설명"
@@ -73,18 +120,6 @@
                 :rows="2" />
             </b-col>            
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
-              <y-number
-                :width="8"
-                :editable="editable"
-                :maxlength="5"
-                :hasSeperator="false"
-                ui="bootstrap"
-                label="출력순서"
-                name="sortOrder"
-                v-model="discharge.sortOrder"
-              />
-            </b-col>
-            <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
                 <y-switch
                   :width="8"
                   :editable="editable"
@@ -97,6 +132,18 @@
                   unselectText="미사용"
                   v-model="discharge.useYn"
                   />
+            </b-col>
+            <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
+              <y-number
+                :width="8"
+                :editable="editable"
+                :maxlength="5"
+                :hasSeperator="false"
+                ui="bootstrap"
+                label="정렬순서"
+                name="sortOrder"
+                v-model="discharge.sortOrder"
+              />
             </b-col>
           </b-row>
           <div class="float-right mt-3">
@@ -163,9 +210,13 @@ export default {
         updateUserNm: '',
         updateDt: '',
       },
-      codeGroup: {
-        codeGroupCd: '',
-        codeLength: 5
+      searchParam: {
+        eairOutletNo: 0,
+        eairDischFacNm: ''
+      },
+      searchArea: {
+        title: '검색박스숨기기',
+        show: true
       },
       gridOptions: {
         header: [],
@@ -178,6 +229,7 @@ export default {
       isUpdateSubmit: false,
 
       eairOutletNoItems: [],
+      searchEairOutletNoItems: [],
 
       insertUrl: '',
       editUrl: '',
@@ -212,9 +264,9 @@ export default {
       this.gridOptions.header = [
         { text: '배출구', name: 'eairOutletNm', width: '160px' },
         { text: '배출시설명', name: 'eairDischFacNm', width: '160px' },
-        { text: '출력순서', name: 'sortOrder', width: '100px', align: 'center' },
-        { text: '사용여부', name: 'useYn', width: '100px', align: 'center' },
         { text: '비고', name: 'remark', width: '500px' },        
+        { text: '사용여부', name: 'useYn', width: '100px', align: 'center' },
+        { text: '정렬순서', name: 'sortOrder', width: '100px', align: 'center' },
         { text: '등록일', name: 'createDt', width: '200px', align: 'center' },
         { text: '등록자', name: 'createUserNm', width: '120px', align: 'center' },
         { text: '수정일', name: 'updateDt', width: '200px', align: 'center' },
@@ -233,6 +285,7 @@ export default {
     getList () {
       this.$http.url = this.searchUrl;
       this.$http.type = 'get';      
+      this.$http.param = this.searchParam;
       this.$http.request((_result) => {
         this.gridOptions.data = _result.data;
       }, (_error) => {
@@ -257,8 +310,13 @@ export default {
         'useYn': 'Y'
       }
       this.$http.request((_result) => {
-        _result.data.splice(0, 0, { 'eairOutletNo': null, 'eairOutletNm': '선택하세요' });
-        this.eairOutletNoItems = _result.data;
+        var items = this.$_.clone(_result.data);
+        var searchItems = this.$_.clone(_result.data);
+        items.splice(0, 0, { 'eairOutletNo': null, 'eairOutletNm': '선택하세요' });
+        searchItems.splice(0, 0, { 'eairOutletNo': 0, 'eairOutletNm': '전체' });
+
+        this.eairOutletNoItems = items;
+        this.searchEairOutletNoItems = searchItems;
       }, (_error) => {
         window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
       });
@@ -375,6 +433,18 @@ export default {
       this.isCreateSubmit = false;
       this.isUpdateSubmit = false;
       window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
+    },
+
+    btnSearchClicked () {
+      this.getList();
+    },
+    btnSearchVisibleClicked () {      
+      this.searchArea.show = !this.searchArea.show;
+      if (this.searchArea.show) this.searchArea.title = '검색박스숨기기';
+      else this.searchArea.title = '검색박스보이기';
+
+      window.getApp.$emit('LOADING_PASS_COUNT', 1);
+      this.setGridSize();
     },
   }
 };

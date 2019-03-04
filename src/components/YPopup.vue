@@ -21,12 +21,16 @@
         >
         <div v-if="type === 'checkupUser'">
           <checkup-user 
+            :isPopupOpen="isPopupOpen"
+            ref="popupBody"
             :checkupPlanNo="childProps.checkupPlanNo"
             @selectionChanged="selectionChanged" 
           />
         </div>
         <div v-if="type === 'checkupResultConsent'">
           <checkup-result-consent 
+            :isPopupOpen="isPopupOpen"
+            ref="popupBody"
             :heaCheckupPlanNo="childProps.heaCheckupPlanNo"
             :heaCheckedOrgNo="childProps.heaCheckedOrgNo"
             @selectionChanged="selectionChanged" 
@@ -37,6 +41,11 @@
             :isPopupOpen="isPopupOpen"
             ref="popupBody"
             @selectionChanged="selectionChanged" />
+        </div>
+        <div v-if="type === 'passwordChange'">
+          <password-change 
+           :isPopupOpen="isPopupOpen"
+            ref="popupBody" />
         </div>
         <!-- 기존에 만들어진 컴포넌트가 아닌 직접 바인딩 해야 할 경우 아래의 popupBody 슬롯에 추가 -->
         <slot name="popupBody"></slot>
@@ -54,6 +63,7 @@
 import checkupUser from '@/pages/hea/checkup/checkupUser';
 import checkupResultConsent from '@/pages/hea/user/checkupResultConsent';
 import menuSearch from '@/pages/manage/menuManage/menuSearch';
+import passwordChange from '@/pages/manage/userManage/passwordChange';
 
 export default {
   /** attributes: name, components, props, data **/
@@ -62,7 +72,8 @@ export default {
     // 팝업 본문에 추가해야 할 컴포넌트 선언
     checkupUser,
     checkupResultConsent,
-    menuSearch
+    menuSearch,
+    passwordChange
   },
   props: {
     ui: {

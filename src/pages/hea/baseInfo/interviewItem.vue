@@ -78,7 +78,7 @@
                 maxlength="5"
                 :hasSeperator="false"
                 ui="bootstrap"
-                label="출력순서"
+                label="정렬순서"
                 name="sortOrder"
                 v-model="interviewItem.sortOrder"
               />
@@ -152,7 +152,7 @@ export default {
       interviewItem: {
         heaInteItemCd: '',
         heaInteItemNm: null,
-        upHeaInteItemCd: '',
+        upHeaInteItemCd: null,
         remark: '',
         sortOrder: null,
         useYn: 'Y',
@@ -240,7 +240,7 @@ export default {
       this.$http.request((_result) => {
         this.gridData = _result.data;
       }, (_error) => {
-        window.getApp.$emit('APP_REQUEST_ERROR', _error);
+        window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
       });
     },
     getDetail (data) {
@@ -250,17 +250,17 @@ export default {
         this.updateMode = true;
         this.interviewItem = _result.data;
       }, (_error) => {
-        window.getApp.$emit('APP_REQUEST_ERROR', _error);
+        window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
       });
     },
     getUpHeaInteItemCdItems () {
       this.$http.url = this.searchUrl;
       this.$http.type = 'get';      
       this.$http.request((_result) => {
-        _result.data.splice(0, 0, { 'heaInteItemCd': '', 'heaInteItemNm': '선택하세요' });
+        _result.data.splice(0, 0, { 'heaInteItemCd': null, 'heaInteItemNm': '선택하세요' });
         this.upHeaInteItemCdItems = _result.data;
       }, (_error) => {
-        window.getApp.$emit('APP_REQUEST_ERROR', _error);
+        window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
       });
     },
     /**
@@ -355,7 +355,7 @@ export default {
       this.updateMode = false;
       this.interviewItem.heaInteItemCd = '';
       this.interviewItem.heaInteItemNm = '';
-      this.interviewItem.upHeaInteItemCd = '';
+      this.interviewItem.upHeaInteItemCd = null;
       this.interviewItem.remark = '';
       this.interviewItem.useYn = 'Y';
       this.interviewItem.sortOrder = null;
@@ -396,7 +396,7 @@ export default {
       // TODO : 여기에 추가 로직 삽입(로직 삽입시 지워주세요)
       this.isCreateSubmit = false;
       this.isUpdateSubmit = false;
-      window.getApp.$emit('APP_REQUEST_ERROR', _result);
+      window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
     },
     /** /Button Event **/
     

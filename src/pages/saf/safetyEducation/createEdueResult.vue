@@ -9,24 +9,19 @@
 <template>
   <b-container fluid>
     <b-row>
-      <!-- 유형별 설비 상세 -->
+      <!-- 유교육 결과 상세 -->
       <b-col sm="12">
         <b-row>
           <b-col sm="12">
-            <y-label label="유형별 설비 등록" icon="user-edit" color-class="cutstom-title-color"/>
+            <y-label label="교육 결과 상세" icon="user-edit" color-class="cutstom-title-color"/>
             <div slot="buttonGroup" class="float-right mb-1">  
-              <y-btn
-                v-if="editable"
-                title="초기화"
-                @btnClicked="btnClearClickedCallback" 
-              />
               <y-btn
                 v-if="updateCompleMode"
                 :action-url="editCompleUrl"
                 :param="edueResultMaster"
-                :is-submit="isEditSubmit"
+                :is-submit="isCompleSubmit"
                 title="완료"
-                color="orange"
+                color="black"
                 action-type="PUT"
                 beforeSubmit = "beforeEditComple"
                 @beforeEditComple ="beforeEditComple"
@@ -34,11 +29,11 @@
                 @btnClickedErrorCallback="btnClickedErrorCallback"
               />
               <y-btn
-                v-if="editable&&insertMode"
+                v-if="insertMode"
                 :action-url="insertUrl"
                 :param="edueResultMaster"
                 :is-submit="isInsertSubmit"
-                title="신규등록"
+                title="저장"
                 color="orange"
                 action-type="POST"
                 beforeSubmit = "beforeInsert"
@@ -51,7 +46,7 @@
                 :action-url="editUrl"
                 :param="edueResultMaster"
                 :is-submit="isEditSubmit"
-                title="수정"
+                title="저장"
                 color="orange"
                 action-type="PUT"
                 beforeSubmit = "beforeEdit"
@@ -87,29 +82,31 @@
                 :width="baseWidth"
                 :required="true"
                 :comboItems="eduCourseCds"
+                :disabled="disabled"
                 itemText="codeNm"
                 itemValue="code"
                 v-validate="'required'"
                 ui="bootstrap"
                 name="eduCourseCd"
                 label="교육과정"
-                v-model="edueResult.eduCourseCd"
+                v-model="edueResultMaster.edueResult.eduCourseCd"
                 :state="validateState('eduCourseCd')"
               >
               </y-select>
             </b-col>
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
-              <y-radio
+              <y-select
                 :width="baseWidth"
                 :editable="editable"
                 :comboItems="eduTypeCds"
                 :required="true"
+                :disabled="disabled"
                 itemText="codeNm"
                 itemValue="code"
                 ui="bootstrap"
-                label="교육구분*"
+                label="교육구분"
                 name="eduTypeCds"
-                v-model="edueResult.eduTypeCd"
+                v-model="edueResultMaster.edueResult.eduTypeCd"
                 v-validate="'required'"
                 :state="validateState('eduTypeCds')"
               />
@@ -119,28 +116,31 @@
                 :width="baseWidth"
                 :required="true"
                 :comboItems="comboDeptItems"
+                :disabled="disabled"
                 itemText="deptNm"
                 itemValue="deptCd"
                 ui="bootstrap"
-                name="deptCd"
+                name="deptCds"
                 label="주관부서"
-                v-model="edueResult.deptCd"
-                :state="validateState('detpCd')"
+                v-model="edueResultMaster.edueResult.deptCd"
+                v-validate="'required'"
+                :state="validateState('deptCds')"
               >
               </y-select>
             </b-col>
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
-            </b-col>
-            <b-col sm="12" md="12" lg="12" xl="12" class="col-xxl-6">
                <y-text
-                :width="10"
+                :width="8"
                 :editable="editable"
                 :required="true"
+                :maxlength="50"
+                :disabled="disabled"
                 ui="bootstrap"
                 type="search"
                 label="교육명"
                 name="eduNm"
-                v-model="edueResult.eduNm"
+                v-model="edueResultMaster.edueResult.eduNm"
+                v-validate="'required'"
                 :state="validateState('eduNm')"
               >
               </y-text>
@@ -150,33 +150,47 @@
                 :width="baseWidth"
                 :editable="editable"
                 :range="true"
+                :required="true"
+                :disabled="disabled"
                 label="교육기간"
-                name="duration"
-                v-model="edueResult.duration"
+                name="durations"
+                v-validate="'required'"
+                v-model="edueResultMaster.edueResult.duration"
+                :state="validateState('durations')"
               >
               </y-datepicker>
             </b-col>
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
-              <y-text
+              <y-number
                 :width="baseWidth"
                 :editable="editable"
+                :maxlength="5"
+                :required="true"
+                :disabled="disabled"
                 ui="bootstrap"
                 type="search"
-                label="교육시간"
-                name="eduTime"
-                v-model="edueResult.eduTime"
+                label="교육시간(시간)"
+                name="eduTimes"
+                v-validate="'required'"
+                v-model="edueResultMaster.edueResult.eduTime"
+                :state="validateState('eduTimes')"
               >
-              </y-text>
+              </y-number>
             </b-col>
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <y-text
                 :width="baseWidth"
                 :editable="editable"
+                :maxlength="50"
+                :required="true"
+                :disabled="disabled"
                 ui="bootstrap"
                 type="search"
                 label="교육장소"
-                name="eduPlace"
-                v-model="edueResult.eduPlace"
+                name="eduPlaces"
+                v-validate="'required'"
+                v-model="edueResultMaster.edueResult.eduPlace"
+                :state="validateState('eduPlaces')"
               >
               </y-text>
             </b-col>
@@ -184,11 +198,16 @@
               <y-text
                 :width="baseWidth"
                 :editable="editable"
+                :maxlength="30"
+                :required="true"
+                :disabled="disabled"
                 ui="bootstrap"
                 type="search"
                 label="교육강사"
-                name="eduTeacher"
-                v-model="edueResult.eduTeacher"
+                name="eduTeachers"
+                v-validate="'required'"
+                v-model="edueResultMaster.edueResult.eduTeacher"
+                :state="validateState('eduTeachers')"
               >
               </y-text>
             </b-col>
@@ -196,13 +215,31 @@
               <y-textarea
                 :width="10"
                 :editable="editable"
-                :maxlength="3000"
+                :maxlength="600"
+                :required="true"
+                :disabled="disabled"
                 ui="bootstrap"
                 label="교육내용"
-                name="eduContent"
-                v-model="edueResult.eduContent"
+                name="eduContents"
+                v-validate="'required'"
+                v-model="edueResultMaster.edueResult.eduContent"
+                :state="validateState('eduContents')"
               >
               </y-textarea>
+            </b-col>
+            <b-col sm="12" md="12" lg="12" xl="12" class="col-xxl-6">
+              <y-text
+                :width="10"
+                :maxlength="600"
+                :required="true"
+                :disabled="disabled"
+                ui="bootstrap"
+                label="결과요약"
+                name="eduResultSummarys"
+                v-validate="'required'"
+                v-model="edueResultMaster.edueResult.eduResultSummary"
+                :state="validateState('eduResultSummarys')"
+              ></y-text>
             </b-col>
           </b-row>
         </b-card>
@@ -235,18 +272,7 @@
     </b-row>
 
     <!-- 팝업 설정 -->
-    <el-dialog
-      :title="popupOptions.title"
-      :visible.sync="popupOptions.visible"
-      :fullscreen="false"
-      :append-to-body="true"
-      :close-on-click-modal="false"
-      :close-on-press-escape="false"
-      :show-close="false"
-      :width="popupOptions.width"
-      :top="popupOptions.top">
-      <component :is="popupOptions.target" :popupParam="popupOptions.param" @closePopup="popupOptions.closeCallback" />
-    </el-dialog>
+    <y-popup :param="popupOptions"></y-popup>
   </b-container>
 </template>
 
@@ -288,9 +314,28 @@ export default {
       tabIndex: 0,
       edueResultMaster: {
         safEduRsltNo: '',
-        edueResult: '',
+        edueResult: {
+          safEduRsltNo: '',
+          eduCourseCd: null,
+          eduTypeCd: null,
+          eduNm: '',
+          eduSYmd: '',
+          eduEYmd: '',
+          duration: '',
+          eduTime: '',
+          eduPlace: '',
+          eduTeacher: '',
+          eduContent: '',
+          eduResultSummary: '',
+          processStepCd: '',
+          createUserId: '',
+          createDt: '',
+          updateUserId: '',
+          updateDt: '',
+          deptCd: null,
+        },
         eduUserId: [],
-        eduResultSummary: '',
+        eduDeptCd: [],
       },
       edueResult: {
         safEduRsltNo: '',
@@ -310,7 +355,7 @@ export default {
         createDt: '',
         updateUserId: '',
         updateDt: '',
-        deptCd: '',
+        deptCd: null,
       },
       eduRsltPsn: {
         safEduRsltNo: '',
@@ -333,13 +378,15 @@ export default {
       deleteUrl: '',
       isInsertSubmit: false, 
       isEditSubmit: false,
+      isCompleSubmit: false,
       isDelete: false,
       deleteValue: null,
+      disabled: false,
     };
   },
   watch: {
     tabIndex () {
-      // this.loadComponent();
+      this.loadComponent();
     }
   },
   /** Vue lifecycle: created, mounted, destroyed, etc **/
@@ -367,7 +414,7 @@ export default {
       this.deleteUrl = transactionConfig.saf.eduResult.delete.url;
       this.editCompleUrl = transactionConfig.saf.eduResult.editComple.url;
 
-      this.insertMode = true;
+      
       this.getDeptItems();  // 관리부서
       this.getEduCourseCds(); // 교육과정
       this.getEduTypeCds();  // 교육구분
@@ -377,37 +424,32 @@ export default {
       }
       if (this.popupParam.processStepCd === "STEP1") {
         this.updateCompleMode = true;
-      } else {
+        this.updateMode = true;
+        this.insertMode = false;
+      } else if (this.popupParam.processStepCd === "STEP2") {
         this.updateCompleMode = false;
+        this.updateMode = false;
+        this.insertMode = false;
+        this.disabled = true;
+      } else {
+        this.updateCompleMode = true;
+        this.updateMode = false;
+        this.insertMode = true;
       }
 
       this.edueResultMaster.safEduRsltNo = this.popupParam.safEduRsltNo;
-      // 수정 또는 신규등록 버튼 Mode
-      this.edueResult.safEduRsltNo = this.popupParam.safEduRsltNo;
-      if (this.popupParam.safEduRsltNo !== 0) {
-        this.updateMode = true;
-      } else {
-        this.insertMode = true;
-      }
+
     },
 
     getDetailData () {
       this.$http.url = this.$format(selectConfig.saf.eduResult.get.url, this.popupParam.safEduRsltNo);
       this.$http.type = 'GET';
       this.$http.request((_result) => {
-        // this.edueResult = this.$_.clone(_result.data);
-        
         this.edueResultMaster = this.$_.clone(_result.data);
-        this.edueResult = this.edueResultMaster.edueResult;
 
         if (this.edueResult !== null) { 
-          this.edueResult.duration = [this.edueResult.eduSYmd, this.edueResult.eduEYmd] 
-          /* if (this.eduResult.processStepCd == "STEP1") {
-              this.updateCompleMode = true;
-          }  */
+          this.edueResultMaster.edueResult.duration = [this.edueResultMaster.edueResult.eduSYmd, this.edueResultMaster.edueResult.eduEYmd] 
         }
-       
-        
       }, (_error) => {
         window.getApp.$emit('APP_REQUEST_ERROR', _error);
       });
@@ -419,7 +461,7 @@ export default {
       this.$http.url = selectConfig.manage.dept.list.url;
       this.$http.type = 'GET';
       this.$http.request((_result) => {
-        _result.data.splice(0, 0, { 'deptCd': '', 'deptNm': '선택하세요' });
+        _result.data.splice(0, 0, { 'deptCd': null, 'deptNm': '선택하세요' });
         this.comboDeptItems = this.$_.clone(_result.data);
       }, (_error) => {
         this.$emit('APP_REQUEST_ERROR', _error);
@@ -431,7 +473,7 @@ export default {
       this.$http.type = 'get';
       this.$http.request((_result) => {
         this.eduCourseCds = this.$_.clone(_result.data);
-        this.eduCourseCds.splice(0, 0, { 'code': '', 'codeNm': '전체' });
+        this.eduCourseCds.splice(0, 0, { 'code': null, 'codeNm': '선택하세요' });
       }, (_error) => {
         window.getApp.$emit('APP_REQUEST_ERROR', _error);
       });
@@ -442,6 +484,7 @@ export default {
       this.$http.type = 'get';
       this.$http.request((_result) => {
         this.eduTypeCds = this.$_.clone(_result.data);
+        this.eduTypeCds.splice(0, 0, { 'code': null, 'codeNm': '선택하세요' });
       }, (_error) => {
         window.getApp.$emit('APP_REQUEST_ERROR', _error);
       });
@@ -449,8 +492,7 @@ export default {
 
     // 탭
     loadComponent () {
-      var path = this.tabItems[this.tabIndex].url; 
-      
+      var path = this.tabItems[this.tabIndex].url;
       if (path === 'fileUploadPage') this.component = () => import('@/pages/saf/imprAct/fileUploadPage');
       else this.component = () => import(`${path}`);
     },
@@ -470,17 +512,13 @@ export default {
     * 수정전 유효성 검사
     */
     beforeInsert () {
-      
-      if (this.edueResult.duration !== "0") {
-        this.edueResult.eduSYmd = this.edueResult.duration[0];
-        this.edueResult.eduEYmd = this.edueResult.duration[1];
+      if (this.edueResultMaster.edueResult.duration !== "0") {
+        this.edueResultMaster.edueResult.eduSYmd = this.edueResultMaster.edueResult.duration[0];
+        this.edueResultMaster.edueResult.eduEYmd = this.edueResultMaster.edueResult.duration[1];
       }
-      this.edueResultMaster.edueResult = this.edueResult;
-      this.edueResultMaster.edueResult.eduResultSummary = this.edueResultMaster.eduResultSummary;
-      
       window.getApp.$emit('CONFIRM', {
         title: '확인',
-        message: '추가하시겠습니까?',
+        message: '저장하시겠습니까?',
         // TODO : 필요시 추가하세요.
         type: 'info',  // success / info / warning / error
         // 확인 callback 함수
@@ -488,16 +526,15 @@ export default {
       });
     },
     beforeEdit () {
-      if (this.edueResult.duration !== "null") {
-        this.edueResult.eduSYmd = this.edueResult.duration[0];
-        this.edueResult.eduEYmd = this.edueResult.duration[1];
+      if (this.edueResultMaster.edueResult.duration !== "0") {
+        this.edueResultMaster.edueResult.eduSYmd = this.edueResultMaster.edueResult.duration[0];
+        this.edueResultMaster.edueResult.eduEYmd = this.edueResultMaster.edueResult.duration[1];
       }
-      this.edueResultMaster.edueResult = this.edueResult;
-      this.edueResultMaster.edueResult.eduResultSummary = this.edueResultMaster.eduResultSummary;
+      // this.edueResultMaster.edueResult = this.edueResult;
 
       window.getApp.$emit('CONFIRM', {
         title: '확인',
-        message: '수정하시겠습니까?',
+        message: '저장하시겠습니까?',
         // TODO : 필요시 추가하세요.
         type: 'info',  // success / info / warning / error
         // 확인 callback 함수
@@ -511,22 +548,28 @@ export default {
         type: 'info',  
         confirmCallback: () => {
           this.deleteValue = {
-            'data': this.edueResult.safEduRsltNo
+            'data': this.edueResultMaster.edueResult.safEduRsltNo
           };
           this.isDelete = true;
         }
       });
     },
     beforeEditComple () {
-      this.edueResultMaster.edueResult = this.edueResult;
-
+      // this.edueResultMaster.edueResult = this.edueResult;
+      if (this.edueResultMaster.edueResult.duration !== "0") {
+        this.edueResultMaster.edueResult.eduSYmd = this.edueResultMaster.edueResult.duration[0];
+        this.edueResultMaster.edueResult.eduEYmd = this.edueResultMaster.edueResult.duration[1];
+      }
       window.getApp.$emit('CONFIRM', {
         title: '확인',
         message: '완료하시겠습니까?',
         // TODO : 필요시 추가하세요.
         type: 'info',  // success / info / warning / error
         // 확인 callback 함수
-        confirmCallback: () => { this.checkValidationSave(); }
+        confirmCallback: () => { 
+          this.checkValidationComple(); 
+          this.edueResultMaster.edueResult.processStepCd = 'STEP2';
+        }
       });
     },
     checkValidationSave () {
@@ -535,29 +578,35 @@ export default {
         this.isEditSubmit = _result;
         // TODO : 전역 성공 메시지 처리
         // 이벤트는 ./event.js 파일에 선언되어 있음
-        if (!this.isEditSubmit) window.getApp.$emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
+        if (!this.isEditSubmit) window.getApp.$emit('APP_VALID_ERROR', '필수 입력값을 입력해 주세요.');
+
       }).catch(() => {
+        window.getApp.$emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
         this.isEditSubmit = false;
       });
     },
+    checkValidationComple () {
+      this.$validator.validateAll().then((_result) => {
+        
+        this.isCompleSubmit = _result;
+        // TODO : 전역 성공 메시지 처리
+        // 이벤트는 ./event.js 파일에 선언되어 있음
+        if (!this.isEditSubmit) window.getApp.$emit('APP_VALID_ERROR', '필수 입력값을 입력해 주세요.');
+      }).catch(() => {
+        window.getApp.$emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
+        this.isCompleSubmit = false;
+      });
+    },
+
     checkValidationInsert () {
       this.$validator.validateAll().then((_result) => {
         this.isInsertSubmit = _result;
         // TODO : 전역 성공 메시지 처리
         // 이벤트는 ./event.js 파일에 선언되어 있음
-        if (!this.isInsertSubmit) window.getApp.$emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
+        if (!this.isInsertSubmit) window.getApp.$emit('APP_VALID_ERROR', '필수 입력값을 입력해 주세요.');
       }).catch(() => {
+        window.getApp.$emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
         this.isInsertSubmit = false;
-      });
-    },
-    checkValidation () {
-      this.$validator.validateAll().then((_result) => {
-        this.isSubmit = _result;
-        // TODO : 전역 성공 메시지 처리
-        // 이벤트는 ./event.js 파일에 선언되어 있음
-        if (!this.isSubmit) window.getApp.emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
-      }).catch(() => {
-        this.isSubmit = false;
       });
     },
     validateState (_ref) {
@@ -577,12 +626,6 @@ export default {
     btnClosePopup () {
       // 부모창에 값 전달
       this.$emit('closePopup', { 'success': true });
-    },
-    // 초기화
-    btnClearClickedCallback () {
-      Object.assign(this.$data.edueResult, this.$options.data().edueResult);
-      this.$validator.reset();
-      window.getApp.$emit('APP_REQUEST_SUCCESS', '초기화 버튼이 클릭 되었습니다.');
     },
     // 신규등록
     btnInsertClickedCallback (_result) {
@@ -618,7 +661,7 @@ export default {
     },
     // 완료
     btnEditCompleClickedCallback (_result) {
-      this.isEditSubmit = false;
+      this.isCompleSubmit = false;
       window.getApp.$emit('ALERT', {
         title: '안내',
         message: '완료되었습니다.',
@@ -637,6 +680,7 @@ export default {
       this.isInsertSubmit = false;
       this.isEditSubmit = false;
       this.editable = false;
+      this.isCompleSubmit = false;
       window.getApp.emit('APP_REQUEST_ERROR', _result);
     },
     /** /Button Event **/
@@ -647,3 +691,8 @@ export default {
   }
 };
 </script>
+<style>
+#eduTypeCds{
+  height: auto;
+}
+</style>

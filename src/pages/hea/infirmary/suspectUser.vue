@@ -134,6 +134,7 @@
                     label="과거력"
                     name="diseasePast"
                     v-model="consult.diseasePast"
+                    :rows="2"
                   >
                   </y-textarea>
                 </b-col>
@@ -146,6 +147,7 @@
                     label="현 병력"
                     name="diseaseCurr"
                     v-model="consult.diseaseCurr"
+                    :rows="2"
                   >
                   </y-textarea>
                 </b-col>
@@ -158,6 +160,7 @@
                     label="증상"
                     name="symptom"
                     v-model="consult.symptom"
+                    :rows="2"
                   >
                   </y-textarea>
                 </b-col>
@@ -170,6 +173,7 @@
                     label="상담 내용"
                     name="remark"
                     v-model="consult.remark"
+                    :rows="2"
                   >
                   </y-textarea>
                 </b-col>
@@ -212,17 +216,7 @@
         </b-row>
       </b-col>
     </b-row>
-    <el-dialog
-      :title="popupOptions.title"
-      :visible.sync="popupOptions.visible"
-      :fullscreen="false"
-      :width="popupOptions.width"        
-      :close-on-click-modal="false"
-      :close-on-press-escape="false"
-      :show-close="false"
-      :top="popupOptions.top" >
-      <component :is="popupOptions.target" :popupParam="popupOptions.param" @closePopup="closePopup" />
-    </el-dialog>
+    <y-popup :param="popupOptions"></y-popup>
   </b-container>
 </template>
 
@@ -259,7 +253,8 @@ export default {
         visible: false,
         width: '80%',
         top: '10px',
-        param: {}
+        param: {},
+        closeCallback: null
       },
       isDeleteSubmit: false,
       isInsertSubmit: false,
@@ -393,7 +388,7 @@ export default {
         if (_result) {
           window.getApp.$emit('CONFIRM', {
             title: '확인',
-            message: '등록하시겠습니까?',
+            message: '유소견자 건강상담 정보를 저장하시겠습니까?',
             type: 'info',
             // 확인 callback 함수
             confirmCallback: () => {
@@ -410,7 +405,7 @@ export default {
         if (_result) {
           window.getApp.$emit('CONFIRM', {
             title: '확인',
-            message: '수정하시겠습니까?',
+            message: '유소견자 건강상담 정보를 수정하시겠습니까?',
             type: 'info',
             // 확인 callback 함수
             confirmCallback: () => {
@@ -427,7 +422,7 @@ export default {
       {
         window.getApp.$emit('ALERT', {
           title: '안내',
-          message: '항목을 선택해주세요.',
+          message: '유소견자 건강상담 항목을 선택해주세요.',
           type: 'warning',
         });
         return;
@@ -435,7 +430,7 @@ export default {
 
       window.getApp.$emit('CONFIRM', {
         title: '확인',
-        message: '삭제하시겠습니까?',
+        message: '유소견자 건강상담을 삭제하시겠습니까?',
         type: 'info',
         // 확인 callback 함수
         confirmCallback: () => {
@@ -467,7 +462,7 @@ export default {
       this.updateMode = true;
       window.getApp.$emit('ALERT', {
         title: '안내',
-        message: '등록되었습니다.',
+        message: '유소견자 건강상담 정보를 정상적으로 저장하였습니다.',
         type: 'success',
       });
     },
@@ -476,7 +471,7 @@ export default {
       this.isEditSubmit = false;
       window.getApp.$emit('ALERT', {
         title: '안내',
-        message: '수정되었습니다.',
+        message: '유소견자 건강상담 정보를 정상적으로 수정하였습니다.',
         type: 'success',
       });
     },
@@ -486,7 +481,7 @@ export default {
       this.isDeleteSubmit = false;
       window.getApp.$emit('ALERT', {
         title: '안내',
-        message: '삭제되었습니다.',
+        message: '유소견자 건강상담을 정상적으로 삭제하였습니다.',
         type: 'success',
       });
     },
@@ -502,12 +497,13 @@ export default {
     btnClickedErrorCallback (_result) {
       this.isInsertSubmit = false;
       this.isEditSubmit = false;
-      window.getApp.$emit('APP_REQUEST_ERROR', _result);
+      window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
     },
     btnPopupClickedCallback () {
       this.popupOptions.target = () => import(`${'./suspectUserPopup.vue'}`);
       this.popupOptions.title = '관리대상 유소견자 지정';
       this.popupOptions.visible = true;
+      this.popupOptions.closeCallback = this.closePopup;
     },
     closePopup (data) {
       this.popupOptions.target = null;

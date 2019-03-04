@@ -110,7 +110,6 @@ Vue.component(YDatepicker.name, YDatepicker);
 Vue.component(YRadio.name, YRadio);
 // Vue.component(YDurationpicker.name, YDurationpicker);
 Vue.component(YTextarea.name, YTextarea);
-// Vue.component(YPopup.name, YPopup);
 Vue.component(YMultiSelect.name, YMultiSelect);
 Vue.component(YNumber.name, YNumber);
 Vue.component(YCheckbox.name, YCheckbox);

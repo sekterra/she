@@ -1,6 +1,6 @@
 <!--
   목적 : 안전보호구 > 입출고 내역
-  작성자 : kga
+  작성자 : kth
   Detail :
   *
   examples:
@@ -41,8 +41,8 @@
                 :editable="editable"
                 type="year"
                 label="년도"
-                name="year"
-                v-model="searchParam.year"
+                name="giveInYear"
+                v-model="searchParam.giveInYear"
               >
               </y-datepicker>
             </b-col>
@@ -84,9 +84,12 @@
           <y-data-table
             label="입출고 내역"
             ui="bootstrap"
+            gridType="edit"
             :height="gridOptions.height"
             :headers="gridOptions.header"
             :items="gridOptions.data"
+            :use-paging="true"
+            :print="true"
           >
           </y-data-table>
         </b-col>
@@ -112,14 +115,14 @@ export default {
         show: true
       },
       searchParam: {
-        year: null,
+        giveInYear: '',
         speKindCd: '',
         speNm: '',
       },
       gridOptions: {
         header: [],
         data: [],
-        height: '210'
+        height: '440'
       },
       baseWidth: 8,
       editable: true,
@@ -152,13 +155,14 @@ export default {
     /** 초기화 관련 함수 **/
     init () {
       // URL 셋팅
+      this.searchUrl = selectConfig.saf.speGiveinList.list.url;
 
       setTimeout(() => {
-        this.searchParam.year = this.$comm.getToday();
+        this.searchParam.giveInYear = this.$comm.getToday().substring(0, 4);
+        this.getDataList();  // 보호구 입출고 grid
       }, 200);
 
       this.getSpeKindCds(); // 보호구 종류
-      // this.getDataList();  // 설비 grid
       this.setGridSize(); // 그리드 사이즈 조절
 
       // 입출고 내역 grid 헤더 설정
@@ -174,13 +178,15 @@ export default {
         monthHeader.push(
           { text: i + '월', child: 
             [
-              { text: '입', name: 'inNum' + i, width: '60px', type: 'number' },
-              { text: '출', name: 'giveNum' + i, width: '60px', type: 'number' },
+              { text: '입', name: 'inNum' + i, width: '80px', align: 'center' },
+              { text: '출', name: 'giveNum' + i, width: '80px', align: 'center' },
             ]
           },
         );
         this.gridOptions.header.push(monthHeader[i - 1]);
       }
+
+      this.setGridSize();
     },
     // 보호구 종류
     getSpeKindCds () {
@@ -211,7 +217,7 @@ export default {
     setGridSize () {
       window.getApp.$emit('LOADING_SHOW');
       setTimeout(() => {
-        this.gridOptions.height = window.innerHeight - this.$refs.searchBox.clientHeight - 260;
+        this.gridOptions.height = window.innerHeight - this.$refs.searchBox.clientHeight - 320;
         window.getApp.$emit('LOADING_HIDE');
       }, 600);
     },
@@ -252,7 +258,7 @@ export default {
     },
     // 검색
     btnSearchClickedCallback (_result) {
-      // this.getDataList();
+      this.getDataList();
     },
     /**
     * 저장 버튼 처리용 샘플함수

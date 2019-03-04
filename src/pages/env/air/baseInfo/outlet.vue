@@ -33,7 +33,7 @@
                 :width="8"
                 ui="bootstrap"
                 label="배출구명"
-                name="eairOutletNm"                
+                name="searchEairOutletNm"                
                 v-model="searchParam.eairOutletNm"
                 />
             </b-col>
@@ -41,7 +41,7 @@
               <y-text
                 :width="8"
                 ui="bootstrap"
-                label="배출시설명"
+                label="배출구표시명"
                 name="mainDischFacNm"                
                 v-model="searchParam.mainDischFacNm"
                 />
@@ -79,10 +79,11 @@
               <y-text
                 :width="8"
                 :editable="editable"
+                :required="true"
                 :maxlength="30"
                 ui="bootstrap"
                 label="배출구명"
-                name="code"                
+                name="eairOutletNm"                
                 v-model="outlet.eairOutletNm"
                 v-validate="'required'"
                 :state="validateState('eairOutletNm')"
@@ -116,24 +117,15 @@
               <y-text
                 :width="8"
                 :editable="editable"
+                :required="true"
                 :maxlength="30"
                 ui="bootstrap"
-                label="배출시설명"
+                label="배출구표시명"
                 name="mainDischFacNm"                
                 v-model="outlet.mainDischFacNm"
+                v-validate="'required'"
+                :state="validateState('mainDischFacNm')"
                 />
-            </b-col>
-            <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
-              <y-number
-                :width="8"
-                :editable="editable"
-                :maxlength="5"
-                :hasSeperator="false"
-                ui="bootstrap"
-                label="출력순서"
-                name="sortOrder"
-                v-model="outlet.sortOrder"
-              />
             </b-col>
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
                 <y-switch
@@ -149,6 +141,18 @@
                   v-model="outlet.useYn"
                   />
             </b-col>
+            <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
+              <y-number
+                :width="8"
+                :editable="editable"
+                :maxlength="5"
+                :hasSeperator="false"
+                ui="bootstrap"
+                label="정렬순서"
+                name="sortOrder"
+                v-model="outlet.sortOrder"
+              />
+            </b-col>
             <b-col sm="12" md="12" lg="12" xl="12" class="col-xxl-6">
               <y-shuttlebox
                 :width="10"
@@ -163,7 +167,7 @@
                 v-model="outlet.eairTestItemCds"
                 >
               </y-shuttlebox>
-            </b-col>
+            </b-col>            
           </b-row>
           <div class="float-right mt-3">
             <y-btn
@@ -282,11 +286,11 @@ export default {
       // 그리드 헤더 설정
       this.gridOptions.header = [
         { text: '배출구명', name: 'eairOutletNm', width: '200px', align: 'center' },
-        { text: '배출구직경(m)', name: 'eairOutletDiam', width: '120px', align: 'right' },
-        { text: '배출구높이(m)', name: 'eairOutletHt', width: '120px', align: 'right' },
-        { text: '배출시설명', name: 'mainDischFacNm', width: '250px' },        
-        { text: '출력순서', name: 'sortOrder', width: '100px', align: 'center' },
+        { text: '배출구직경(m)', name: 'eairOutletDiam', width: '130px', align: 'right' },
+        { text: '배출구높이(m)', name: 'eairOutletHt', width: '130px', align: 'right' },
+        { text: '배출구표시명', name: 'mainDischFacNm', width: '250px' },        
         { text: '사용여부', name: 'useYn', width: '100px', align: 'center' },
+        { text: '정렬순서', name: 'sortOrder', width: '100px', align: 'center' },
         { text: '등록일', name: 'createDt', width: '200px', align: 'center' },
         { text: '등록자', name: 'createUserNm', width: '120px', align: 'center' },
         { text: '수정일', name: 'updateDt', width: '200px', align: 'center' },

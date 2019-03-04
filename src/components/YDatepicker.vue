@@ -348,6 +348,7 @@ export default {
       }
       else this.vValue = this.value;
     }
+    if (this.vValue === 'Invalid date') this.vValue = '';
     // alert(this.vValue);
     this.$emit('input', this.vValue);
   },
@@ -387,6 +388,7 @@ export default {
       } else {
         if (this.type === 'time') {
           // value = this.$comm.moment(this.vValue).format('HH-mm-ss');
+          value = this.vValue;
         }
         else if (this.type === 'year')
         {
@@ -398,6 +400,7 @@ export default {
           value = this.$comm.moment(this.vValue).format('YYYY-MM-DD');
         }
       }
+      if (value === 'Invalid date') value = '';
       this.$emit('input', value);
     },
     change () {
@@ -417,6 +420,7 @@ export default {
       var dateFormat = 'L';
       if (this.locale.toLowerCase() === 'ko-kr') dateFormat = 'YYYY-MM-DD';
       this.localFormattedDate = this.$comm.moment(this.vValue).format(dateFormat);
+      if (this.localFormattedDate === 'Invalid date') this.localFormattedDate = '';
       this.$emit('input', this.localFormattedDate);
     },
     setLocalFormattedPeriod () {
@@ -429,6 +433,7 @@ export default {
       ];
       // const date = this.transform.value2date(this.vValue, this.format);
       // console.log('date:' + JSON.stringify(date));
+      if (this.vValue === 'Invalid date') this.vValue = '';
       this.$emit('input', this.vValue);
     }
   }

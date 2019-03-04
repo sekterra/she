@@ -18,40 +18,350 @@
               <y-btn
                 v-if="editable&&insertMode"
                 :action-url="insertUrl"
-                :param="edueResultMaster"
+                :param="noAccident"
                 :is-submit="isInsertSubmit"
-                title="신규등록"
+                title="저장"
                 color="orange"
                 action-type="POST"
+                beforeSubmit = "beforeInsert"
+                @beforeInsert="beforeInsert"
+                @btnClicked="btnInsertClickedCallback" 
+                @btnClickedErrorCallback="btnClickedErrorCallback"
               />
               <y-btn
-                v-if="editable&&updateMode"
+                v-if="editable&&updateMode&&(!isInActiveYn)"
                 :action-url="editUrl"
-                :param="edueResultMaster"
+                :param="noAccident"
                 :is-submit="isEditSubmit"
-                title="수정"
+                title="저장"
                 color="orange"
                 action-type="PUT"
+                beforeSubmit = "beforeEdit"
+                @beforeEdit="beforeEdit"
+                @btnClicked="btnEditClickedCallback" 
+                @btnClickedErrorCallback="btnClickedErrorCallback"
               />
               <y-btn title="닫기" @btnClicked="btnClosePopup" />
             </div>
           </b-col>
         </b-row>
+        <b-card>
+          <b-row>
+              <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-6">
+                <y-datepicker
+                :width="baseWidth"
+                :editable="editable"
+                :disabled="isInActiveYn"
+                :required="true"
+                default="today"
+                label="무재해시작일"
+                name="startYmd"
+                :clearable="true"
+                v-model="noAccident.startYmd"
+                v-validate="'required'"
+                :state="validateState('startYmd')"
+                >
+                </y-datepicker>
+              </b-col>
+              <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-6">
+                <y-datepicker
+                :width="baseWidth"
+                :editable="editable"
+                :disabled="isInActiveYn"
+                :required="true"
+                default="today"
+                label="무재해달성예정일"
+                name="endSchYmd"
+                :clearable="true"
+                v-model="noAccident.endSchYmd"
+                v-validate="'required'"
+                :state="validateState('endSchYmd')"
+                >
+                </y-datepicker>
+              </b-col>
+              <b-col sm="12" md="12" lg="12" xl="12" class="col-xxl-12">
+                <y-switch
+                  :width="10"
+                  true-value="Y"
+                  false-value="N"
+                  ui="bootstrap"
+                  :disabled="isInActiveYn"
+                  label="사용여부"
+                  name="useYn"
+                  selectText="사용"
+                  unselectText="미사용"
+                  v-model="noAccident.useYn"
+                  v-validate="'required'"
+                  :error-msg="errors.first('useYn')"
+                  :state="validateState('useYn')"
+                />
+              </b-col>
+              <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-6">
+                <y-switch
+                  :width="8"
+                  true-value="Y"
+                  false-value="N"
+                  ui="bootstrap"
+                  :disabled="isInActiveYn"
+                  label="무재해 인시"
+                  name="mhUseYn"
+                  selectText="사용"
+                  unselectText="미사용"
+                  v-model="noAccident.mhUseYn"
+                />
+              </b-col>
+              <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-6">
+                <y-number
+                  :width="baseWidth"
+                  :editable="editable"
+                  ui="bootstrap"
+                  :disabled="isInActiveYn"
+                  label="목표인시"
+                  name="targetMh"
+                  v-model="noAccident.targetMh"
+                  :required="true"
+                  v-validate="'required'"
+                  :state="validateState('targetMh')"
+                />
+              </b-col>
+              <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-6">
+                <y-number
+                  :width="baseWidth"
+                  :editable="editable"
+                  :disabled="updateMode||isInActiveYn"
+                  ui="bootstrap"
+                  label="초기인시"
+                  name="initMh"
+                  v-model="noAccident.initMh"
+                />                 
+              </b-col>
+              <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-6">
+                <b-row>
+                  <b-col sm="4">
+                        <y-label label="근무인원(명)"/>
+                  </b-col>
+                  <b-col sm="8">
+                    <b-row>
+                      <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-6">
+                         <y-number
+                          :width="6"
+                          ui="bootstrap"
+                          :disabled="isInActiveYn"
+                          label="정규직"
+                          name="dayMancntCpy"
+                          v-model="noAccident.dayMancntCpy"
+                          >
+                        </y-number>
+                      </b-col>
+                      <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-6">
+                         <y-number
+                          :width="6"
+                          ui="bootstrap"
+                          :disabled="isInActiveYn"
+                          label="협력업체"
+                          name="dayMancntCon"
+                          v-model="noAccident.dayMancntCon"
+                          >
+                      </y-number>
+                      </b-col>
+                    </b-row>            
+                  </b-col>
+                </b-row>               
+              </b-col>
+              <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-6">
+              </b-col>
+              <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-6">
+                <b-row>
+                  <b-col sm="4">
+                        <y-label label="기본인시(시간)"/>
+                  </b-col>
+                  <b-col sm="8">
+                    <b-row>
+                      <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-6">
+                        <y-number
+                        :width="6"
+                        ui="bootstrap"
+                        :disabled="isInActiveYn"
+                        label="평일"
+                        name="normMh"
+                        v-model="noAccident.normMh"
+                        >
+                        </y-number>
+                      </b-col>
+                      <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-6">
+                        <y-number
+                        :width="6"
+                        ui="bootstrap"
+                        :disabled="isInActiveYn"
+                        label="휴일"
+                        name="holiMh"
+                        v-model="noAccident.holiMh"
+                        >
+                        </y-number>
+                      </b-col>
+                    </b-row>     
+                  </b-col>
+                </b-row>  
+              </b-col>
+              <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-6">
+                 <y-switch
+                  :width="8"
+                  true-value="Y"
+                  false-value="N"
+                  ui="bootstrap"
+                  :disabled="isInActiveYn"
+                  label="무재해 일"
+                  name="dayUseYn"
+                  selectText="사용"
+                  unselectText="미사용"
+                  v-model="noAccident.dayUseYn"
+                />
+              </b-col>
+              <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-6">
+                <y-number
+                    :width="baseWidth"
+                    ui="bootstrap"
+                    :disabled="isInActiveYn"
+                    label="목표일"
+                    name="targetMh"
+                    v-model="noAccident.targetDays"
+                    >
+                </y-number>
+              </b-col>
+              <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-6">
+                <y-number
+                    :width="baseWidth"
+                    ui="bootstrap"
+                    :disabled="updateMode||isInActiveYn"
+                    label="초기일"
+                    name="initDays"
+                    v-model="noAccident.initDays"
+                    >
+                </y-number>
+              </b-col>
+              <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-6">
+                <b-row>
+                  <b-col sm="4">
+                        <y-label label="기본일(일수)"/>
+                  </b-col>
+                  <b-col sm="8">
+                    <b-row>
+                      <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-6">
+                        <y-number
+                          :width="6"
+                          ui="bootstrap"
+                          :disabled="isInActiveYn"
+                          label="평일"
+                          name="normMh"
+                          v-model="noAccident.normalDays"
+                          >
+                        </y-number>
+                      </b-col>
+                      <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-6">
+                        <y-number
+                        :width="6"
+                        ui="bootstrap"
+                        :disabled="isInActiveYn"
+                        label="휴일"
+                        name="holiMh"
+                        v-model="noAccident.holiDays"
+                        >
+                        </y-number>
+                      </b-col>
+                    </b-row>        
+                  </b-col>
+                </b-row>
+              </b-col>
+              <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-6">
+                  <y-select
+                    :width="8"
+                    :comboItems="selNoaccStypeCds"
+                    itemText="codeNm"
+                    itemValue="code"
+                    ui="bootstrap"
+                    :disabled="isInActiveYn"
+                    type="search"
+                    :required="true"
+                    label="무재해 시작 사유"
+                    name="noaccStypeCd"
+                    v-model="noAccident.noaccStypeCd"
+                    v-validate="'required'"
+                    :state="validateState('noaccStypeCd')"
+                  />
+               </b-col>
+               <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-6">
+                  <y-datepicker
+                    :width="8"
+                    default="today"
+                    :disabled="isInActiveYn"
+                    label="시작관련일"
+                    name="noaccStypeYmd"
+                    :clearable="true"
+                    v-model="noAccident.noaccStypeYmd"
+                  >
+                  </y-datepicker>
+               </b-col>
+               <b-col sm="12" md="12" lg="12" xl="12" class="col-xxl-12">
+                <y-text
+                    :width="10"
+                    ui="bootstrap"
+                    :disabled="isInActiveYn"
+                    label="시작 상세 사유"
+                    name="remark"
+                    v-model="noAccident.remark"
+                    >
+                </y-text>
+              </b-col>
+          </b-row>
+        </b-card>
       </b-col>
     </b-row>
     <!-- 팝업 설정 -->
-    <el-dialog
-      :title="popupOptions.title"
-      :visible.sync="popupOptions.visible"
-      :fullscreen="false"
-      :append-to-body="true"
-      :close-on-click-modal="false"
-      :close-on-press-escape="false"
-      :show-close="false"
-      :width="popupOptions.width"
-      :top="popupOptions.top">
-      <component :is="popupOptions.target" :popupParam="popupOptions.param" @closePopup="popupOptions.closeCallback" />
-    </el-dialog>
+    <y-popup :param="popupOptions"></y-popup>
+    <!-- 설비 grid -->
+    <b-row>
+      <b-col sm="12">
+        <b-row>
+          <b-col sm="12" md="12" lg="12" xl="12" class="col-xxl-12">
+            <y-data-table 
+              label="과거 무재해 이력"
+              ref="dataTable"
+              grid-type="edit"
+              :headers="gridOptions.header"
+              :items="gridOptions.data"
+              :height="gridOptions.height"
+              :editable="editable"
+              :excel-down="true"
+              :print="true"
+            >
+            </y-data-table>
+          </b-col>
+        </b-row>
+        <div class="float-right mt-3">
+          <y-btn
+            v-if="editable&&insertMode"
+            :param="noAccident"
+            title="저장"
+            color="orange"
+            beforeSubmit = "beforeInsert"
+            @beforeInsert="beforeInsert"
+            @btnClicked="btnInsertClickedCallback" 
+            @btnClickedErrorCallback="btnClickedErrorCallback"
+          />
+          <y-btn
+            v-if="editable&&updateMode&&(!isInActiveYn)"
+            :param="noAccident"
+            title="저장"
+            color="orange"
+            beforeSubmit = "beforeEdit"
+            @beforeEdit="beforeEdit"
+            @btnClicked="btnEditClickedCallback" 
+            @btnClickedErrorCallback="btnClickedErrorCallback"
+          />
+          <y-btn title="닫기" @btnClicked="btnClosePopup" />
+        </div>
+      </b-col>
+    </b-row>
   </b-container>
 </template>
 
@@ -65,8 +375,9 @@ export default {
     popupParam: {
       type: Object,
       default: {
-        safFacilityCd: 0,
+        safNoAccidentNo: 0,
         pageNm: '',
+        noAccUseYn: false,
       },
     },
   },
@@ -84,70 +395,67 @@ export default {
         param: {},
         closeCallback: null,
       },
+      searchParam: {
+        duration: []
+      },
       component: null,
-      noAccidentResult: {
+      noAccident: {
+        safNoAccidentNo: 0,
         startYmd: '',
         endSchYmd: '',
-        mhUseYn: '',
-        targetMh: 0,
-        initMh: 0,
-        normMh: 0,
-        holiMh: 0,
-        dayMancntCpy: 0,
-        dayMancntCon: 0,
-        dayUseYn: 0,
-        targetDays: 0,
-        initDays: 0,
-        normalDays: 0,
-        holiDays: 0,
+        mhUseYn: 'Y',
+        targetMh: '',
+        initMh: '',
+        normMh: '',
+        holiMh: '',
+        dayMancntCpy: '',
+        dayMancntCon: '',
+        dayUseYn: '',
+        targetDays: '',
+        initDays: '',
+        normalDays: '',
+        holiDays: '',
         remark: '',
-        useYn: '',
+        useYn: 'Y',
         createUserId: '',
         createDt: '',
         updateUserId: '',
         updateDt: '',
-
+        totalMh: 0,
+        totalDays: 0,
+        progressMh: 0,
+        bydateMh: '',
+        noAccidentDays: 0,
+        noaccStypeCd: '', 
+        noaccStypeNm: '',
+        noaccStypeYmd: '',
+        updateYn: 0,
+      },
+      gridOptions: {
+        header: [],
+        data: [],
+        height: '300',
       },
       baseWidth: 8,
       editable: true,
       insertMode: false,
       updateMode: false,
-      comboFacilityTypeItems: [], // 설비유형 
-      processNoItems: [], // 공정
-      comboDeptItems: [], // 관리부서
-      eduCourseCds: [], // 교육과정
-      eduTypeCds: [], // 교육구분
+      selNoaccStypeCds: [], // 시작사유 종류
       insertUrl: '',
       editUrl: '',
       deleteUrl: '',
       isInsertSubmit: false, 
       isEditSubmit: false,
       deleteValue: null,
+      recentendSchYmd: null,
+      isInActiveYn: false,
     };
   },
   watch: {
     tabIndex () {
-      this.loadComponent();
     }
   },
   /** Vue lifecycle: created, mounted, destroyed, etc **/
-  beforeInsert () {
-  },
-  beforeEdit () {
-  },
-  beforeDelete () {
-    window.getApp.$emit('CONFIRM', {
-      title: '확인',
-      message: '삭제하시겠습니까?',
-      type: 'info',  
-      confirmCallback: () => {
-        this.deleteValue = {
-          'data': Object.values(this.$_.clone(this.selectedValue))
-        };
-        this.isDelete = true;
-      }
-    });
-  },
   created () {
   },
   beforeMount () {
@@ -157,10 +465,10 @@ export default {
     this.init();
   },
   mounted () {
-    this.loadComponent();
+    window.addEventListener('resize', this.setGridSize);
   },
   beforeDestroy () {
-    this.init();
+    window.removeEventListener('resize', this.setGridSize);
   },
   /** methods **/
   methods: {
@@ -169,32 +477,68 @@ export default {
       // URL 셋팅
       this.insertUrl = transactionConfig.saf.noAccidentResult.insert.url;
       this.editUrl = transactionConfig.saf.noAccidentResult.edit.url;
-      // this.getFacilityTypeItems(); // 설비유형
-     
+      this.searchUrl = selectConfig.saf.noAccidentResult.list.url; 
+      this.lastviewUrl = selectConfig.saf.noAccidentResult.getNoaccLastView.url;
+
+      // 수정 또는 신규등록 버튼 Mode
+      this.noAccident.safNoAccidentNo = this.popupParam.safNoAccidentNo;
+
+      setTimeout(() => {
+        this.getNoaccStypeCds(); // 시작사유 종류  
+        if (this.popupParam.safNoAccidentNo !== 0) {
+          this.getnoAccident();
+          this.updateMode = true;
+        } else {
+          this.getNoAccList();
+          this.insertMode = true;
+        }
+        if ((this.popupParam.noAccUseYn !== 'Y') && this.updateMode) {
+          this.isInActiveYn = true;
+        }
+      }, 100);
+
+
+      // 교육 결과 목록 grid 헤더 설정
+      this.gridOptions.header = [
+        { text: '시작일', name: 'startYmd', width: '120px', align: 'center' },
+        { text: '달성예정일', name: 'endSchYmd', width: '110px', align: 'center' },
+        { text: '인시', child: 
+          [
+            { text: '초기인시', name: 'initMh', width: '100px', align: 'center' },
+            { text: '누적인시', name: 'totalMh', width: '100px', align: 'center' },
+            { text: '목표인시', name: 'targetMh', width: '100px', align: 'center' },
+            { text: '진행률', name: 'progressMh', width: '120px', align: 'center' },
+            { text: '무재해 일', name: 'noAccidentDays', width: '100px', align: 'left' },
+            { text: '일별 생성인시', name: 'bydateMh', width: '140px', align: 'center' },
+          ]
+        },
+        { text: '일', child: 
+          [
+            { text: '초기일', name: 'initDays', width: '100px', align: 'center' },
+            { text: '누적일', name: 'totalDays', width: '100px', align: 'center' },
+            { text: '목표일', name: 'targetDays', width: '100px', align: 'center' },
+          ]
+        },
+        { text: '무산/시작사유', name: 'remark', width: '140px', align: 'center' },
+      ]; 
     },
-    // 설비유형
-    getFacilityTypeItems () {
-      this.$http.url = selectConfig.facilityType.list.url;
+    getnoAccident () {
+      this.$http.url = this.$format(selectConfig.saf.noAccidentResult.get.url, this.popupParam.safNoAccidentNo);
       this.$http.type = 'GET';
       this.$http.request((_result) => {
-        this.comboFacilityTypeItems = this.$_.clone(_result.data);
-        this.comboFacilityTypeItems.splice(0, 0, { 'safCheckKindNo': '', 'safCheckKindNm': '전체' });
-        this.facilityMst.safFacilityTypeCd = '';
+        this.noAccident = _result.data;
+        this.getNoAccList();
       }, (_error) => {
         window.getApp.$emit('APP_REQUEST_ERROR', _error);
       });
     },
-    // 공정
-    getProcessNoItems () {
-      this.$http.url = selectConfig.manage.process.list.url;
-      this.$http.type = 'get';
-      this.$http.param = {
-        'useYn': 'Y'
-      };
+    // 조회
+    getNoAccList () {
+      this.$http.url = this.lastviewUrl;
+      this.$http.type = 'GET';
       this.$http.request((_result) => {
-        _result.data.splice(0, 0, { 'processNo': 0, 'processNm': '전체' });
-        this.processNoItems = _result.data;
-        this.facilityMst.processNo = 0;
+        this.gridOptions.data = _result.data;
+        this.recentStartYmd = _result.data[0].startYmd;
       }, (_error) => {
         window.getApp.$emit('APP_REQUEST_ERROR', _error);
       });
@@ -210,24 +554,13 @@ export default {
         window.getApp.$emit('APP_REQUEST_ERROR', _error);
       });
     },
-    // 교육과정 종류
-    getEduCourseCds () {
-      this.$http.url = this.$format(selectConfig.codeMaster.getSelect.url, 'SAF_EDU_COURSE');
+    // 무재해 시작 사유 종류
+    getNoaccStypeCds () {
+      this.$http.url = this.$format(selectConfig.codeMaster.getSelect.url, 'SAF_NOACC_STYPE');
       this.$http.type = 'get';
       this.$http.request((_result) => {
-        this.eduCourseCds = this.$_.clone(_result.data);
-        this.eduCourseCds.splice(0, 0, { 'code': '', 'codeNm': '전체' });
-      }, (_error) => {
-        window.getApp.$emit('APP_REQUEST_ERROR', _error);
-      });
-    },
-    // 교육구분 종류
-    getEduTypeCds () {
-      this.$http.url = this.$format(selectConfig.codeMaster.getSelect.url, 'SAF_EDU_TYPE');
-      this.$http.type = 'get';
-      this.$http.request((_result) => {
-        this.eduTypeCds = this.$_.clone(_result.data);
-        this.eduTypeCds.splice(0, 0, { 'code': '', 'codeNm': '전체' });
+        this.selNoaccStypeCds = this.$_.clone(_result.data);
+        this.selNoaccStypeCds.splice(0, 0, { 'code': null, 'codeNm': '선택하세요.' });
       }, (_error) => {
         window.getApp.$emit('APP_REQUEST_ERROR', _error);
       });
@@ -243,8 +576,39 @@ export default {
     */
     
     /** /Call API service **/
+    /**
+     * 그리드 리사이징
+     */
+    setGridSize () {
+      window.getApp.$emit('LOADING_SHOW');
+      setTimeout(() => {
+        this.gridOptions.height = window.innerHeight - 260;
+        window.getApp.$emit('LOADING_HIDE');
+      }, 600);
+    },
     
     /** validation checking(필요없으면 지워주세요) **/
+    checkValidationEdit () {
+      this.$validator.validateAll().then((_result) => {
+        
+        this.isEditSubmit = _result;
+        // TODO : 전역 성공 메시지 처리
+        // 이벤트는 ./event.js 파일에 선언되어 있음
+        if (!this.isEditSubmit) window.getApp.$emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
+      }).catch(() => {
+        this.isEditSubmit = false;
+      });
+    },
+    checkValidationInsert () {
+      this.$validator.validateAll().then((_result) => {
+        this.isInsertSubmit = _result;
+        // TODO : 전역 성공 메시지 처리
+        // 이벤트는 ./event.js 파일에 선언되어 있음
+        if (!this.isInsertSubmit) window.getApp.$emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
+      }).catch(() => {
+        this.isInsertSubmit = false;
+      });
+    },
     checkValidation () {
       this.$validator.validateAll().then((_result) => {
         this.isSubmit = _result;
@@ -267,7 +631,92 @@ export default {
     
     /** /Component, Callbacks (버튼 제외) **/
     
-    /** Button Event **/
+    /** button 관련 이벤트 **/
+    beforeInsert () {
+      this.$validator.validateAll().then((_result) => {
+
+        this.noAccident.updateYn = 0;
+
+        var startYmd1 = this.$comm.convertStringToDate(this.noAccident.startYmd, '-'); 
+        var endSchYmd1 = this.$comm.convertStringToDate(this.noAccident.endSchYmd, '-'); 
+        var recentStartYmd1 = this.$comm.convertStringToDate(this.recentStartYmd, '-'); 
+        var routine = this.$comm.getDatediff(startYmd1, endSchYmd1);
+        if (routine < 0) {
+          window.getApp.$emit('ALERT', {
+            title: '에러',
+            message: '달성예정일은 시작일 이전 일 수 없습니다.',
+            type: 'error',
+          });
+          return;
+        }  
+        var routine2 = this.$comm.getDatediff(recentStartYmd1, startYmd1);
+        if (routine2 <= 0) {
+          window.getApp.$emit('ALERT', {
+            title: '에러',
+            message: '시작일은 그리드화면에 나오는 최근 등록한 시작일의 다음날부터 가능합니다.',
+            type: 'error',
+          });
+          return;
+        }  
+        if (_result) {
+          window.getApp.$emit('CONFIRM', {
+            title: '확인',
+            message: '저장하시겠습니까?',
+            type: 'info',  // success / info / warning / error
+            // 확인 callback 함수
+            confirmCallback: () => {
+              this.checkValidationInsert();
+            },
+          });
+        }
+        else {
+          window.getApp.$emit('ALERT', {
+            title: '안내',
+            message: '필수입력값을 입력해주세요.',
+            type: 'warning',
+          });
+        }
+      }).catch(() => {
+        window.getApp.$emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
+      });
+    },
+    beforeEdit () {
+      this.$validator.validateAll().then((_result) => {
+
+        this.noAccident.updateYn = 1;
+
+        var startYmd1 = this.$comm.convertStringToDate(this.noAccident.startYmd, '-'); 
+        var endSchYmd1 = this.$comm.convertStringToDate(this.noAccident.endSchYmd, '-'); 
+        var routine = this.$comm.getDatediff(startYmd1, endSchYmd1);
+        if (routine < 0) {
+          window.getApp.$emit('ALERT', {
+            title: '에러',
+            message: '달성예정일은 시작일 이전 일 수 없습니다.',
+            type: 'error',
+          });
+          return;
+        }  
+        if (_result) {
+          window.getApp.$emit('CONFIRM', {
+            title: '확인',
+            message: '수정하시겠습니까?',
+            type: 'info', 
+            confirmCallback: () => {
+              this.checkValidationEdit();
+            },
+          });
+        }
+        else {
+          window.getApp.$emit('ALERT', {
+            title: '안내',
+            message: '필수입력값을 입력해주세요.',
+            type: 'warning',
+          });
+        }
+      }).catch(() => {
+        window.getApp.$emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
+      });
+    },
     // 팝업 닫기
     btnClosePopup () {
       // 부모창에 값 전달
@@ -275,13 +724,13 @@ export default {
     },
     // 초기화
     btnClearClickedCallback () {
-      Object.assign(this.$data.facilityMst, this.$options.data().facilityMst);
+      Object.assign(this.$data.noAccident, this.$options.data().noAccident);
       this.$validator.reset();
       window.getApp.$emit('APP_REQUEST_SUCCESS', '초기화 버튼이 클릭 되었습니다.');
     },
     // 신규등록
     btnInsertClickedCallback (_result) {
-      this.safFacilityCd = _result.data;
+      this.noAccident.safNoAccidentNo = _result.data;
       this.isInsertSubmit = false;
       window.getApp.$emit('ALERT', {
         title: '안내',
@@ -309,6 +758,10 @@ export default {
         message: '삭제되었습니다.',
         type: 'success',
       });
+    },
+    closePopupUsage () {
+      // 부모창에 값 전달
+      this.$emit('closePopup', { 'success': true });
     },
     /**
     * 버튼 에러 처리용 공통함수

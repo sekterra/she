@@ -10,9 +10,10 @@ NProgress.configure({ showSpinner: false })// NProgress Configuration
 
 // permission judge function
 function hasPermission(roles, permissionRoles) {
-  if (roles.indexOf('admin') >= 0) return true // admin permission passed directly
-  if (!permissionRoles) return true
-  return roles.some(role => permissionRoles.indexOf(role) >= 0)
+  // if (roles.indexOf('admin') >= 0) return true // admin permission passed directly
+  // if (!permissionRoles) return true
+  // return roles.some(role => permissionRoles.indexOf(role) >= 0)
+  return true;
 }
 
 const whiteList = ['/login', '/auth-redirect']// no redirect whitelist
@@ -27,7 +28,6 @@ router.beforeEach((to, from, next) => {
     } else {
       if (store.getters.roles.length === 0) { // 현재 사용자가 user_info 정보를 가져 왔는지 확인
         store.dispatch('GetUserInfo').then(result => { // user_info 조회
-          console.log(':::::::::::::::: GetUserInfo ::::::::::::::::');
           store.dispatch('GetUserMenus').then(_menus => {
             // TODO : 원본 소스
             // const roles = res.data.roles // note: roles must be a array! such as: ['editor','develop']

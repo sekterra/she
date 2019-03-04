@@ -12,30 +12,40 @@
       <y-label :label="label" />
     </div>
     <el-upload
-      class="upload"
+      :action="uploadUrl"
+      :data="attachFileGrp"
+      :auto-upload="false"
+      :on-preview="handlePreview"
+      :on-remove="handleRemove"
+      :file-list="uploadedList"
       drag
-      action="https://jsonplaceholder.typicode.com/posts/"
-      :on-preview="onPreview"
-      :on-remove="onRemove"
-      :on-success="onSuccess"
-      :on-error="onError"
-      :file-list="fileList"
+      ref="upload"
+      name="files"
+      list-type="picture"
       multiple
+      @on-success="onSuccess"
       >
       <i class="el-icon-upload"></i>
-      <div class="el-upload__text">업로드할 파일을 Drag & Drop 하거나 <em>클릭하세요.</em></div>
+      <div class="el-upload__text">Drop file here or <em>click to upload</em></div>
       <div class="el-upload__tip" slot="tip">
-        {{info}}
+        <el-button size="small" type="success" @click="submitUpload">upload to server</el-button>
+        <span>jpg/png files with a size less than 500kb</span>
       </div>
     </el-upload>
-    <div class="text-right">
+    <!-- 파일 뷰어 -->
+    <el-dialog :visible.sync="dialogVisible">
+      <img width="100%" :src="dialogImageUrl" alt="">
+      <el-button
+        class="mt-2"
+        size="small" 
+        @click="download">파일 다운로드</el-button>
+        {{dialogImageUrl}}
+    </el-dialog>
+    <div class="text-right mt-1">
       <y-btn
-        title="뷰어보기"
+        title="전체 다운로드"
         size="small"
-      />
-      <y-btn
-        title="다운로드"
-        size="small"
+        @btnClicked="zipDownload"
       />
       <y-btn
         v-if="editable"
@@ -48,6 +58,10 @@
 </template>
 
 <script>
+import backendConfig from '@/js/backendConfig.js';
+import selectConfig from '@/js/selectConfig.js';
+import transactionConfig from '@/js/transactionConfig.js';
+
 export default {
   /** attributes: name, components, props, data **/
   name: 'y-file-upload',
@@ -83,16 +97,15 @@ export default {
       type: Number,
       default: 1
     },
-    // TODO : 첨부 파일 그룹 번호
-    // 이 번호가 존재하면 기존 업로드된 파일을 조회해 옴
-    attachFileGrpNo: {
-      type: Number,
-      default: null
-    },
     // 파일 첨부 필터
     filter: {
       type: String,
       default: 'jpg, png, txt'
+    },
+    // 첨부파일 그룹 정보
+    attachFileGrp: {
+      type: Object,
+      required: true
     }
   },
   // TODO: 화살표 함수(=>)는 data에 사용하지 말 것
@@ -100,20 +113,28 @@ export default {
   //    참고url: https://kr.vuejs.org/v2/api/index.html#data
   data () {
     return {
-      fileList: [
-        { name: 'food.jpeg', url: 'https://fuss10.elemecdn.com/3/63/4e7f3a15429bfda99bce42a18cdd1jpeg.jpeg?imageMogr2/thumbnail/360x360/format/webp/quality/100' }, 
-        { name: 'food2.jpeg', url: 'https://fuss10.elemecdn.com/3/63/4e7f3a15429bfda99bce42a18cdd1jpeg.jpeg?imageMogr2/thumbnail/360x360/format/webp/quality/100' },
-      ]
+      // TODO: 기존 업로드 파일 목록
+      uploadedList: [
+        // 예시
+        // { name: 'food.jpeg', url: 'https://fuss10.elemecdn.com/3/63/4e7f3a15429bfda99bce42a18cdd1jpeg.jpeg?imageMogr2/thumbnail/360x360/format/webp/quality/100' }, 
+      ],
+      // TODO: 이미지 미리보기 경로
+      dialogImageUrl: '',
+      // TODO: 이미지 미리보기 표시 여부
+      dialogVisible: false
     };
   },
   computed: {
     info () {
       return '파일크기 ' + this.uploadLimitSize + 'MB 이하 파일만 업로드 됩니다.'
+    },
+    uploadUrl () {
+      return backendConfig.getUrl(transactionConfig.attachFile.insert.url);
     }
   },
   watch: {
-    attachFileGrpNo () {
-      if (this.attachFileGrpNo) this.getUploadedFileList();
+    attachFileGrp () {
+      if (this.attachFileGrp) this.getUploadedFileList();
     }
   },
   /** Vue lifecycle: created, mounted, destroyed, etc **/
@@ -136,7 +157,7 @@ export default {
   methods: {
     /** 초기화 관련 함수 **/
     init () {
-      if (this.attachFileGrpNo) this.getUploadedFileList();
+      if (this.attachFileGrp) this.getUploadedFileList();
     },
     /** /초기화 관련 함수 **/
     
@@ -150,35 +171,41 @@ export default {
     /** /Call API service **/
        
     /** Component Events, Callbacks (버튼 제외) **/
-    onRemove (file, fileList) {
+    handleRemove(file, fileList) {
       console.log(file, fileList);
     },
-    onPreview (file) {
-      console.log(file);
+    handlePreview(file) {
+      this.dialogImageUrl = file.url;
+      this.dialogVisible = true;
+    },
+    submitUpload() {
+      this.$refs.upload.submit();
     },
     onSuccess (_result, _file, fileList) {
+      this.uploadedList = _result.body;
       this.$emit('fileUploadComplete', _result);
     },
     onError (_error, _file, fileList) {
     },
+    download () {
+      const link = document.createElement('a');
+      link.href = this.dialogImageUrl;
+      document.body.appendChild(link);
+      link.click();
+    },
     /** /Component, Callbacks (버튼 제외) **/
     
     /** Button Event **/
-    /**
-    * 저장 버튼 처리용 샘플함수
-    */
-    btnSaveClickedCallback (_result) {
-      this.isSubmit = false;  // 반드시 isSubmit을 false로 초기화 하세요. 그렇지 않으면 버튼을 다시 클릭해도 동작하지 않습니다.
-      // TODO : 여기에 추가 로직 삽입(로직 삽입시 지워주세요)
-      window.getApp.emit('APP_REQUEST_SUCCESS', "정상적으로 저장 되었습니다.");
-    },
-    /**
-    * 버튼 에러 처리용 공통함수
-    */
-    btnClickedErrorCallback (_result) {
-      this.isSubmit = false;  // 반드시 isSubmit을 false로 초기화 하세요. 그렇지 않으면 버튼을 다시 클릭해도 동작하지 않습니다.
-      // TODO : 여기에 추가 로직 삽입(로직 삽입시 지워주세요)
-      window.getApp.emit('APP_REQUEST_ERROR', _result);
+    zipDownload () {
+      this.$http.url = selectConfig.attachFile.zip.url;
+      this.$http.type = 'GET';
+      this.$http.param = this.attachFileGrp;
+      this.$http.request((_result) => {
+        const link = document.createElement('a');
+        link.href = _result.data;
+        document.body.appendChild(link);
+        link.click();
+      });
     },
     /** /Button Event **/
     
@@ -187,7 +214,12 @@ export default {
      * 업로드된 파일 목록 조회
      */
     getUploadedFileList () {
-
+      this.$http.url = selectConfig.attachFile.list.url;
+      this.$http.type = 'GET';
+      this.$http.param = this.attachFileGrp;
+      this.$http.request((_result) => {
+        this.uploadedList = _result.data;
+      });
     }
     /** /기타 function **/
   }

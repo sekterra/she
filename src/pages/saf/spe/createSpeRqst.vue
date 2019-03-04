@@ -13,8 +13,42 @@
       <b-col sm="12">
         <b-row>
           <b-col sm="12">
-            <y-label label="보호구 신청 등록" icon="user-edit" color-class="cutstom-title-color"/>
+            <y-label label="보호구 신청" icon="user-edit" color-class="cutstom-title-color"/>
             <div slot="buttonGroup" class="float-right mb-1">  
+              <y-btn
+                v-if="editable"
+                :action-url="insertUrl"
+                :param="speRqst"
+                :is-submit="isFinish"
+                title="완료"
+                color="black"
+                action-type="POST"
+                beforeSubmit = "beforeFinish"
+                @beforeFinish="beforeFinish"
+                @btnClicked="btnFinishClickedCallback" 
+                @btnClickedErrorCallback="btnClickedErrorCallback"
+              />
+              <y-btn
+                v-if="this.speRqst.processStepCd !== 'STEP2'"
+                :action-url="insertUrl"
+                :param="speRqst"
+                :is-submit="isInsert"
+                title="저장"
+                color="orange"
+                action-type="POST"
+                beforeSubmit = "beforeInsert"
+                @beforeInsert="beforeInsert"
+                @btnClicked="btnInsertClickedCallback" 
+                @btnClickedErrorCallback="btnClickedErrorCallback"
+              />
+              <y-btn 
+                v-if="this.speRqst.processStepCd !== 'STEP2'
+                  && this.speRqst.safSpeRqstNo > 0"
+                title="삭제"
+                color="red"
+                @btnClicked="btnDeleteClickedCallback" 
+                @btnClickedErrorCallback="btnClickedErrorCallback"
+              />
               <y-btn
                 title="닫기"
                 @btnClicked="btnClosePopup" 
@@ -27,7 +61,6 @@
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <y-datepicker
                 :width="baseWidth"
-                :editable="editable"
                 :disabled="true"
                 default="today"
                 label="신청일"
@@ -46,15 +79,14 @@
                 itemValue="deptCd"
                 ui="bootstrap"
                 label="신청부서"
-                name="deptCd"
-                v-model="speRqst.deptCd"
+                name="rqstDeptCd"
+                v-model="speRqst.rqstDeptCd"
               >
               </y-select>
             </b-col>
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <y-text
                 :width="baseWidth"
-                :editable="editable"
                 :disabled="true"
                 ui="bootstrap"
                 label="신청자"
@@ -66,7 +98,7 @@
             <b-col sm="12" md="12" lg="12" xl="12" class="col-xxl-6">
               <y-textarea
                 :width="10"
-                :editable="editable"
+                :maxlength="100"
                 ui="bootstrap"
                 label="비고"
                 name="remark"
@@ -84,7 +116,7 @@
       <b-col sm="12">
         <b-col sm="12" class="px-0">
           <y-data-table 
-            label="신청 목록"
+            label="보호구 신청 목록"
             gridType="edit"
             :excel-down="true"
             :print="true"
@@ -99,85 +131,53 @@
         <div class="float-right mt-3">
           <y-btn
             v-if="editable"
-            title="초기화"
-            @btnClicked="btnClearClickedCallback" 
-          />
-          <y-btn
-            v-if="editable&&insertMode"
-            :action-url="insertUrl"
-            :param="speRqst"
-            :is-submit="isInsert"
-            title="신규등록"
-            color="orange"
+            title="완료"
+            color="black"
             action-type="POST"
-            beforeSubmit = "beforeInsert"
-            @beforeInsert="beforeInsert"
-            @btnClicked="btnInsertClickedCallback" 
+            beforeSubmit = "beforeFinish"
+            @beforeFinish="beforeFinish"
+            @btnClicked="btnFinishClickedCallback" 
             @btnClickedErrorCallback="btnClickedErrorCallback"
           />
           <y-btn
-            v-if="editable&&updateMode"
-            :action-url="editUrl"
-            :param="speRqst"
-            :is-submit="isEdit"
-            title="수정"
+            v-if="this.speRqst.processStepCd !== 'STEP2'"
+            title="저장"
             color="orange"
-            action-type="PUT"
-            beforeSubmit = "beforeEdit"
-            @beforeEdit="beforeEdit"
-            @btnClicked="btnEditClickedCallback" 
+            @btnClicked="beforeInsert" 
             @btnClickedErrorCallback="btnClickedErrorCallback"
           />
           <y-btn 
-            v-if="editable&&updateMode"
-            :action-url="deleteUrl"
-            :param="deleteValue"
-            :is-submit="isDelete"
+            v-if="this.speRqst.processStepCd !== 'STEP2'
+              && this.speRqst.safSpeRqstNo > 0"
             title="삭제"
             color="red"
-            action-type="DELETE"
-            beforeSubmit = "beforeDelete"
-            @beforeDelete="beforeDelete"
             @btnClicked="btnDeleteClickedCallback" 
             @btnClickedErrorCallback="btnClickedErrorCallback"
+          />
+          <y-btn
+            title="닫기"
+            @btnClicked="btnClosePopup" 
           />
         </div>
       </b-col>
     </b-row>
-
-    <!-- 팝업 설정 -->
-    <el-dialog
-      :title="popupOptions.title"
-      :visible.sync="popupOptions.visible"
-      :fullscreen="false"
-      :append-to-body="true"
-      :close-on-click-modal="false"
-      :close-on-press-escape="false"
-      :show-close="false"
-      :width="popupOptions.width"
-      :top="popupOptions.top">
-      <component :is="popupOptions.target" :popupParam="popupOptions.param" @closePopup="popupOptions.closeCallback" />
-    </el-dialog>
   </b-container>
 </template>
 
 <script>
 import selectConfig from '@/js/selectConfig';
+import transactionConfig from '@/js/transactionConfig';
 export default {
-  /** attributes: name, components, props, data **/
   name: 'create-spe-rqst',
   props: {
     popupParam: {
       type: Object,
       default: {
-        safFacilityCd: 0,
-        pageNm: '',
+        safSpeRqstNo: 0,
+        processStepCd: 'STEP1',
       },
     },
   },
-  // TODO: 화살표 함수(=>)는 data에 사용하지 말 것
-  //    data: () => { return { a: this.myProp }}) 화살표 함수가 부모 컨텍스트를 바인딩하기 때문에 this는 예상과 달리 Vue 인스턴스가 아니기 때문에 this.myProp는 undefined로 나옵니다.
-  //    참고url: https://kr.vuejs.org/v2/api/index.html#data
   data () {
     return {
       gridOptions: {
@@ -185,136 +185,163 @@ export default {
         data: [],
         height: '210'
       },
-      popupOptions: {
-        target: null,
-        title: '',
-        visible: false,
-        width: '90%',
-        top: '10px',
-        param: {},
-        closeCallback: null,
-      },
       speRqst: {
+        safSpeRqstNo: 0,
         rqstYmd: null,
-        deptCd: '',
+        rqstDeptCd: '',
         rqstUserNm: '',
         remark: '',
+        speRequestDetails: [],
+        processStepCd: ''
       },
       baseWidth: 8,
       editable: true,
-      insertMode: false,
-      updateMode: false,
       comboDeptItems: [], // 관리부서
+      searchUrl: '',
       insertUrl: '',
-      editUrl: '',
-      deleteUrl: '',
       isInsert: false, 
-      isEdit: false,
-      deleteValue: null,
+      isFinish: false,
     };
   },
-  /** Vue lifecycle: created, mounted, destroyed, etc **/
-  beforeInsert () {
-  },
-  beforeEdit () {
-  },
-  beforeDelete () {
-    window.getApp.$emit('CONFIRM', {
-      title: '확인',
-      message: '삭제하시겠습니까?',
-      type: 'info',  
-      confirmCallback: () => {
-        this.deleteValue = {
-          'data': Object.values(this.$_.clone(this.selectedValue))
-        };
-        this.isDelete = true;
-      }
-    });
-  },
-  created () {
+  watch: {
+    'gridOptions.data': {
+      handler: function (newValue, oldValue) {
+        this.speRqst.speRequestDetails = [];
+        this.$_.forEach(this.gridOptions.data, (item) => {
+          if (!isNaN(item.rqstNum) && parseInt(item.rqstNum, 10) > 0) this.speRqst.speRequestDetails.push(item);
+        });
+      },
+      deep: true
+    },
   },
   beforeMount () {
-    // TODO : data를 초기화 시켜줌(검색 조건 유지가 필요할 때는 삭제할 것)
-    // 이유 : vue.js는 SPA기반으로 동작하기 때문에 페이지를 이동하더라도 기존 입력된 정보가 그대로 남아 있는 문제가 있음
     Object.assign(this.$data, this.$options.data());
     this.init();
   },
   mounted () {
   },
   beforeDestroy () {
-    this.init();
   },
   /** methods **/
   methods: {
-    /** 초기화 관련 함수 **/
     init () {
+      // 사용자 정보 setting
+      this.speRqst.rqstUserNm = '개발자';
+      this.speRqst.rqstDeptCd = 'yullin';
+
       // URL 셋팅
+      this.searchUrl = selectConfig.saf.speRqstDtl.list.url;
+      this.insertUrl = transactionConfig.saf.speRqst.insert.url;
+      this.deleteUrl = transactionConfig.saf.speRqst.delete.url;
 
       this.getDeptItems();  // 관리부서
-      this.insertMode = true;
+      this.getSpeRqst();  // 보호구 신청 상세
+      this.getDataList();
 
-      // 수정 또는 신규등록 버튼 Mode
-      this.speRqst.safFacilityCd = this.popupParam.safFacilityCd;
-      if (this.popupParam.safFacilityCd !== 0) {
-        this.updateMode = true;
+      // 완료 또는 저장 버튼 Mode
+      this.speRqst.safSpeRqstNo = this.popupParam.safSpeRqstNo;
+      this.speRqst.processStepCd = this.popupParam.processStepCd;
+      if (this.popupParam.safSpeRqstNo !== 0 && this.speRqst.processStepCd === 'STEP2') {
+        this.editable = false;
       } else {
-        this.insertMode = true;
+        this.editable = true;
       }
 
       // 보호구 신청 grid 헤더 설정
       this.gridOptions.header = [
         { text: '보호구종류', name: 'speKindNm', width: '130px', align: 'center' },
         { text: '보호구명', name: 'speNm', width: '200px', align: 'left' },
-        { text: '신청개수', name: 'rqstNum', width: '100px', align: 'center', type: 'text' },
-        { text: '단위', name: 'giveUnitNm', width: '90px', align: 'center' },
-        { text: '비고', name: 'remark', width: '200px', align: 'center', type: 'text' },
       ];
+
+      if (this.editable)
+      {
+        this.gridOptions.header.splice(3, 0, { text: '신청개수', name: 'rqstNum', width: '100px', align: 'center', type: 'number' });
+        this.gridOptions.header.splice(4, 0, { text: '단위', name: 'giveUnitNm', width: '90px', align: 'center' });
+        this.gridOptions.header.splice(5, 0, { text: '비고', name: 'remark', width: '200px', align: 'center', type: 'text' });
+      }
+      else
+      {
+        this.gridOptions.header.splice(3, 0, { text: '신청개수', name: 'rqstNum', width: '100px', align: 'center' });
+        this.gridOptions.header.splice(4, 0, { text: '단위', name: 'giveUnitNm', width: '90px', align: 'center' });
+        this.gridOptions.header.splice(5, 0, { text: '비고', name: 'remark', width: '200px', align: 'center' });
+      }
     },
     // 부서
     getDeptItems () {
       this.$http.url = selectConfig.manage.dept.list.url;
       this.$http.type = 'GET';
       this.$http.request((_result) => {
-        _result.data.splice(0, 0, { 'deptCd': '', 'deptNm': '전체' });
         this.comboDeptItems = _result.data;
       }, (_error) => {
         window.getApp.$emit('APP_REQUEST_ERROR', _error);
       });
     },
-    /** /초기화 관련 함수 **/
-    
-    /** Call API service
-    * Naming Rule: get, post, put 등의 RESTFul verb를 접두사로 사용하고 그 뒤에 관련 모델명을 Camel case로 추가하세요.
-    * Naming Rule: get의 경우 복수의 데이터조회(리스트 데이터 등)시에는 복수를 나타내는 접미사 "s"를 붙여주세요.
-    * ex) getExamData () {}
-    * ex) getExamDatas () {}
-    */
-    
-    /** /Call API service **/
-    
-    /** validation checking(필요없으면 지워주세요) **/
-    checkValidation () {
-      this.$validator.validateAll().then((_result) => {
-        this.isSubmit = _result;
-        // TODO : 전역 성공 메시지 처리
-        // 이벤트는 ./event.js 파일에 선언되어 있음
-        if (!this.isSubmit) window.getApp.emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
-      }).catch(() => {
-        this.isSubmit = false;
+    // 보호구 신청 상세
+    getSpeRqst () {
+      if (!this.popupParam.safSpeRqstNo) return;
+      this.$http.url = this.$format(selectConfig.saf.speRqst.get.url, this.popupParam.safSpeRqstNo);
+      this.$http.type = 'get';
+      this.$http.request((_result) => {
+        this.speRqst = _result.data;
+      }, (_error) => {
+        window.getApp.$emit('APP_REQUEST_ERROR', _error);
       });
     },
-    validateState (_ref) {
-      if (this.veeBag[_ref] && (this.veeBag[_ref].dirty || this.veeBag[_ref].validated)) {
-        return !this.errors.has(_ref);
-      }
-      return null;
+    // 보호구 신청 상세 grid
+    getDataList () {
+      this.$http.url = this.searchUrl;
+      this.$http.type = 'GET';
+      this.$http.param = {
+        safSpeRqstNo: this.popupParam.safSpeRqstNo
+      };
+      this.$http.request((_result) => {
+        this.gridOptions.data = _result.data;
+      }, (_error) => {
+        window.getApp.$emit('APP_REQUEST_ERROR', _error);
+      });
     },
-    /** /validation checking **/
-    
-    /** Component Events, Callbacks (버튼 제외) **/
-    
-    /** /Component, Callbacks (버튼 제외) **/
-    
+    beforeInsert () {
+      this.$validator.validateAll().then((_result) => {
+        if (_result) {
+          window.getApp.$emit('CONFIRM', {
+            title: '확인',
+            message: '저장하시겠습니까?',
+            type: 'info',
+            // 확인 callback 함수
+            confirmCallback: () => {
+              this.isInsert = true;
+            },
+            cancelCallback: () => {
+              this.isInsert = false;
+            }
+          });
+        }
+        else {
+          window.getApp.$emit('ALERT', {
+            title: '안내',
+            message: '필수입력값을 입력해주세요.',
+            type: 'warning',
+          });
+        }
+      }).catch(() => {
+        window.getApp.$emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
+      });
+    },
+    beforeFinish () {
+      window.getApp.$emit('CONFIRM', {
+        title: '확인',
+        message: '완료하시겠습니까?',
+        type: 'info',
+        // 확인 callback 함수
+        confirmCallback: () => {
+          this.speRqst.processStepCd = 'STEP2';
+          this.isFinish = true;
+        },
+        cancelCallback: () => {
+          this.isFinish = false;
+        }
+      });
+    },
     /** Button Event **/
     // 팝업 닫기
     btnClosePopup () {
@@ -327,49 +354,61 @@ export default {
       this.$validator.reset();
       window.getApp.$emit('APP_REQUEST_SUCCESS', '초기화 버튼이 클릭 되었습니다.');
     },
-    // 신규등록
+    // 저장
     btnInsertClickedCallback (_result) {
-      this.safFacilityCd = _result.data;
+      window.getApp.$emit('ALERT', {
+        title: '안내',
+        message: '저장되었습니다.',
+        type: 'success',
+      });
+      this.btnClosePopup();
       this.isInsert = false;
-      window.getApp.$emit('ALERT', {
-        title: '안내',
-        message: '등록되었습니다.',
-        type: 'success',
-      });
-      this.closePopupUsage();
     },
-    // 수정
-    btnEditClickedCallback (_result) {
-      this.isEdit = false;
+    // 완료
+    btnFinishClickedCallback (_result) {
       window.getApp.$emit('ALERT', {
         title: '안내',
-        message: '수정되었습니다.',
+        message: '완료되었습니다.',
         type: 'success',
       });
-      this.closePopupUsage();
+      this.btnClosePopup();
+      this.isFinish = false;
+      this.editable = false;
     },
     // 삭제
     btnDeleteClickedCallback (_result) {
-      this.getDataList();
-      this.isDelete = false;
-      window.getApp.$emit('ALERT', {
-        title: '안내',
-        message: '삭제되었습니다.',
-        type: 'success',
+      window.getApp.$emit('CONFIRM', {
+        title: '확인',
+        message: '삭제하시겠습니까?',
+        type: 'info',
+        // 확인 callback 함수
+        confirmCallback: () => {
+          this.$http.url = this.$format(transactionConfig.saf.speRqst.delete.url, this.speRqst.safSpeRqstNo);
+          this.$http.type = 'DELETE';
+          this.$http.request((_result) => {
+            window.getApp.$emit('ALERT', {
+              title: '안내',
+              message: '삭제되었습니다.',
+              type: 'success',
+            });
+            this.btnClosePopup();
+          }, (_error) => {
+            window.getApp.$emit('APP_REQUEST_ERROR', _error);
+          });
+        },
+        // 취소 callback 함수
+        cancelCallback: () => {
+        }
       });
     },
     // 버튼 에러 처리
     btnClickedErrorCallback (_result) {
       this.isInsert = false;
-      this.isEdit = false;
+      this.isFinish = false;
       this.editable = false;
       window.getApp.emit('APP_REQUEST_ERROR', _result);
     },
     /** /Button Event **/
-    
-    /** 기타 function **/
-    
-    /** /기타 function **/
   }
 };
 </script>

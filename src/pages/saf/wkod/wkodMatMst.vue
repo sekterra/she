@@ -140,7 +140,7 @@
                     :maxlength="5"
                     :hasSeperator="false"
                     ui="bootstrap"
-                    label="출력순서"
+                    label="정렬순서"
                     name="sortOrder"
                     v-model="wkodMatMst.sortOrder"
                     >
@@ -157,7 +157,7 @@
                       :param="wkodMatMst"
                       :is-submit="isInsert"
                       title="신규등록"
-                      color="blue"
+                      color="orange"
                       action-type="POST"
                       beforeSubmit = "beforeInsert"
                       @beforeInsert="beforeInsert"
@@ -239,37 +239,36 @@ export default {
   beforeMount () {
     Object.assign(this.$data, this.$options.data());
     this.init();
-    this.getComboItems('SAF_WKOD_MAT_CLASS'); // 작업종류
-    this.setGridSize();
-    this.getList();
   },
   mounted () {
     window.addEventListener('resize', this.setGridSize);
   },
-  beforeDestory () {
+  beforeDestroy () {
   },
   //* methods */
   methods: {
     init () {
-      setTimeout(() => {
-        // Url Setting
-        this.searchUrl = selectConfig.saf.wkodMatMst.list.url;
-        this.editUrl = transactionConfig.saf.wkodMatMst.edit.url;
-        this.insertUrl = transactionConfig.saf.wkodMatMst.insert.url;
-        // radio 버튼 셋팅
-        this.radioItems = [
-          { useYn: 'Y', useName: '사용' },
-          { useYn: 'N', useName: '미사용' },
-        ];
-      }, 1000);
+      // Url Setting
+      this.searchUrl = selectConfig.saf.wkodMatMst.list.url;
+      this.editUrl = transactionConfig.saf.wkodMatMst.edit.url;
+      this.insertUrl = transactionConfig.saf.wkodMatMst.insert.url;
+      // radio 버튼 셋팅
+      this.radioItems = [
+        { useYn: 'Y', useName: '사용' },
+        { useYn: 'N', useName: '미사용' },
+      ];
       
       // 그리드 헤더 설정
       this.gridOptions.header = [
         { text: '취급물질분류', name: 'wkodMatClassNm', width: '25%', align: 'center' },
         { text: '취급물질명', name: 'wkodMatNm', width: '35%', },
-        { text: '출력순서', name: 'sortOrder', width: '20%', align: 'center' },
+        { text: '정렬순서', name: 'sortOrder', width: '20%', align: 'center' },
         { text: '사용여부', name: 'useYnNm', width: '20%', align: 'center' }
       ];
+
+      this.getComboItems('SAF_WKOD_MAT_CLASS'); // 작업종류
+      this.setGridSize();
+      this.getList();
     },
     // combo box list
     getComboItems (codeGroupCd) {
@@ -279,9 +278,8 @@ export default {
         this.comboWkodMatClassItems = this.$_.clone(_result.data);
         this.comboDetailWkodMatClassItems = this.$_.clone(_result.data);
 
-        this.comboWkodMatClassItems.splice(0, 0, { 'code': '', 'codeNm': '전체' });
-        this.comboDetailWkodMatClassItems.splice(0, 0, { 'code': '', 'codeNm': '선택하세요' });
-        this.wkodMatMst.wkodMatClass = '';
+        this.comboWkodMatClassItems.splice(0, 0, { 'code': null, 'codeNm': '전체' });
+        this.comboDetailWkodMatClassItems.splice(0, 0, { 'code': null, 'codeNm': '선택하세요' });
       }, (_error) => {
         this.$emit('APP_REQUEST_ERROR', _error);
       });
@@ -376,7 +374,7 @@ export default {
       return null;
     },
     getList () {
-      this.$http.url = selectConfig.saf.wkodMatMst.list.url;
+      this.$http.url = this.searchUrl;
       this.$http.type = 'GET';
       this.$http.param = this.searchParam;
       this.$http.request((_result) => {
@@ -396,7 +394,7 @@ export default {
       this.gridOptions.data = this.$_.clone(_result.data);
 
       this.btnClearClickedCallback();
-      window.getApp.$emit('APP_REQUEST_SUCCESS', '조회 버튼이 클릭되었습니다.');
+      // window.getApp.$emit('APP_REQUEST_SUCCESS', '조회 버튼이 클릭되었습니다.');
     },
     btnSaveClickedCallback (_result) {
       this.getList();

@@ -77,6 +77,7 @@
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <y-text
                 :width="baseWidth"
+                :maxlength="60"
                 :editable="editable"
                 ui="bootstrap"
                 type="search"
@@ -94,20 +95,21 @@
                 itemValue="deptCd"
                 ui="bootstrap"
                 label="수령부서"
-                name="deptCd"
-                v-model="searchParam.deptCd"
+                name="receiptDeptCd"
+                v-model="searchParam.receiptDeptCd"
               >
               </y-select>
             </b-col>
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <y-text
                 :width="baseWidth"
+                :maxlength="60"
                 :editable="editable"
                 ui="bootstrap"
                 type="search"
                 label="수령자명"
-                name="rqstUserNm"
-                v-model="searchParam.rqstUserNm"
+                name="receiptUserNm"
+                v-model="searchParam.receiptUserNm"
               >
               </y-text>
             </b-col>
@@ -158,8 +160,8 @@ export default {
         giveKindCd: '',
         speKindCd: '',
         speNm: '',
-        deptCd: '',
-        rqstUserNm: ''
+        receiptDeptCd: '',
+        receiptUserNm: ''
       },
       gridOptions: {
         header: [],
@@ -199,13 +201,15 @@ export default {
     /** 초기화 관련 함수 **/
     init () {
       // URL 셋팅
+      this.searchUrl = selectConfig.saf.speGiveinStatus.list.url;
 
       var today = this.$comm.getToday();
-      var from = this.$comm.getCalculatedDate(today, '-1m', 'YYYY-MM-DD', 'YYYY-MM-DD');
-      var to = this.$comm.getCalculatedDate(today, '1m', 'YYYY-MM-DD', 'YYYY-MM-DD');
+      var from = this.$comm.getCalculatedDate(today, '-1y', 'YYYY-MM-DD', 'YYYY-MM-DD');
+      var to = this.$comm.getCalculatedDate(today, '1y', 'YYYY-MM-DD', 'YYYY-MM-DD');
 
       setTimeout(() => {
         this.searchParam.period = [from, to];
+        this.getDataList();  // 수불현황 grid
       }, 200);
       
       this.getGiveKindCds(); // 지급구분
@@ -216,7 +220,7 @@ export default {
       this.gridOptions.header = [
         { text: '출고일', name: 'giveYmd', width: '100px', align: 'center' },
         { text: '지급구분', name: 'giveKindNm', width: '100px', align: 'center' },
-        { text: '수령부서', name: 'receiptDeptCd', width: '100px', align: 'center' },
+        { text: '수령부서', name: 'receiptDeptNm', width: '100px', align: 'center' },
         { text: '수령자', name: 'receiptUserNm', width: '100px', align: 'center' },
         { text: '보호구종류', name: 'speKindNm', width: '130px', align: 'center' },
         { text: '보호구명', name: 'speNm', width: '200px', align: 'left' },
@@ -253,6 +257,17 @@ export default {
       this.$http.request((_result) => {
         this.speKindCds = this.$_.clone(_result.data);
         this.speKindCds.splice(0, 0, { 'code': '', 'codeNm': '전체' });
+      }, (_error) => {
+        window.getApp.$emit('APP_REQUEST_ERROR', _error);
+      });
+    },
+    // 수불현황 grid
+    getDataList () {
+      this.$http.url = this.searchUrl;
+      this.$http.type = 'GET';
+      this.$http.param = this.searchParam;
+      this.$http.request((_result) => {
+        this.gridOptions.data = _result.data;
       }, (_error) => {
         window.getApp.$emit('APP_REQUEST_ERROR', _error);
       });
@@ -313,7 +328,7 @@ export default {
     },
     // 검색
     btnSearchClickedCallback (_result) {
-      // this.getDataList();
+      this.getDataList();
     },
     /**
     * 저장 버튼 처리용 샘플함수

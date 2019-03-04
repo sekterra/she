@@ -10,13 +10,8 @@
   <b-container fluid>
     
     <!-- 등록 -->
-    <b-row class="mt-3" ref="insertBox">
+    <b-row ref="insertBox">
       <b-col sm="12">
-        <b-row>
-          <b-col sm="12">
-            <y-label label="기본정보 상세" icon="user-edit" color-class="cutstom-title-color" />
-          </b-col>
-        </b-row>
         <b-card >
           <b-row>
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
@@ -27,35 +22,22 @@
                 itemText="codeNm"
                 itemValue="code"
                 ui="bootstrap"
-                label="공급수 분류명"
+                :disabled="true"
+                label="작성 구분"
                 name="envOpLogStCd"
                 v-model="ewtrOpLogResult.envOpLogStCd"
+                :required="true"
               >
               </y-select>
-            </b-col>
-            <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
-              <y-datepicker 
-                :width="8"
-                :editable="editable"
-                label="작성일"
-                name="measureYmd"
-                v-model="ewtrOpLogResult.measureYmd"
-                :required="true"
-                v-validate="'required'"
-                :state="validateState('measureYmd')"
-              >
-              </y-datepicker>
             </b-col>
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <y-text
               :width="8"
               :editable="editable"
-              :maxlength="15"
               ui="bootstrap"
               label="작성자"
               :disabled="true"
-              name="createUserNm"
-              v-model="ewtrOpLogResult.createUserNm"
+              v-model="displayCreateUser"
               >
               </y-text>
             </b-col>
@@ -63,9 +45,9 @@
               <y-text
               :width="8"
               :editable="editable"
-              :maxlength="3"
               ui="bootstrap"
               label="요일"
+              :disabled="true"
               name="day"
               v-model="ewtrOpLogResult.day"
               >
@@ -91,7 +73,7 @@
                 :hasSeperator="false"
                 :pointNumber="2"
                 ui="bootstrap"
-                label="온도"
+                label="온도(℃)"
                 name="temp"
                 v-model="ewtrOpLogResult.temp"
               />
@@ -172,45 +154,15 @@
               >
               </y-text>
             </b-col>
-            <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
-              <y-number
-                :width="8"
-                :editable="editable"
-                :maxlength="9"
-                :hasSeperator="false"
-                :pointNumber="2"
-                ui="bootstrap"
-                label="금일 폐수 단위 부피당 소모전력량"
-                name="pwrcPerDay"
-                v-model="ewtrOpLogResult.pwrcPerDay"
-              />
-            </b-col>
           </b-row>
           <div class="float-right mt-3">
             <y-btn
-              v-if="editable"
-              title="초기화"
-              @btnClicked="btnClearClickedCallback" 
-            />
-            <y-btn
-              v-if="editable&&insertMode"
-              :action-url="insertUrl"
-              :param="ewtrOpLogResult"
-              :is-submit="isInsert"
-              title="신규등록"
-              color="orange"
-              action-type="POST"
-              beforeSubmit = "beforeInsert"
-              @beforeInsert="beforeInsert"
-              @btnClicked="btnInsertClickedCallback" 
-              @btnClickedErrorCallback="btnClickedErrorCallback"
-            />
-            <y-btn
-              v-if="editable&&updateMode"
+              v-show="false"
+              v-if="editable&&measureEditable"
               :action-url="editUrl"
               :param="ewtrOpLogResult"
               :is-submit="isEdit"
-              title="수정"
+              title="저장"
               color="orange"
               action-type="PUT"
               beforeSubmit = "beforeEdit"
@@ -233,12 +185,15 @@ export default {
   name: 'daily-report',
   props: {
     paramMeasureYmd: '',
+    measureEditable: 0,
+    isSaveDailyReport: false,
   },
   data () {
     return {
       ewtrOpLogResult: {
         measureYmd: '',
-        createUserNm: '개발자',
+        createUserNm: '',
+        deptNm: '',
         createUserId: '',
         day: '',
         weather: '',
@@ -249,7 +204,6 @@ export default {
         sludgeMc: '',
         sludgeStoPo: '',
         sludgeTxPo: '',
-        pwrcPerDay: '',
         envOpLogStCd: '11',
       },
       gridOptions: {
@@ -258,17 +212,27 @@ export default {
         height: 300
       },
       editable: true,
-      updateMode: false,
-      insertMode: false,
-      isInsert: false,
       isEdit: false,
       editUrl: '',
-      insertUrl: '',
       detailUrl: '',
       envOpLogStCdItems: [],
     };
   },
+  computed: {
+    displayCreateUser: {
+      get: function () {
+        return this.ewtrOpLogResult.deptNm + '/' + this.ewtrOpLogResult.createUserNm;
+      },
+      set: function (newValue) {
+      }
+    }
+  },
   watch: {
+    isSaveDailyReport: function (newValue, oldValue) {
+      if (this.isSaveDailyReport) {
+        this.beforeEdit();
+      }
+    }
   },
   //* Vue lifecycle: created, mounted, destroyed, etc */
   beforeCreate () {
@@ -287,20 +251,14 @@ export default {
   methods: {
     /** 초기화 관련 함수 **/
     init () {
-      setTimeout(() => {
-        this.getEnvOpLogStCdItems();
-      }, 200);
+      this.getEnvOpLogStCdItems();
       
       this.editUrl = transactionConfig.env.water.operationLog.dailyReport.edit.url;
-      this.insertUrl = transactionConfig.env.water.operationLog.dailyReport.insert.url;
       this.detailUrl = selectConfig.env.water.operationLog.dailyReport.get.url;
 
       // 수정 또는 신규등록 버튼 Mode
       if (this.paramMeasureYmd !== '') {
         this.getDetail();
-        this.updateMode = true;
-      } else {
-        this.insertMode = true;
       }
 
     },
@@ -309,10 +267,9 @@ export default {
       this.$http.url = this.$format(this.detailUrl, this.paramMeasureYmd);
       this.$http.type = 'GET';
       this.$http.request((_result) => {
-        this.updateMode = true;
         this.ewtrOpLogResult = this.$_.clone(_result.data);
       }, (_error) => {
-        window.getApp.$emit('APP_REQUEST_ERROR', _error);
+        window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
       });
     },
     getEnvOpLogStCdItems () {
@@ -321,39 +278,25 @@ export default {
       this.$http.request((_result) => {
         this.envOpLogStCdItems = _result.data;
       }, (_error) => {
-        window.getApp.$emit('APP_REQUEST_ERROR', _error);
+        window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
       });
     },
 
-    /** 신규등록 하기전 UI단 유효성 검사 **/
-    beforeInsert () {
-      this.$validator.validateAll().then((_result) => {
-        if (_result) {
-          window.getApp.$emit('CONFIRM', {
-            title: '확인',
-            message: '등록하시겠습니까?',
-            type: 'info',
-            confirmCallback: () => {
-              this.isInsert = true;
-            },
-          });
-        }
-      }).catch(() => {
-        window.getApp.$emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
-      });
-    },
     /** 수정 하기전 UI단 유효성 검사 **/
     beforeEdit () {
       this.$validator.validateAll().then((_result) => {
         if (_result) {
-          window.getApp.$emit('CONFIRM', {
-            title: '확인',
-            message: '수정하시겠습니까?',
-            type: 'info', 
-            confirmCallback: () => {
-              this.isEdit = true;
-            },
-          });
+          if (this.isSaveDailyReport) this.isEdit = true;
+          else {
+            window.getApp.$emit('CONFIRM', {
+              title: '확인',
+              message: '운영일지 기본정보를 저장하시겠습니까?',
+              type: 'info', 
+              confirmCallback: () => {
+                this.isEdit = true;
+              },
+            });
+          }
         }
       }).catch(() => {
         window.getApp.$emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
@@ -371,36 +314,30 @@ export default {
     },
     
     /** button 관련 이벤트 **/
-    btnInsertClickedCallback (_result) {
-      this.ewtrOpLogResult.measureYmd = _result.data;
-      this.isInsert = false;
-      this.updateMode = true;      
-      this.insertMode = false;
-      window.getApp.$emit('ALERT', {
-        title: '안내',
-        message: '등록되었습니다.',
-        type: 'success',
-      });
-    },
     btnEditClickedCallback (_result) {
       this.isEdit = false;
-      window.getApp.$emit('ALERT', {
-        title: '안내',
-        message: '수정되었습니다.',
-        type: 'success',
-      });
-    },
-    btnClearClickedCallback () {
-      Object.assign(this.$data.ewtrOpLogResult, this.$options.data().ewtrOpLogResult);
-      this.$validator.reset();
-      this.updateMode = false;
+      if (this.isSaveDailyReport) this.$emit('callbackSaveOperationLog', { 'isSaveDailyReport': true });
+      else {
+        window.getApp.$emit('ALERT', {
+          title: '안내',
+          message: '운영일지 기본정보를 정상적으로 저장하였습니다.',
+          type: 'success',
+        });
+      }
     },
     btnClickedErrorCallback (_result) {
-      this.isInsert = false;
       this.isEdit = false;
-      window.getApp.$emit('APP_REQUEST_ERROR', _result);
+      window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
     },
     /** end button 관련 이벤트 **/
   }
 };
 </script>
+
+<style>
+.container-fluid {
+  /* 내부로 들어가므로 padding 제거 */
+  padding-right: 0px;
+  padding-left: 0px;
+}
+</style>

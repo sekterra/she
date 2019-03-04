@@ -14,67 +14,127 @@
           <b-col sm="12">
             <y-label label="조치요청 상세 정보" icon="user-edit" color-class="cutstom-title-color" />
             <div slot="buttonGroup" class="float-right mb-1">
-            <y-btn
-              title="닫기"
-              @btnClicked="closePopup" 
-            />
+              <y-btn
+                v-if="statusCheck"
+                :action-url="editUrl"
+                :param="imprAct"
+                :is-submit="isConfirm"
+                title="확인"
+                color="black"
+                action-type="PUT"
+                beforeSubmit = "beforeConfirm"
+                @beforeConfirm="beforeConfirm"
+                @btnClicked="btnConfirmClickedCallback" 
+                @btnClickedErrorCallback="btnClickedErrorCallback"
+              />
+              <y-btn
+                v-if="returnCheck"
+                :action-url="editUrl"
+                :param="imprAct"
+                :is-submit="isReturn"
+                title="반려"
+                color="black"
+                action-type="PUT"
+                beforeSubmit = "beforeReturn"
+                @beforeReturn="beforeReturn"
+                @btnClicked="btnReturnClickedCallback" 
+                @btnClickedErrorCallback="btnClickedErrorCallback"
+              />
+              <y-btn
+                v-if="statusCheck"
+                :action-url="editUrl"
+                :param="imprAct"
+                :is-submit="isEdit"
+                title="저장"
+                color="orange"
+                action-type="PUT"
+                beforeSubmit = "beforeEdit"
+                @beforeEdit="beforeEdit"
+                @btnClicked="btnEditClickedCallback" 
+                @btnClickedErrorCallback="btnClickedErrorCallback"
+              />
+              <y-btn
+                title="닫기"
+                @btnClicked="closePopup" 
+              />
           </div>
           </b-col>
         </b-row>
         <b-card >
           <b-row>
             <b-col sm="12" md="12" lg="12" xl="12" class="col-xxl-12">
-              <y-text
-                :width="10"
-                :disabled="true"
-                ui="bootstrap"
-                label="진행단계"
-                name="imprStepCd"
-                v-model="imprStepCd"
-              >
-              </y-text>
+              <b-row>
+                <b-col sm="2">
+                    <y-label 
+                        label="진행 단계" 
+                    />
+                </b-col>
+                <b-col v-if="imprAct.imprStepCd==='IMST1'">
+                  <b><font color="blue">요청등록</font>&nbsp;&nbsp;▷&nbsp;&nbsp;미접수&nbsp;&nbsp;▷&nbsp;&nbsp;조치부서 조치&nbsp;&nbsp;▷&nbsp;&nbsp;
+                    요청부서 조치확인&nbsp;&nbsp;▷&nbsp;&nbsp;개선완료</b>
+                </b-col>
+                <b-col v-if="imprAct.imprStepCd==='IMST2'">
+                  <b>요청등록&nbsp;&nbsp;▷&nbsp;&nbsp;<font color="blue">미접수</font>&nbsp;&nbsp;▷&nbsp;&nbsp;조치부서 조치&nbsp;&nbsp;▷&nbsp;&nbsp;
+                    요청부서 조치확인&nbsp;&nbsp;▷&nbsp;&nbsp;개선완료</b>
+                </b-col>
+                <b-col v-if="imprAct.imprStepCd==='IMST3'">
+                  <b>요청등록&nbsp;&nbsp;▷&nbsp;&nbsp;미접수&nbsp;&nbsp;▷&nbsp;&nbsp;<font color="blue">조치부서 조치</font>&nbsp;&nbsp;▷&nbsp;&nbsp;
+                    요청부서 조치확인&nbsp;&nbsp;▷&nbsp;&nbsp;개선완료</b>
+                </b-col>
+                <b-col v-if="imprAct.imprStepCd==='IMST4'">
+                  <b>요청등록&nbsp;&nbsp;▷&nbsp;&nbsp;미접수&nbsp;&nbsp;▷&nbsp;&nbsp;조치부서 조치&nbsp;&nbsp;▷&nbsp;&nbsp;
+                    <font color="blue">요청부서 조치확인</font>&nbsp;&nbsp;▷&nbsp;&nbsp;개선완료</b>
+                </b-col>
+                <b-col v-if="imprAct.imprStepCd==='IMST5'">
+                  <b>요청등록&nbsp;&nbsp;▷&nbsp;&nbsp;미접수&nbsp;&nbsp;▷&nbsp;&nbsp;조치부서 조치&nbsp;&nbsp;▷&nbsp;&nbsp;
+                    요청부서 조치확인&nbsp;&nbsp;▷&nbsp;&nbsp;<font color="blue">개선완료</font></b>
+                </b-col>
+              </b-row>
             </b-col>
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-6">
-              <y-text
+              <y-select
                 :width="8"
                 :disabled="true"
+                :comboItems="comboImprClassItems"
+                itemText="codeNm"
+                itemValue="code"
                 ui="bootstrap"
                 label="업무구분"
-                name="actClassCd"
-                v-model="imprAct.actClassCd"
+                name="imprClassCd"
+                v-model="imprAct.imprClassCd"
               >
-              </y-text>
+              </y-select>
             </b-col>
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-6">
               <b-row>
-                    <b-col sm="3">
-                        <y-label 
-                            label="작성일/작성자" 
-                        />
-                    </b-col>
-                    <b-col sm="4">
-                      <y-text
-                        :width="12"
-                        :disabled="true"
-                        ui="bootstrap"
-                        name="imprRqstYmd"
-                        v-model="imprAct.imprRqstYmd"
-                      >
-                      </y-text>
-                    </b-col>
-                    <b-col sm="5">
-                      <y-text
-                        :width="12"
-                        :disabled="true"
-                        ui="bootstrap"
-                        name="imprRqstUserNm"
-                        v-model="imprRqstUserInfo"
-                      >
-                      </y-text>
-                    </b-col>
-                </b-row>
+                <b-col sm="3">
+                    <y-label 
+                        label="작성일/작성자" 
+                    />
+                </b-col>
+                <b-col sm="4">
+                  <y-text
+                    :width="12"
+                    :disabled="true"
+                    ui="bootstrap"
+                    name="imprRqstYmd"
+                    v-model="imprAct.imprRqstYmd"
+                  >
+                  </y-text>
+                </b-col>
+                <b-col sm="5">
+                  <y-text
+                    :width="12"
+                    :disabled="true"
+                    ui="bootstrap"
+                    name="imprRqstUserNm"
+                    v-model="imprRqstUserInfo"
+                  >
+                  </y-text>
+                </b-col>
+              </b-row>
             </b-col>
-            <b-col sm="12" md="12" lg="12" xl="12" class="col-xxl-6">
+            <b-col sm="12" md="12" lg="12" xl="12" class="col-xxl-12">
               <y-text
                 :width="10"
                 :disabled="true"
@@ -133,8 +193,8 @@
                 :disabled="true"
                 label="조치기한"
                 type="today"
-                name="workOverTime"
-                v-model="imprAct.safImprActNo"
+                name="actLimitYmd"
+                v-model="imprAct.actLimitYmd"
               >
               </y-datepicker>
             </b-col>
@@ -142,7 +202,7 @@
         </b-card>
         <b-row class="mt-3">
           <b-col sm="12">
-            <y-label label="임시 Tab" icon="user-edit" color-class="cutstom-title-color" />
+            <y-label label="조치내용" icon="user-edit" color-class="cutstom-title-color" />
           </b-col>
         </b-row>
         <el-tabs type="border-card" v-model="tabIndex" sm="12" md="12" lg="12" xl="12" class="col-xxl-12">
@@ -167,6 +227,36 @@
       <b-col sm="12">  
         <div class="float-right mt-3">
           <y-btn
+            v-if="statusCheck"
+            title="확인"
+            color="black"
+            action-type="PUT"
+            beforeSubmit = "beforeConfirm"
+            @beforeConfirm="beforeConfirm"
+            @btnClicked="btnConfirmClickedCallback" 
+            @btnClickedErrorCallback="btnClickedErrorCallback"
+          />
+          <y-btn
+            v-if="returnCheck"
+            title="반려"
+            color="black"
+            action-type="PUT"
+            beforeSubmit = "beforeReturn"
+            @beforeReturn="beforeReturn"
+            @btnClicked="btnReturnClickedCallback" 
+            @btnClickedErrorCallback="btnClickedErrorCallback"
+          />
+          <y-btn
+            v-if="statusCheck"
+            title="저장"
+            color="orange"
+            action-type="PUT"
+            beforeSubmit = "beforeEdit"
+            @beforeEdit="beforeEdit"
+            @btnClicked="btnEditClickedCallback" 
+            @btnClickedErrorCallback="btnClickedErrorCallback"
+          />
+          <y-btn
             title="닫기"
             @btnClicked="closePopup" 
           />
@@ -186,7 +276,10 @@ export default {
     popupParam: {
       type: Object,
       default: {
-        safImprActNo: 0
+        safImprActNo: 0,
+        refTableId: 0,
+        imprClassCd: null,
+        flag: '',
       },
     }
   },
@@ -219,7 +312,6 @@ export default {
         createDt: '',
         updateUserId: '',
         updateDt: '',
-        flag: 'DETAIL'
       },
       tabItems: [
         { title: '조치내용', url: './improveContent' },
@@ -228,11 +320,20 @@ export default {
       ],
       tabIndex: 0,
       component: null,
+      searchUrl: '',
+      editUrl: '',
+      isEdit: false,
+      isConfirm: false,
+      isReturn: false,
+      disabled: false,
+      statusCheck: true,
+      returnCheck: true,
       imprStepCd: '요청등록 => 미접수 => 조치부서 조치 => 요청부서 조치확인 => 개선완료',
       imprRqstUserInfo: '',
       immediateBeforeImage: '',
       immediateAfterImage: '',
-      comboDeptItems: []
+      comboDeptItems: [],
+      comboImprClassItems: []
     }
   },
   watch: {
@@ -247,28 +348,43 @@ export default {
   },
   beforeMount () {
     Object.assign(this.$data, this.$options.data());
-    this.getDeptItems();
+    this.imprAct.flag = this.popupParam.flag;
+    this.init();
   },
   updated () {
-    // this.$nextTick(function () {
-    //   console.log("confirm Update : " + this.wkodMaster);
-    //   this.$emit("wkodChkItem", this.wkodMaster)
-    // })
   },
   mounted () {
-    this.imprRqstUserInfo = this.imprAct.imprRqstDeptNm + " " + this.imprAct.imprRqstUserNm;
-    // const _URL = window.URL || window.webkitURL;
-    
-    // this.immediateBeforeImage = _URL.createObjectURL('C:\\Users\\JDR\\Pictures\\image1.jpg');
-    // this.immediateAfterImage = _URL.createObjectURL('C://Users//JDR//Pictures//image2.jpg');
   },
-  beforeDestory () {
+  beforeDestroy () {
   },
   //* methods */
   methods: {
     init () {
+      this.searchUrl = selectConfig.saf.imprAct.get.url;
+      this.editUrl = transactionConfig.saf.imprAct.edit.url;
+      
+      if (this.popupParam.flag === 'IMPROVE') {
+        this.statusCheck = true;
+        this.returnCheck = false;
+      } else if (this.popupParam.flag === 'DETAIL') {
+        this.statusCheck = false;
+        this.returnCheck = false;
+      }
+      
+      this.getDeptItems();
+      this.getComboItems('SAF_IMPR_CLASS'); // 개선분류코드
+      this.getList();
     },
     getList () {
+      this.$http.url = this.$format(this.searchUrl, this.popupParam.safImprActNo);
+      this.$http.type = 'GET';
+      this.$http.request((_result) => {
+        Object.assign(this.imprAct, _result.data);
+        this.imprRqstUserInfo = this.imprAct.imprRqstDeptNm + " " + this.imprAct.imprRqstUserNm;
+        this.imprAct.flag = this.popupParam.flag;
+      }, (_error) => {
+        this.$emit('APP_REQUEST_ERROR', _error);
+      });
     },
     getDeptItems () {
       this.$http.url = selectConfig.manage.dept.list.url;
@@ -280,9 +396,136 @@ export default {
         this.$emit('APP_REQUEST_ERROR', _error);
       });
     },
+    getComboItems (codeGroupCd) {
+      this.$http.url = this.$format(selectConfig.codeMaster.getSelect.url, codeGroupCd);
+      this.$http.type = 'GET';
+      this.$http.request((_result) => {
+        _result.data.splice(0, 0, { 'code': '', 'codeNm': '선택' });
+        this.comboImprClassItems = this.$_.clone(_result.data);
+      }, (_error) => {
+        this.$emit('APP_REQUEST_ERROR', _error);
+      });
+    },
     loadComponent () {
       var path = this.tabItems[this.tabIndex].url;
       this.component = () => import(`${path}`);
+    },
+    validateState (ref) {
+      if (this.veeBag[ref] && (this.veeBag[ref].dirty || this.veeBag[ref].validated)) {
+        return !this.errors.has(ref);
+      }
+      return null;
+    },
+    beforeConfirm () {
+      window.getApp.$emit('CONFIRM', {
+        title: '확인',
+        message: '확인하시겠습니까?',
+        type: 'info',  // success / info / warning / error
+        // 확인 callback 함수
+        confirmCallback: () => {
+          this.checkValidationConfirm();
+        }
+      });
+    },
+    beforeReturn () {
+      window.getApp.$emit('CONFIRM', {
+        title: '확인',
+        message: '반려하시겠습니까?',
+        type: 'info',  // success / info / warning / error
+        // 확인 callback 함수
+        confirmCallback: () => {
+          this.checkValidationReturn();
+        }
+      });
+    },
+    beforeEdit () {
+      window.getApp.$emit('CONFIRM', {
+        title: '확인',
+        message: '저장하시겠습니까?',
+        type: 'info',  // success / info / warning / error
+        // 확인 callback 함수
+        confirmCallback: () => {
+          this.checkValidationEdit();
+        }
+      });
+    },
+    checkValidationConfirm () {
+      if (this.tabDataCheck()) return;
+      this.$validator.validateAll().then((_result) => {
+        if (this.imprAct.imprStepCd === 'IMST3') this.imprAct.imprStepCd = 'IMST4'
+        else if (this.imprAct.imprStepCd === 'IMST4') this.imprAct.imprStepCd = 'IMST5'
+        
+        this.isConfirm = _result;
+        // TODO : 전역 성공 메시지 처리
+        // 이벤트는 ./event.js 파일에 선언되어 있음
+        if (!this.isConfirm) window.getApp.$emit('APP_VALID_ERROR', '필수 입력값을 입력해 주세요.');
+      }).catch(() => {
+        this.isConfirm = false;
+      });
+    },
+    checkValidationReturn () {
+      this.$validator.validateAll().then((_result) => {
+        this.imprAct.imprStepCd = 'IMST3'
+        this.isReturn = _result;
+        // TODO : 전역 성공 메시지 처리
+        // 이벤트는 ./event.js 파일에 선언되어 있음
+        if (!this.isReturn) window.getApp.$emit('APP_VALID_ERROR', '필수 입력값을 입력해 주세요.');
+      }).catch(() => {
+        this.isReturn = false;
+      });
+    },
+    checkValidationEdit () {
+      if (this.tabDataCheck()) return;
+      this.$validator.validateAll().then((_result) => {
+        this.isEdit = _result;
+        // TODO : 전역 성공 메시지 처리
+        // 이벤트는 ./event.js 파일에 선언되어 있음
+        if (!this.isEdit) window.getApp.$emit('APP_VALID_ERROR', '필수 입력값을 입력해 주세요.');
+      }).catch(() => {
+        this.isEdit = false;
+      });
+    },
+    tabDataCheck () {
+      if (this.imprAct.imprStepCd === 'IMST3' && this.imprAct.actResultContents === '') {
+        window.getApp.$emit('ALERT', {
+          title: '안내',
+          message: '필수 입력값을 입력해 주세요.',
+          type: 'warning',  // success / info / warning / error
+        });
+        return true;
+      } else if (this.imprAct.imprStepCd === 'IMST4' && this.imprAct.actResultReview === '') {
+        window.getApp.$emit('ALERT', {
+          title: '안내',
+          message: '필수 입력값을 입력해 주세요.',
+          type: 'warning',  // success / info / warning / error
+        });
+        return true;
+      }
+      return false;
+    },
+    btnConfirmClickedCallback (_result) {
+      window.getApp.$emit('ALERT', {
+        title: '안내',
+        message: '확인되었습니다.',
+        type: 'success',  // success / info / warning / error
+      });
+      this.closePopup();
+    },
+    btnReturnClickedCallback (_result) {
+      window.getApp.$emit('ALERT', {
+        title: '안내',
+        message: '반려되었습니다.',
+        type: 'success',  // success / info / warning / error
+      });
+      this.closePopup();
+    },
+    btnEditClickedCallback (_result) {
+      window.getApp.$emit('ALERT', {
+        title: '안내',
+        message: '저장되었습니다.',
+        type: 'success',  // success / info / warning / error
+      });
+      this.closePopup();
     },
     closePopup (data) {
       this.$emit('closePopup', {});

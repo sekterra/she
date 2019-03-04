@@ -270,9 +270,16 @@ export default {
     },
   },
   watch: {
-    // todo : 부모의 v-model 변경을 감시(예를 들면, db로부터 데이터를 조회 한 후 값을 바인딩 할 경우)
+    // todo : 부모의 v-model 변경을 감시(예를 들면, db로부터 데이터를 조회 한 후 값을 바인딩 할 경우)s
     value () {
-      this.vValue = this.value;
+      if (this.value && this.value.length > this.maxlength)
+      {
+        this.$emit('input', this.value.substr(0, this.maxlength));
+      }
+      else
+      {
+        this.vValue = this.value;
+      }
     }
   },
   /* Vue lifecycle: created, mounted, destroyed, etc */

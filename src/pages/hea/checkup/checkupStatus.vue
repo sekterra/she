@@ -114,7 +114,7 @@
                 />
             </div>
           <y-data-table 
-           label="수검 현황 목록"
+           label="수검 현황"
             :editable="editable"
             :excel-down="true"
             :print="true"
@@ -202,13 +202,13 @@ export default {
 
       // 수검 현황 그리드 헤더 설정
       this.gridOptions.header = [
-        { text: '검진 계획', name: 'heaCheckupPlanNm', width: '35%', align: 'center' },
-        { text: '예약일자', name: 'reserveYmd', width: '20%', align: 'center' },
-        { text: '예약 검진 기관', name: 'heaCheckupOrgNm', width: '30%', align: 'left' },
-        { text: '검진 일자', name: 'heaCheckedYmd', width: '25%', align: 'center' },
-        { text: '검진받은 기관', name: 'heaCheckedOrgNm', width: '30%', align: 'left' },
-        { text: '예약자', name: 'userNm', width: '15%', align: 'center' },
-        { text: '수검여부', name: 'statusYn', width: '17%', align: 'center' },
+        { text: '검진 계획', name: 'heaCheckupPlanNm', width: '200px', align: 'center' },
+        { text: '예약일자', name: 'reserveYmd', width: '110px', align: 'center' },
+        { text: '예약 검진 기관', name: 'heaCheckupOrgNm', width: '130px', align: 'left' },
+        { text: '검진 일자', name: 'heaCheckedYmd', width: '110px', align: 'center' },
+        { text: '검진받은 기관', name: 'heaCheckedOrgNm', width: '130px', align: 'left' },
+        { text: '예약자', name: 'userNm', width: '90px', align: 'center' },
+        { text: '수검여부', name: 'statusYn', width: '90px', align: 'center' },
       ];
     },
 
@@ -220,7 +220,7 @@ export default {
         this.comboCheckupPlans = _result.data;
         this.comboCheckupPlans.splice(0, 0, { 'heaCheckupPlanNo': '0', 'heaCheckupPlanNm': '전체' })
       }, (_error) => {
-        window.getApp.$emit('APP_REQUEST_ERROR', _error);
+        window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
       });
     },
     // 검진 기관
@@ -230,7 +230,7 @@ export default {
       this.$http.request((_result) => {
         this.heaCheckupOrgNosItems = _result.data;
       }, (_error) => {
-        window.getApp.$emit('APP_REQUEST_ERROR', _error);
+        window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
       });
     },
     // 수검현황 그리드
@@ -241,7 +241,7 @@ export default {
       this.$http.request((_result) => {
         this.gridOptions.data = _result.data;
       }, (_error) => {
-        window.getApp.$emit('APP_REQUEST_ERROR', _error);
+        window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
       });
     },
     /**
@@ -278,7 +278,6 @@ export default {
     // 검색
     btnSearchClickedCallback () {
       this.getDataList();
-      window.getApp.$emit('APP_REQUEST_SUCCESS', '검색 버튼이 클릭 되었습니다.');
     },
     // 검색박스숨기기
     btnSearchVisibleClicked () {      

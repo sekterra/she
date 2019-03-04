@@ -30,24 +30,16 @@
               ref="dataTable"
               :headers="gridOptions.header"
               :items="gridOptions.data"
-              @tableLinkClicked="tableLinkClicked"
+              :excel-down="true"
+              :print="true"
+              :rows="5"
+              :cellClick="true"
+              @tableLinkClicked="tableLinkimprTitleClicked"
             />
           </b-col>
       </b-col>
     </b-row>
-
-    <el-dialog
-      :title="popupOptions.title"
-      :visible.sync="popupOptions.visible"
-      :fullscreen="false"
-      :append-to-body="true"
-      :width="popupOptions.width"        
-      :close-on-click-modal="false"
-      :close-on-press-escape="false"
-      :show-close="true"
-      :top="popupOptions.top" >
-      <component :is="popupOptions.target" :popupParam="popupOptions.param" @closePopup="closePopup" />
-    </el-dialog>
+    <y-popup :param="popupOptions"></y-popup>
   </b-container>
 </template>
 
@@ -63,9 +55,11 @@ export default {
       default: {
         imprClassCd: '',
         refTableId: 0,
-        editable: true
+        editable: true,
+        detailCheck: false,
       },
     },
+    tabIndex: ''
   },
   data () {
     return {
@@ -73,15 +67,21 @@ export default {
         target: null,
         title: '',
         visible: false,
-        width: '930px',
+        width: '1000px',
         top: '10px',
-        param: {}
+        param: {},
+        closeCallback: null
       },
       gridOptions: {
         header: [],
         data: [],
       },
       searchUrl: ''
+    }
+  },
+  watch: {
+    tabIndex () {
+      this.getList();
     }
   },
   //* Vue lifecycle: created, mounted, destroyed, etc */
@@ -92,68 +92,90 @@ export default {
   beforeMount () {
     Object.assign(this.$data, this.$options.data());
     this.init();
-    // this.getList();
   },
   mounted () {
   },
-  beforeDestory () {
+  beforeDestroy () {
   },
   //* methods */
   methods: {
     init () {
+      // Url Setting
+      this.searchUrl = selectConfig.saf.imprAct.list.url;
+      
       setTimeout(() => {
-        // Url Setting
-        this.searchUrl = selectConfig.saf.wkodMaster.list.url;
-      }, 1000);
+        this.getList();
+      }, 100);
       
       // 그리드 헤더 설정
       this.gridOptions.header = [
-        { text: '조치구분', name: 'actClassNm', width: '10%', align: 'center' },
-        { text: '개선요청내용', name: 'imprRqstContents', width: '30%' },
-        { text: '조치결과내용', name: 'actResultContents', width: '20%' },
-        { text: '조치부서', name: 'actDeptNm', width: '10%', align: 'center' },
-        { text: '조치예정일', name: 'actUserNm', width: '10%', align: 'center' },
-        { text: '조치완료일', name: 'actConfirmYmd', width: '10%', align: 'center' }
+        { text: '조치구분', name: 'actClassNm', width: '130px', align: 'center' },
+        { text: '개선요청내용', name: 'imprRqstContents', width: '300px', url: 'true' },
+        { text: '조치결과내용', name: 'actResultContents', width: '250px' },
+        { text: '조치부서', name: 'actDeptNm', width: '130px', align: 'center' },
+        { text: '조치예정일', name: 'actSchYmd', width: '130px', align: 'center' },
+        { text: '조치완료일', name: 'actConfirmYmd', width: '130px', align: 'center' }
       ];
     },
     selectedRow (data) {
       if (data === null) return;
     },
-    tableLinkClicked (header, row) {
-      if (header.name === 'imprTitle') {
-        console.log("Title Click");
-      }
+    tableLinkimprTitleClicked (header, data) {
+      this.openDialogPage('DETAIL', data)
     },
     getList () {
-      this.$http.url = selectConfig.saf.wkodMaster.list.url;
+      this.$http.url = this.searchUrl;
       this.$http.type = 'GET';
-      this.$http.param = this.searchParam;
+      this.$http.param = this.tabParam;
       this.$http.request((_result) => {
-        this.gridOptions.data = _result.data;
+        this.gridOptions.data = this.$_.clone(_result.data);
       }, (_error) => {
         this.$emit('APP_REQUEST_ERROR', _error);
       });
     },
-    openDialogPage (flag) {
-      this.popupOptions.param = {
-        'item': 0,
-      };
+    openDialogPage (flag, data) {
+      if (data !== undefined) {
+        if (data.imprStepCd === 'IMST1' && data.actClassCd === 'ACL01') flag = 'NOW';
+        else if (data.imprStepCd === 'IMST1' && data.actClassCd === 'ACL02') flag = 'REQUEST';
+        
+        this.popupOptions.param = {
+          'safImprActNo': data.safImprActNo,
+          'imprClassCd': this.tabParam.imprClassCd,
+          'refTableId': this.tabParam.refTableId,
+          'flag': flag
+        };
+      } else {
+        this.popupOptions.param = {
+          'safImprActNo': 0,
+          'imprClassCd': this.tabParam.imprClassCd,
+          'refTableId': this.tabParam.refTableId,
+          'flag': flag
+        };
+      }
 
-      if (flag === 'NOW')
-      {
+      if (this.tabParam.detailCheck) {
+        flag = 'DETAIL';
+        this.popupOptions.param.flag = 'DETAIL';
+      } 
+      
+      if (flag === 'NOW') {
         this.popupOptions.title = '즉시조치등록';
         this.popupOptions.target = () => import(`${'./immediateAction.vue'}`);
-      } 
-      else
-      {
+      } else if (flag === 'DETAIL') {
+        this.popupOptions.title = '개선요청상세';
+        this.popupOptions.target = () => import(`${'./improveDetail.vue'}`);
+      } else {
         this.popupOptions.title = '개선요청등록';
         this.popupOptions.target = () => import(`${'./actionRequest.vue'}`);
-      } 
+      }
       
       this.popupOptions.top = "10px";
       this.popupOptions.visible = true;
+      this.popupOptions.closeCallback = this.closePopup;
     },
     closePopup () {
+      this.getList();
+      
       this.popupOptions.target = null;
       this.popupOptions.visible = false;
     },
@@ -163,13 +185,6 @@ export default {
     getConfirm () {
     },
     /** button 관련 이벤트 **/
-    btnSearchClickedCallback (_result) {
-      this.getList();
-      window.getApp.$emit('APP_REQUEST_SUCCESS', '조회 버튼이 클릭되었습니다.');
-    },
-    btnClickedErrorCallback (_result) {
-      this.$emit('APP_REQUEST_ERROR', _result);
-    },
     /** end button 관련 이벤트 **/
   }
 };

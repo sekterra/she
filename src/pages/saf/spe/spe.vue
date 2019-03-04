@@ -23,12 +23,8 @@
                 @btnClicked="btnSearchVisibleClicked" 
               />
               <y-btn
-                v-if="editable"
-                :action-url="searchUrl"
-                :param="searchParam"
                 title="검색"
                 color="green"
-                action-type="GET"
                 @btnClicked="btnSearchClickedCallback" 
                 @btnClickedErrorCallback="btnClickedErrorCallback"
               />
@@ -38,7 +34,6 @@
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <y-select
                 :width="baseWidth"
-                :editable="editable"
                 :comboItems="selSpeKindCds"
                 itemText="codeNm"
                 itemValue="code"
@@ -52,7 +47,6 @@
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <y-text
                 :width="baseWidth"
-                :editable="editable"
                 ui="bootstrap"
                 type="search"
                 label="보호구명"
@@ -64,7 +58,6 @@
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <y-select
                 :width="baseWidth"
-                :editable="editable"
                 :comboItems="comboRqstYnItems"
                 itemText="codeNm"
                 itemValue="code"
@@ -79,7 +72,6 @@
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <y-select
                 :width="baseWidth"
-                :editable="editable"
                 :comboItems="selGiveKindCds"
                 itemText="codeNm"
                 itemValue="code"
@@ -93,7 +85,6 @@
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <y-select
                 :width="baseWidth"
-                :editable="editable"
                 :comboItems="selGiveUnitCds"
                 itemText="codeNm"
                 itemValue="code"
@@ -107,7 +98,6 @@
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <y-select
                 :width="baseWidth"
-                :editable="editable"
                 :comboItems="comboUseYnItems"
                 itemText="codeNm"
                 itemValue="code"
@@ -119,18 +109,6 @@
               >
               </y-select>
             </b-col>
-            <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
-              <y-text
-                :width="baseWidth"
-                :editable="editable"
-                ui="bootstrap"
-                type="search"
-                label="정렬순서"
-                name="sortOrder"
-                v-model="searchParam.sortOrder"
-              >
-              </y-text>
-            </b-col>
           </b-row>
         </b-card>
       </b-col>
@@ -141,17 +119,18 @@
       <b-col sm="12">
         <b-col sm="12" class="px-0">
           <y-data-table 
-            label="설비 목록"
+            label="보호구 목록"
             gridType="edit"
             :excel-down="true"
             :print="true"
-            :rows="3"
+            :rows="5"
             :cellClick="true"
             v-model="spe"
             ref="dataTable"
             :height="gridOptions.height"
             :headers="gridOptions.header"
             :items="gridOptions.data"
+            @selectedRow="selectedRow"
             >
           </y-data-table>
         </b-col>
@@ -169,7 +148,6 @@
                 <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
                   <y-select
                     :width="baseWidth"
-                    :editable="editable"
                     :comboItems="insSpeKindCds"
                     :required="true"
                     itemText="codeNm"
@@ -186,8 +164,8 @@
                 <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
                   <y-text
                     :width="baseWidth"
-                    :editable="editable"
                     :required="true"
+                    :maxlength="30"
                     ui="bootstrap"
                     type="search"
                     label="보호구명"
@@ -201,7 +179,7 @@
                 <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
                   <y-switch
                     :width="baseWidth"
-                    :editable="editable"
+                    :required="true"
                     true-value="Y"
                     false-value="N"
                     ui="bootstrap"
@@ -218,8 +196,8 @@
                 <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
                   <y-select
                     :width="baseWidth"
-                    :editable="editable"
-                    :comboItems="selGiveKindCds"
+                    :required="true"
+                    :comboItems="insGiveKindCds"
                     itemText="codeNm"
                     itemValue="code"
                     ui="bootstrap"
@@ -227,12 +205,14 @@
                     label="지급구분"
                     name="giveKindCd"
                     v-model="spe.giveKindCd"
+                    v-validate="'required'"
+                    :state="validateState('giveKindCd')"
                   />
                 </b-col>
                 <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
                   <y-select
                     :width="baseWidth"
-                    :editable="editable"
+                    :required="true"
                     :comboItems="insGiveUnitCds"
                     itemText="codeNm"
                     itemValue="code"
@@ -241,12 +221,14 @@
                     label="단위"
                     name="giveUnitCd"
                     v-model="spe.giveUnitCd"
+                    v-validate="'required'"
+                    :state="validateState('giveUnitCd')"
                   />
                 </b-col>
                 <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
                   <y-switch
                     :width="baseWidth"
-                    :editable="editable"
+                    :required="true"
                     true-value="Y"
                     false-value="N"
                     ui="bootstrap"
@@ -261,26 +243,39 @@
                   </y-switch>
                 </b-col>
                 <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
-                  <y-text
+                  <y-number
                     :width="baseWidth"
-                    :editable="editable"
+                    :maxlength="7"
+                    ui="bootstrap"
+                    type="search"
+                    label="현재고"
+                    name="nowStock"
+                    v-model="spe.nowStock"
+                  >
+                  </y-number>
+                </b-col>
+                <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
+                  <y-number
+                    :width="baseWidth"
+                    :required="true"
+                    :maxlength="5"
                     ui="bootstrap"
                     type="search"
                     label="정렬순서"
                     name="sortOrder"
                     v-model="spe.sortOrder"
+                    v-validate="'required'"
+                    :state="validateState('sortOrder')"
                   >
-                  </y-text>
+                  </y-number>
                 </b-col>
               </b-row>
               <div class="float-right">
                 <y-btn
-                    v-if="editable"
                     title="초기화"
                     @btnClicked="btnClearClickedCallback" 
                   />
                   <y-btn
-                    v-if="editable"
                     :action-url="insertUrl"
                     :param="spe"
                     :is-submit="isInsert"
@@ -293,7 +288,7 @@
                     @btnClickedErrorCallback="btnClickedErrorCallback"
                   />
                   <y-btn
-                    v-if="editable&&updateMode"
+                    v-if="this.spe.safSpeNo > 0"
                     :action-url="editUrl"
                     :param="spe"
                     :is-submit="isEdit"
@@ -318,19 +313,20 @@
 import selectConfig from '@/js/selectConfig';
 import transactionConfig from '@/js/transactionConfig';
 export default {
-  /** attributes: name, components, props, data **/
   name: 'spe',
   props: {
   },
   data () {
     return {
       spe: {
+        safSpeNo: 0,
         speKindCd: null,
         speNm: '',
-        rqstYn: '',
+        rqstYn: 'Y',
         giveKindCd: null,
         giveUnitCd: null,
         useYn: 'Y',
+        nowStock: '0',
         sortOrder: ''
       },
       searchArea: {
@@ -344,7 +340,6 @@ export default {
         giveKindCd: '',
         giveUnitCd: '',
         useYn: '',
-        sortOrder: ''
       },
       gridOptions: {
         header: [],
@@ -352,8 +347,6 @@ export default {
         height: '210'
       },
       baseWidth: 8,
-      editable: true,
-      updateMode: false,
       selSpeKindCds: [], // 보호구 종류 - 검색조건
       insSpeKindCds: [], // 보호구 종류 - 상세
       comboRqstYnItems: [],  // 신청대상여부
@@ -365,19 +358,12 @@ export default {
       searchUrl: '',
       insertUrl: '',
       editUrl: '',
-      isSubmit: false,  // 버튼을 submit 할 것인지 판단하는 변수로써 버튼의 개수만큼 필요합니다.
+      isInsert: false,
+      isEdit: false,  
+      isDelete: false,  
     };
   },
-  /** Vue lifecycle: created, mounted, destroyed, etc **/
-  beforeInsert () {
-  },
-  beforeEdit () {
-  },
-  created () {
-  },
   beforeMount () {
-    // TODO : data를 초기화 시켜줌(검색 조건 유지가 필요할 때는 삭제할 것)
-    // 이유 : vue.js는 SPA기반으로 동작하기 때문에 페이지를 이동하더라도 기존 입력된 정보가 그대로 남아 있는 문제가 있음
     Object.assign(this.$data, this.$options.data());
     this.init();
   },
@@ -389,9 +375,7 @@ export default {
     // 윈도우 resize event 제거-SPA 기반이므로 제거하지 않으면 다른페이지에서 해당 이벤트가 호출됨
     window.removeEventListener('resize', this.setGridSize);
   },
-  /** methods **/
   methods: {
-    /** 초기화 관련 함수 **/
     init () {
       // URL 셋팅
       this.searchUrl = selectConfig.saf.spe.list.url;
@@ -408,20 +392,21 @@ export default {
         this.comboUseYnItems.push({ 'code': 'N', 'codeNm': '미사용' });
       }, 200);
 
+      this.setGridSize(); // 그리드 사이즈 조절
       this.getSpeKindCds(); // 보호구 종류
       this.getGiveKindCds(); // 지급구분
       this.getGiveUnitCds(); // 단위
-      // this.getDataList();  // 보호구 grid
-      this.setGridSize(); // 그리드 사이즈 조절
+      this.getDataList();  // 보호구 grid
 
       // 보호구 grid 헤더 설정
       this.gridOptions.header = [
-        { text: '보호구 종류명', name: 'speKindNm', width: '150px', align: 'left' },
+        { text: '보호구 종류', name: 'speKindNm', width: '130px', align: 'center' },
         { text: '보호구명', name: 'speNm', width: '200px', align: 'left' },
-        { text: '신청대상여부', name: 'rqstYn', width: '120px', align: 'center' },
-        { text: '지급구분', name: 'giveKindNm', width: '120px', align: 'center' },
-        { text: '단위', name: 'giveUnitNm', width: '100px', align: 'center' },
-        { text: '사용여부', name: 'useYn', width: '100px', align: 'center' },
+        { text: '신청대상여부', name: 'rqstYnNm', width: '120px', align: 'center' },
+        { text: '지급구분', name: 'giveKindNm', width: '110px', align: 'center' },
+        { text: '단위', name: 'giveUnitNm', width: '80px', align: 'center' },
+        { text: '사용여부', name: 'useYnNm', width: '100px', align: 'center' },
+        { text: '현재고', name: 'nowStock', width: '100px', align: 'right' },
         { text: '정렬순서', name: 'sortOrder', width: '100px', align: 'center' },
       ];
     },
@@ -431,10 +416,9 @@ export default {
       this.$http.type = 'get';
       this.$http.request((_result) => {
         this.selSpeKindCds = this.$_.clone(_result.data);
-        this.selSpeKindCds.splice(0, 0, { 'code': '', 'codeNm': '전체' });
+        this.selSpeKindCds.splice(0, 0, { 'code': null, 'codeNm': '전체' });
         this.insSpeKindCds = this.$_.clone(_result.data);
-        this.insSpeKindCds.splice(0, 0, { 'code': '', 'codeNm': '선택하세요' });
-        this.spe.speKindCd = '';
+        this.insSpeKindCds.splice(0, 0, { 'code': null, 'codeNm': '선택하세요' });
       }, (_error) => {
         window.getApp.$emit('APP_REQUEST_ERROR', _error);
       });
@@ -445,10 +429,9 @@ export default {
       this.$http.type = 'get';
       this.$http.request((_result) => {
         this.selGiveKindCds = this.$_.clone(_result.data);
-        this.selGiveKindCds.splice(0, 0, { 'code': '', 'codeNm': '전체' });
+        this.selGiveKindCds.splice(0, 0, { 'code': null, 'codeNm': '전체' });
         this.insGiveKindCds = this.$_.clone(_result.data);
-        this.insGiveKindCds.splice(0, 0, { 'code': '', 'codeNm': '선택하세요' });
-        this.spe.giveKindCd = '';
+        this.insGiveKindCds.splice(0, 0, { 'code': null, 'codeNm': '선택하세요' });
       }, (_error) => {
         window.getApp.$emit('APP_REQUEST_ERROR', _error);
       });
@@ -459,10 +442,9 @@ export default {
       this.$http.type = 'get';
       this.$http.request((_result) => {
         this.selGiveUnitCds = this.$_.clone(_result.data);
-        this.selGiveUnitCds.splice(0, 0, { 'code': '', 'codeNm': '전체' });
+        this.selGiveUnitCds.splice(0, 0, { 'code': null, 'codeNm': '전체' });
         this.insGiveUnitCds = this.$_.clone(_result.data);
-        this.insGiveUnitCds.splice(0, 0, { 'code': '', 'codeNm': '선택하세요' });
-        this.spe.giveUnitCd = '';
+        this.insGiveUnitCds.splice(0, 0, { 'code': null, 'codeNm': '선택하세요' });
       }, (_error) => {
         window.getApp.$emit('APP_REQUEST_ERROR', _error);
       });
@@ -478,16 +460,90 @@ export default {
         window.getApp.$emit('APP_REQUEST_ERROR', _error);
       });
     },
-    /** /초기화 관련 함수 **/
-    
-    /** Call API service
-    * Naming Rule: get, post, put 등의 RESTFul verb를 접두사로 사용하고 그 뒤에 관련 모델명을 Camel case로 추가하세요.
-    * Naming Rule: get의 경우 복수의 데이터조회(리스트 데이터 등)시에는 복수를 나타내는 접미사 "s"를 붙여주세요.
-    * ex) getExamData () {}
-    * ex) getExamDatas () {}
-    */
-    
-    /** /Call API service **/
+
+    beforeInsert () {
+      this.$validator.validateAll().then((_result) => {
+        var speNms = this.$_.map(this.gridOptions.data, 'speNm');
+        var sortOrders = this.$_.map(this.gridOptions.data, 'sortOrder');
+        if (this.$_.indexOf(speNms, this.spe.speNm) > -1) {
+          window.getApp.$emit('ALERT', {
+            title: '안내',
+            message: '이미 같은 이름의 보호구가 존재합니다.',
+            type: 'warning',
+          });
+          return;
+        } else if (this.$_.indexOf(sortOrders, this.spe.sortOrder) > -1) {
+          window.getApp.$emit('ALERT', {
+            title: '안내',
+            message: '이미 존재하는 정렬순서입니다.',
+            type: 'warning',
+          });
+          return;
+        }
+
+        if (_result) {
+          window.getApp.$emit('CONFIRM', {
+            title: '확인',
+            message: '등록하시겠습니까?',
+            type: 'info',
+            // 확인 callback 함수
+            confirmCallback: () => {
+              this.isInsert = true;
+            },
+            cancelCallback: () => {
+              this.isInsert = false;
+            }
+          });
+        }
+        else {
+          window.getApp.$emit('ALERT', {
+            title: '안내',
+            message: '필수입력값을 입력해주세요.',
+            type: 'warning',
+          });
+        }
+      }).catch(() => {
+        window.getApp.$emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
+      });
+    },
+    beforeEdit () {
+      window.getApp.$emit('CONFIRM', {
+        title: '확인',
+        message: '수정하시겠습니까?',
+        type: 'info',
+        confirmCallback: () => {
+          this.isEdit = true;
+        },
+        cancelCallback: () => {
+          this.isEdit = false;
+        }
+      });
+    },
+    beforeDelete () {
+      window.getApp.$emit('CONFIRM', {
+        title: '확인',
+        message: '삭제하시겠습니까?',
+        type: 'info',  
+        confirmCallback: () => {
+          this.deleteValue = {
+            'data': Object.values(this.$_.clone(this.selectedValue))
+          };
+          this.isDelete = true;
+        }
+      });
+    },
+    // 그리드 row click 이벤트
+    selectedRow (data) {
+      if (data === null) return;
+
+      this.$http.url = this.$format(selectConfig.saf.spe.get.url, data.safSpeNo);
+      this.$http.type = 'GET';
+      this.$http.request((_result) => {
+        this.spe = this.$_.clone(_result.data);
+      }, (_error) => {
+        window.getApp.$emit('APP_REQUEST_ERROR', _error);
+      });
+    },
     /**
      * 그리드 리사이징
      */
@@ -498,29 +554,12 @@ export default {
         window.getApp.$emit('LOADING_HIDE');
       }, 600);
     },
-    
-    /** validation checking(필요없으면 지워주세요) **/
-    checkValidation () {
-      this.$validator.validateAll().then((_result) => {
-        this.isSubmit = _result;
-        // TODO : 전역 성공 메시지 처리
-        // 이벤트는 ./event.js 파일에 선언되어 있음
-        if (!this.isSubmit) window.getApp.emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
-      }).catch(() => {
-        this.isSubmit = false;
-      });
-    },
     validateState (_ref) {
       if (this.veeBag[_ref] && (this.veeBag[_ref].dirty || this.veeBag[_ref].validated)) {
         return !this.errors.has(_ref);
       }
       return null;
     },
-    /** /validation checking **/
-    
-    /** Component Events, Callbacks (버튼 제외) **/
-    
-    /** /Component, Callbacks (버튼 제외) **/
     
     /** Button Event **/
     // 검색박스숨기기
@@ -534,11 +573,10 @@ export default {
     },
     // 검색
     btnSearchClickedCallback (_result) {
-      // this.getDataList();
+      this.getDataList();
     },
     // 초기화
     btnClearClickedCallback () {
-      this.updateMode = false;
       Object.assign(this.$data.spe, this.$options.data().spe);
 
       this.spe.speKindCd = '';
@@ -548,20 +586,19 @@ export default {
     },
     // 신규등록
     btnInsertClickedCallback (_result) {
-      // this.getDataList();
-      this.updateMode = true;
+      this.getDataList();
       this.isInsert = false;
+      this.spe.safSpeNo = _result.data;
       window.getApp.$emit('ALERT', {
         title: '안내',
-        message: '저장되었습니다.',
+        message: '등록되었습니다.',
         type: 'success',
       });
     },
     // 수정
     btnEditClickedCallback (_result) {
-      // this.getDataList();
+      this.getDataList();
       this.isEdit = false;
-      // window.alert("수정되었습니다.");
       window.getApp.$emit('ALERT', {
         title: '안내',
         message: '수정되었습니다.',
@@ -570,15 +607,12 @@ export default {
     },
     // 버튼 에러 처리
     btnClickedErrorCallback (_result) {
-      this.isSubmit = false;  // 반드시 isSubmit을 false로 초기화 하세요. 그렇지 않으면 버튼을 다시 클릭해도 동작하지 않습니다.
-      // TODO : 여기에 추가 로직 삽입(로직 삽입시 지워주세요)
+      this.isInsert = false;
+      this.isEdit = false;
+      this.isDelete = false;
       window.getApp.emit('APP_REQUEST_ERROR', _result);
     },
     /** /Button Event **/
-    
-    /** 기타 function **/
-    
-    /** /기타 function **/
   }
 };
 </script>

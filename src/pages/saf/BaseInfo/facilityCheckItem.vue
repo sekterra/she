@@ -16,7 +16,7 @@
             <div class="float-right">
               <y-btn
                 :title="searchArea.title"
-                color="orange"
+                color="green"
                 @btnClicked="btnSearchVisibleClicked"
               />
               <y-btn
@@ -69,10 +69,11 @@
             :height="gridOptions.height"
             :headers="gridOptions.header"
             :items="gridOptions.data"
+            :useRownum="false"
             :excel-down="true"
             :print="true"
             @selectedRow="selectedRow"
-            label="점검종류"
+            label="설비유형별 점검 항목 목록"
           ></y-data-table>
         </b-col>
       </b-col>
@@ -83,7 +84,7 @@
       <b-col sm="12">
         <b-row>
           <b-col sm="12">
-            <y-label label="안전점검 종류 상세" icon="user-edit" color-class="cutstom-title-color"/>
+            <y-label label="설비유형별 점검 항목 상세" icon="user-edit" color-class="cutstom-title-color"/>
           </b-col>
         </b-row>
         <b-card>
@@ -122,8 +123,9 @@
               <y-text
                 :width="8"
                 :required="true"
+                :maxlength="50"
                 ui="bootstrap"
-                label="항목명"
+                label="설비점검항목"
                 name="safFacilityCheckNm"
                 v-validate="'required'"
                 v-model="facilityCheckItem.safFacilityCheckNm"
@@ -148,15 +150,21 @@
                 :width="8"
                 :maxlength="5"
                 :hasSeperator="false"
+                :required="true"
                 ui="bootstrap"
-                label="정렬 순서"
+                label="정렬순서"
                 name="sortOrder"
                 v-model="facilityCheckItem.sortOrder"
+                v-validate="'required'"
+                :state="validateState('sortOrder')"
               ></y-number>
             </b-col>
           </b-row>
           <div class="float-right mt-3">
-            <y-btn title="초기화" @btnClicked="btnClearClickedCallback"/>
+            <y-btn 
+              title="초기화"
+              @btnClicked="btnClearClickedCallback" 
+            />
             <y-btn
               :action-url="insertUrl"
               :param="facilityCheckItem"
@@ -194,17 +202,17 @@ import selectConfig from "@/js/selectConfig";
 import transactionConfig from "@/js/transactionConfig";
 export default {
   /* attributes: name, components, props, data */
-  name: "y-checkKind",
+  name: "y-facility-checkitem",
   props: {},
   data: () => ({
     facilityCheckItem: {
       safFacilityCheckItemNo: "", // 설비점검항목번호
-      safFacilityCheckCd: "", // 설비점검종류코드
+      safFacilityCheckCd: null, // 설비점검종류코드
       safFacilityCheckCdNm: "", // 설비점검종류명
-      safFacilityTypeCd: "",  // 안전설비유형코드
+      safFacilityTypeCd: null,  // 안전설비유형코드
       safFacilityTypeNm: "",  // 안전설비유형명
       safFacilityCheckNm: "", // 설비점검항목명
-      sortOrder: "",          // 정렬순서
+      sortOrder: 0,          // 정렬순서
       useYn: ""               // 사용여부
     },
     searchParam: {
@@ -238,12 +246,11 @@ export default {
   //* Vue lifecycle: created, mounted, destroyed, etc */
   beforeCreate () {},
   created () {},
-  update () {},
+  updated () {},
   beforeMount () {
     Object.assign(this.$data, this.$options.data());
     this.init();
-    this.getFacilityTypeItems();
-    this.getComboItems("SAF_FACILITY_CHECK");
+
   },
   mounted () {
     // 윈도우 resize event
@@ -267,14 +274,18 @@ export default {
           { useYn: "Y", useName: "사용" },
           { useYn: "N", useName: "미사용" }
         ];
-      }, 1000);
+        
+        this.getFacilityTypeItems();
+        this.getComboItems("SAF_FACILITY_CHECK");
+        this.getList();
+      }, 200);
 
       // 그리드 헤더 설정
       this.gridOptions.header = [
-        { text: "설비유형", name: "safFacilityCheckCdNm", width: "180px", align: "center" },
-        { text: "설비점검종류", name: "safFacilityTypeNm", width: "180px", align: "center" },
+        { text: "설비유형", name: "safFacilityTypeNm", width: "180px", align: "center" },
+        { text: "설비점검종류", name: "safFacilityCheckCdNm", width: "180px", align: "center" },
         { text: "설비점검항목", name: "safFacilityCheckNm", width: "180px", align: "left" },
-        { text: "사용여부", name: "useYn", width: "180px", align: "center" },
+        { text: "사용여부", name: "useYnNm", width: "100px", align: "center" },
         { text: "정렬순서", name: "sortOrder", width: "100px", align: "center" }
       ];
       this.setGridSize();
@@ -300,9 +311,10 @@ export default {
       this.$http.request(
         _result => {
           this.searchComboFacilityCheckCd = this.$_.clone(_result.data);
-          this.searchComboFacilityCheckCd.splice(0, 0, { 'code': '', 'codeNm': '전체' });
+          this.searchComboFacilityCheckCd.splice(0, 0, { 'code': null, 'codeNm': '전체' });
 
           this.detailComboFacilityCheckCd = this.$_.clone(_result.data);
+          this.detailComboFacilityCheckCd.splice(0, 0, { 'code': null, 'codeNm': '선택하세요' });
           
           
         },
@@ -327,7 +339,7 @@ export default {
     beforeInsert () {
       window.getApp.$emit('CONFIRM', {
         title: '확인',
-        message: '수정하시겠습니까?',
+        message: '등록하시겠습니까?',
         // TODO : 필요시 추가하세요.
         type: 'info',  // success / info / warning / error
         // 확인 callback 함수
@@ -344,8 +356,9 @@ export default {
         this.isEdit = _result;
         // TODO : 전역 성공 메시지 처리
         // 이벤트는 ./event.js 파일에 선언되어 있음
-        if (!this.isEdit) window.getApp.$emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
+        if (!this.isEdit) window.getApp.$emit('APP_VALID_ERROR', '필수 입력값을 입력해 주세요.');
       }).catch(() => {
+        window.getApp.$emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
         this.isEdit = false;
       });
     },
@@ -354,8 +367,9 @@ export default {
         this.isInsert = _result;
         // TODO : 전역 성공 메시지 처리
         // 이벤트는 ./event.js 파일에 선언되어 있음
-        if (!this.isInsert) window.getApp.$emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
+        if (!this.isInsert) window.getApp.$emit('APP_VALID_ERROR', '필수 입력값을 입력해 주세요.');
       }).catch(() => {
+        window.getApp.$emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
         this.isInsert = false;
       });
     },
@@ -372,16 +386,17 @@ export default {
       this.$http.type = 'GET';
       this.$http.request((_result) => {
         this.searchComboFacilityType = this.$_.clone(_result.data);
-        this.searchComboFacilityType.splice(0, 0, { 'safFacilityTypeCd': '', 'safFacilityTypeNm': '전체' });
+        this.searchComboFacilityType.splice(0, 0, { 'safFacilityTypeCd': null, 'safFacilityTypeNm': '전체' });
         this.detailComboFacilityType = this.$_.clone(_result.data);
+        this.detailComboFacilityType.splice(0, 0, { 'safFacilityTypeCd': null, 'safFacilityTypeNm': '선택하세요' });
       }, (_error) => {
         console.log(_error);
       });
     },
 
     getList () {
-      this.$http.url = selectConfig.saf.facilityCheckItem.list.url;
-      this.param = this.searchParam;
+      this.$http.url = selectConfig.saf.facilityCheckItem.list.url
+      this.$http.param = this.searchParam;
       this.$http.type = "GET";
       this.$http.request(
         _result => {
@@ -435,31 +450,48 @@ export default {
       // window.getApp.$emit('APP_REQUEST_SUCCESS', '조회 버튼이 클릭되었습니다.');
     },
     btnSaveClickedCallback (result) {
+      if (result.data === 0) {
+        window.getApp.$emit('ALERT', {
+          title: '안내',
+          message: '설비점검항목명이 중복 되었습니다.',
+          type: 'warning',  // success / info / warning / error
+        });
+      }
+      else {
+        window.getApp.$emit('ALERT', {
+          title: '안내',
+          message: '수정되었습니다.',
+          type: 'success',  // success / info / warning / error
+        });
+      }
       this.getList();
-
-      window.getApp.$emit('ALERT', {
-        title: '안내',
-        message: '수정되었습니다.',
-        type: 'success',  // success / info / warning / error
-      });
       this.isEdit = false;
       // this.$emit('APP_REQUEST_SUCCESS', '수정 버튼이 클릭 되었습니다.');
     },
     btnInsertClickedCallback (result) {
       // this.disease.heaDiseaseCd = _result.data;
+      if (result.data === 0) {
+        window.getApp.$emit('ALERT', {
+          title: '안내',
+          message: '설비점검항목명이 중복 되었습니다.',
+          type: 'warning',  // success / info / warning / error
+        });
+      }
+      else {
+        window.getApp.$emit('ALERT', {
+          title: '안내',
+          message: '등록되었습니다.',
+          type: 'success',  // success / info / warning / error
+        });
+        this.facilityCheckItem.safFacilityCheckItemNo = this.$_.clone(result.data);
+      }
       this.getList();
-
-      window.getApp.$emit('ALERT', {
-        title: '안내',
-        message: '저장되었습니다.',
-        type: 'success',  // success / info / warning / error
-      });
       this.isInsert = false;
       this.editable = true;
     },
     btnClearClickedCallback () {
       this.editable = false;
-      Object.assign(this.$data.checkKind, this.$options.data().checkKind);
+      Object.assign(this.$data.facilityCheckItem, this.$options.data().facilityCheckItem);
       this.$validator.reset();
       // this.disease.heaDiseaseClassCd = "";
       // window.getApp.$emit('APP_REQUEST_SUCCESS', '초기화 버튼이 클릭 되었습니다.');

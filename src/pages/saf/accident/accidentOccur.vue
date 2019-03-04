@@ -42,6 +42,28 @@
               </y-datepicker>
             </b-col>
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
+              <y-select
+                :width="8"
+                :comboItems="comboDeptItems"
+                itemText="deptNm"
+                itemValue="deptCd"
+                ui="bootstrap"
+                name="deptCd"
+                label="발생부서"
+                v-model="searchParam.deptCd"
+              />
+            </b-col>
+            <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
+              <y-text
+                :width="8"
+                ui="bootstrap"
+                name="area"
+                label="발생장소"
+                v-model="searchParam.area"
+                >
+              </y-text>
+            </b-col>
+            <!-- <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <b-row>
                 <b-col sm="8" md="8" lg="8" xl="8" class="col-xxl-8">
                   <y-select
@@ -66,7 +88,7 @@
                   </y-text>
                 </b-col>
               </b-row>
-            </b-col>
+            </b-col> -->
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <y-text
                 :width="8"
@@ -77,7 +99,7 @@
                 >
               </y-text>
             </b-col>
-            <!-- <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
+            <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <y-select
                 :width="8"
                 :comboItems="comboAccidentStepItems"
@@ -89,7 +111,7 @@
                 v-model="searchParam.accidentStepCd"
               >
               </y-select>
-            </b-col> -->
+            </b-col>
           </b-row>
         </b-card>
       </b-col>
@@ -102,7 +124,7 @@
           <div slot="buttonGroup" class="float-right mb-1">
             <y-btn 
               title="신규등록"
-              color="blue"
+              color="orange"
               @btnClicked="btnSearchCheckResultOpenPopupClicked" 
               @btnClickedErrorCallback="btnClickedErrorCallback"
             />
@@ -114,25 +136,15 @@
             :items="gridOptions.data"
             :excel-down="true"
             :print="true"
+            :use-paging="true"
             @tableLinkClicked="tableLinkAccidentTitleClicked"
-            label="사고등록 목록"
+            label="사고 목록"
             >
           </y-data-table>
         </b-col>
       </b-col>
     </b-row>
-    <el-dialog
-      :title="popupOptions.title"
-      :visible.sync="popupOptions.visible"
-      :fullscreen="false"
-      :close-on-click-modal="false"
-      :close-on-press-escape="false"
-      :show-close="false"
-      :width="popupOptions.width"
-      :top="popupOptions.top"
-      @close="closePopup" >
-      <component :is="popupOptions.target" :popupParam="popupOptions.param" @closePopup="closePopup" />
-    </el-dialog>
+    <y-popup :param="popupOptions"></y-popup>
   </b-container>
 </template>
 
@@ -152,7 +164,8 @@ export default {
       deptCd: '', // 발생부서 코드
       area: '', // 발생장소
       accidentTitle: '', // 사고명
-      accidentStepCd: '', // 사내사고진행단계
+      accidentStepCd: 'ACCS1', // 사내사고진행단계
+      // accidentStepCds: [], // 사내사고진행단계
     },
     searchArea: {
       title: '검색박스숨기기',
@@ -170,6 +183,7 @@ export default {
       param: null,
       width: '90%',
       top: '10px',
+      closeCallback: null
     },
     userInfo: {
       userId: '',
@@ -182,7 +196,7 @@ export default {
     isInsert: false,
     isEdit: false,
     comboDeptItems: [], // 발생부서
-    // comboAccidentStepItems: [], // 사내사고진행단계
+    comboAccidentStepItems: [], // 사내사고진행단계
     searchUrl: '',
   }),
   //* Vue lifecycle: created, mounted, destroyed, etc */
@@ -214,19 +228,20 @@ export default {
       this.searchUrl = selectConfig.saf.accident.list.url;   
       // 그리드 헤더 설정
       this.gridOptions.header = [
-        { text: '진행단계', name: 'accidentStepNm', width: '150px', },
-        { text: '발생일', name: 'accidentYmd', width: '130px', },
-        { text: '발생부서', name: 'deptCd', width: '150px', align: 'center' },
-        { text: '발생장소', name: 'area', width: '150px', align: 'center' },
-        { text: '사고명', name: 'safMgrPsn', width: '250px', type: 'link' },
-        { text: '작성자', name: 'userNm', width: '100px', },
-        { text: '작성일', name: 'item2', width: '100px', align: 'center' },
+        { text: '진행단계', name: 'accidentStepNm', width: '150px', align: 'center' },
+        { text: '발생일', name: 'accidentYmd', width: '130px', align: 'center' },
+        { text: '발생부서', name: 'deptNm', width: '150px' },
+        { text: '발생장소', name: 'area', width: '150px', },
+        { text: '사고명', name: 'accidentTitle', width: '250px', type: 'link' },
+        { text: '작성자', name: 'createUserNm', width: '100px', },
+        { text: '작성일', name: 'createDt', width: '150px', align: 'center' },
       ];
-      // this.getComboItems('SAF_ACCIDENT_STEP'); // 사내사고진행단계
+      this.getComboItems('SAF_ACCIDENT_STEP'); // 사내사고진행단계
       this.getComboDeptItems(); // 발생부서
       // 기간 Setting
-      var from = this.$comm.getToday();
-      var to = this.$comm.getCalculatedDate(from, '2m', 'YYYY-MM-DD', 'YYYY-MM-DD');
+      var today = this.$comm.getToday();
+      var from = this.$comm.getCalculatedDate(today, '-1m', 'YYYY-MM-DD', 'YYYY-MM-DD');
+      var to = this.$comm.getCalculatedDate(today, '1m', 'YYYY-MM-DD', 'YYYY-MM-DD');
       setTimeout(() => {
         this.searchParam.period = [from, to];
         this.getList(); // 사고등록 목록 조회
@@ -237,17 +252,18 @@ export default {
      * 공통 마스터 정보 조회 (진행단계)
      * codeGroupCd : 마스터 테이블 codeGroupCd 정보
      */
-    // getComboItems (codeGroupCd) {
-    //   this.$http.url = this.$format(selectConfig.codeMaster.getSelect.url, codeGroupCd);
-    //   this.$http.type = 'GET';
-    //   this.$http.request((_result) => {
-    //     this.comboAccidentStepItems = this.$_.clone(_result.data);
-    //     this.comboAccidentStepItems.splice(0, 0, { 'code': '', 'codeNm': '전체' });
-    //     this.searchParam.accidentStepCd = '';
-    //   }, (_error) => {
-    //     window.getApp.$emit('APP_REQUEST_ERROR', _error);
-    //   });
-    // },
+    getComboItems (codeGroupCd) {
+      this.$http.url = this.$format(selectConfig.codeMaster.getSelect.url, codeGroupCd);
+      this.$http.type = 'GET';
+      this.$http.request((_result) => {
+        this.comboAccidentStepItems = this.$_.clone(_result.data);
+        this.comboAccidentStepItems.splice(0, 0, { 'code': '', 'codeNm': '전체' });
+        this.searchParam.accidentStepCd = 'ACCS1';
+      }, (_error) => {
+        window.getApp.$emit('APP_REQUEST_ERROR', _error);
+      });
+    },
+    /**
     /**
      * 발생부서 조회
      */
@@ -269,14 +285,14 @@ export default {
      * data : 클릭한 col의 row 정보
      */
     tableLinkAccidentTitleClicked (header, data) {
-      this.showAccidentPopup(data);
+      this.showAccidentPopup(data, false);
     },
     /**
      * 해당 사고 상세보는 팝업 open
      */
-    showAccidentPopup (data) {
+    showAccidentPopup (data, flag) {
       this.popupOptions.target = () => import(`${'./accidentDetail.vue'}`);
-      this.popupOptions.title = '사고등록';
+      this.popupOptions.title = flag ? '사고발생등록' : '사고';
       this.popupOptions.param = {
         safAccidentNo: data.safAccidentNo, // 사내사고번호
         accidentTitle: data.accidentTitle, // 사고명
@@ -302,14 +318,19 @@ export default {
         cauTypeCd: data.cauTypeCd, // 원인유형코드
         cauTypeEtc: data.cauTypeEtc, // 원인유형기타
         bgnMeas: data.bgnMeas, // 초기대책
+
+        flag: flag, // 수정인지 등록인지 판단
+
+        tabIndex: 0,
       };
       this.popupOptions.visible = true;
+      this.popupOptions.closeCallback = this.closePopup;
     },
     /** 사고등록 목록 조회 **/
     getList () {
       this.searchParam.startDate = this.$_.clone(this.searchParam.period[0]);
       this.searchParam.endDate = this.$_.clone(this.searchParam.period[1]);
-      this.searchParam.accidentStepCd = 'ACCS1';
+      // this.searchParam.accidentStepCds = ['ACCS1'];
       this.$http.url = this.searchUrl;
       this.$http.type = 'GET';
       this.$http.param = this.searchParam;
@@ -328,6 +349,7 @@ export default {
       if (data === null || data === undefined) return;
       this.popupOptions.target = null;
       this.popupOptions.visible = false;
+      this.getList();
     },
     /**
      * 그리드 리사이징
@@ -336,7 +358,7 @@ export default {
       var defaultHeight = 300;
       window.getApp.$emit('LOADING_SHOW');
       setTimeout(() => { 
-        var calculatedHeight = window.innerHeight - this.$refs.searchBox.clientHeight - 250;
+        var calculatedHeight = window.innerHeight - this.$refs.searchBox.clientHeight - 310;
         this.gridOptions.height = calculatedHeight <= 250 ? defaultHeight : calculatedHeight;
         window.getApp.$emit('LOADING_HIDE');
       }, 600);
@@ -366,13 +388,13 @@ export default {
         safAccidentNo: 0, // 사내사고번호
         accidentTitle: '', // 사고명
         accidentNum: '', // 발행번호
-        accidentStepCd: 'ACCS3', // 사내사고진행단계 (계획)
+        accidentStepCd: '', // 사내사고진행단계 (계획)
         accidentYmd: '', // 발생일
         accidentHour: '', // 발생시
         accidentMinute: '', // 발생분
         deptCd: '', // 발생부서코드
         area: '', // 발생장소
-        weatherCd: '', // 날씨코드
+        weatherCd: null, // 날씨코드
         accidentTypeEtc: '', // 사고유형기타
 
         rptUserId: this.userInfo.userId, // 보고자사번
@@ -384,11 +406,11 @@ export default {
 
         contents: '', // 사고발생내용
         provReason: '', // 추정원인
-        cauTypeCd: '', // 원인유형코드
+        cauTypeCd: null, // 원인유형코드
         cauTypeEtc: '', // 원인유형기타
         bgnMeas: '', // 초기대책
       };
-      this.showAccidentPopup(data);
+      this.showAccidentPopup(data, true);
     },
     btnSearchClickedCallback () {
       this.getList();

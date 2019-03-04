@@ -65,12 +65,12 @@
                 <b-col sm="8" md="8" lg="8" xl="8" class="col-xxl-8">
                   <y-select
                     :width="6"
-                    :comboItems="EduCourseCds"
+                    :comboItems="comboEduCourseCds"
                     itemText="codeNm"
                     itemValue="code"
                     ui="bootstrap"
                     name="eduCourseCd"
-                    label="교육과정/교육구분"
+                    label="교육과정/구분"
                     v-model="searchParam.eduCourseCd"
                   >
                   </y-select>
@@ -78,7 +78,7 @@
                 <b-col sm="4" md="4" lg="4" xl="4" class="col-xxl-4">
                   <y-select
                     :width="12"
-                    :comboItems="EduTypeCds"
+                    :comboItems="comboEduTypeCds"
                     itemText="codeNm"
                     itemValue="code"
                     ui="bootstrap"
@@ -88,6 +88,19 @@
                   </y-select>
                 </b-col>
               </b-row>
+            </b-col>
+            <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
+              <y-select
+                :width="8"
+                :comboItems="comboProcessStepItems"
+                itemText="codeNm"
+                itemValue="code"
+                ui="bootstrap"
+                name="processStepCd"
+                label="진행단계"
+                v-model="searchParam.processStepCd"
+              >
+              </y-select>
             </b-col>
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
               <y-text
@@ -101,7 +114,6 @@
               >
               </y-text>
             </b-col>
-            
           </b-row>
         </b-card>
       </b-col>
@@ -120,7 +132,7 @@
             />
           </div>
           <y-data-table 
-            label="교육 결과 목록 목록"
+            label="교육 결과 목록"
             gridType="edit"
             :excel-down="true"
             :print="true"
@@ -128,23 +140,14 @@
             :height="gridOptions.height"
             :headers="gridOptions.header"
             :items="gridOptions.data"
+            :use-paging="true"
             @tableLinkClicked="tableLinkClicked"
             >
           </y-data-table>
         </b-col>
       </b-col>
     </b-row>
-    <el-dialog
-      :title="popupOptions.title"
-      :visible.sync="popupOptions.visible"
-      :fullscreen="false"
-      :width="popupOptions.width"        
-      :close-on-click-modal="false"
-      :close-on-press-escape="false"
-      :show-close="false"
-      :top="popupOptions.top" >
-      <component :is="popupOptions.target" :popupParam="popupOptions.param" @closePopup="popupOptions.closeCallback" />
-    </el-dialog>
+    <y-popup :param="popupOptions"></y-popup>
   </b-container>
 </template>
 
@@ -167,9 +170,10 @@ export default {
       searchParam: {
         duration: [],
         deptCd: '',
-        eduCourseCd: '',
-        eduTypeCd: '',
-        eduNm: ''
+        eduCourseCd: null,
+        eduTypeCd: null,
+        eduNm: '',
+        processStepCd: null,
       },
       edueResult: {
         safEduRsltNo: '',
@@ -200,7 +204,7 @@ export default {
       gridOptions: {
         header: [],
         data: [],
-        height: '460'
+        height: '490'
       },
       popupOptions: {
         target: null,
@@ -214,8 +218,9 @@ export default {
       baseWidth: 8,
       editable: true,
       comboDeptItems: [], // 주관부서
-      EduCourseCds: [], // 교육과정 종류
-      EduTypeCds: [], // 교육구분 종류
+      comboEduCourseCds: [], // 교육과정 종류
+      comboEduTypeCds: [], // 교육구분 종류
+      comboProcessStepItems: [],
       searchUrl: '',
       isSubmit: false,  // 버튼을 submit 할 것인지 판단하는 변수로써 버튼의 개수만큼 필요합니다.
     };
@@ -252,24 +257,27 @@ export default {
 
       setTimeout(() => {
         this.searchParam.duration = [from, to];
+        this.getDeptItems();  // 주관부서
+        this.getComboItems("SAF_EDU_COURSE");
+        this.getComboItems("SAF_EDU_TYPE");
+        this.getComboItems("SAF_PROCESS_STEP");
+        
+        this.getDataList(); // 조회
       }, 200);
-      
-      this.getDeptItems();  // 주관부서
-      this.getEduCourseCds(); // 교육과정
-      this.getEduTypeCds(); // 교육종류 
-      this.getDataList(); // 조회
 
       // 교육 결과 목록 grid 헤더 설정
       this.gridOptions.header = [
-        { text: '진행상태', name: 'processStepNm', width: '150px', align: 'center' },
-        { text: '교육과정', name: 'eduCourseNm', width: '100px', align: 'center' },
+        { text: '진행상태', name: 'processStepNm', width: '100px', align: 'center' },
+        { text: '교육과정', name: 'eduCourseNm', width: '150px', align: 'center' },
         { text: '교육구분', name: 'eduTypeNm', width: '100px', align: 'center' },
-        { text: '교육명', name: 'eduNm', width: '100px', align: 'center', url: 'true' },
+        { text: '교육명', name: 'eduNm', width: '200px', align: 'left', url: 'true' },
         { text: '교육기간', name: 'eduYmd', width: '200px', align: 'center' },
-        { text: '교육장소', name: 'eduPlace', width: '130px', align: 'center' },
-        { text: '주관부서', name: 'deptNm', width: '200px', align: 'center' },
-        { text: '이수인원', name: 'eduUserNum', width: '100px', align: 'center' },
+        { text: '교육장소', name: 'eduPlace', width: '100px', align: 'left' },
+        { text: '주관부서', name: 'deptNm', width: '150px', align: 'center' },
+        { text: '이수인원', name: 'eduUserNum', width: '100px', align: 'right' },
       ];
+
+      this.setGridSize(); // 그리드 사이즈 조절
     },
     closePopupUsage (data) {
       this.popupOptions.target = null;
@@ -298,25 +306,28 @@ export default {
       });
     },
     
-    // 교육과정 종류
-    getEduCourseCds () {
-      this.$http.url = this.$format(selectConfig.codeMaster.getSelect.url, 'SAF_EDU_COURSE');
-      this.$http.type = 'get';
+    /**
+     * 공통 마스터 정보 조회 (진행단계)
+     * codeGroupCd : 마스터 테이블 codeGroupCd 정보
+    */
+    getComboItems (codeGroupCd) {
+      this.$http.url = this.$format(selectConfig.codeMaster.getSelect.url, codeGroupCd);
+      this.$http.type = 'GET';
       this.$http.request((_result) => {
-        this.EduCourseCds = this.$_.clone(_result.data);
-        this.EduCourseCds.splice(0, 0, { 'code': '', 'codeNm': '전체' });
-      }, (_error) => {
-        window.getApp.$emit('APP_REQUEST_ERROR', _error);
-      });
-    },
-
-    // 교육구분 종류
-    getEduTypeCds () {
-      this.$http.url = this.$format(selectConfig.codeMaster.getSelect.url, 'SAF_EDU_TYPE');
-      this.$http.type = 'get';
-      this.$http.request((_result) => {
-        this.EduTypeCds = this.$_.clone(_result.data);
-        this.EduTypeCds.splice(0, 0, { 'code': '', 'codeNm': '전체' });
+        if (codeGroupCd === "SAF_EDU_COURSE") {
+          this.comboEduCourseCds = this.$_.clone(_result.data);
+          this.comboEduCourseCds.splice(0, 0, { 'code': null, 'codeNm': '전체' });
+        }
+        else if (codeGroupCd === "SAF_EDU_TYPE") {
+          this.comboEduTypeCds = this.$_.clone(_result.data);
+          this.comboEduTypeCds.splice(0, 0, { 'code': null, 'codeNm': '전체' });
+        }
+        else if (codeGroupCd === "SAF_PROCESS_STEP") {
+          this.comboProcessStepItems = this.$_.clone(_result.data);
+          this.comboProcessStepItems.splice(0, 0, { 'code': null, 'codeNm': '전체' });
+        }
+        
+        
       }, (_error) => {
         window.getApp.$emit('APP_REQUEST_ERROR', _error);
       });
@@ -341,9 +352,11 @@ export default {
      * 그리드 리사이징
      */
     setGridSize () {
+      var defaultHeight = 180;
       window.getApp.$emit('LOADING_SHOW');
-      setTimeout(() => {
-        this.gridOptions.height = window.innerHeight - this.$refs.searchBox.clientHeight - 260;
+      setTimeout(() => { 
+        var calculatedHeight = window.innerHeight - this.$refs.searchBox.clientHeight - 320;
+        this.gridOptions.height = calculatedHeight <= 180 ? defaultHeight : calculatedHeight;
         window.getApp.$emit('LOADING_HIDE');
       }, 600);
     },
@@ -408,7 +421,7 @@ export default {
       this.popupOptions.target = () => import(`${'./createEdueResult.vue'}`);
       this.popupOptions.title = '교육결과 등록';
       this.popupOptions.visible = true;
-      this.popupOptions.width = '60%';
+      this.popupOptions.width = '90%';
       this.popupOptions.top = '10px';
       this.popupOptions.param = {
         'safEduRsltNo': 0,
@@ -426,7 +439,7 @@ export default {
         'processStepCd': data.processStepCd,
       };
       this.popupOptions.visible = true;
-      this.popupOptions.width = '60%';
+      this.popupOptions.width = '90%';
       this.popupOptions.top = '10px';
       this.popupOptions.closeCallback = this.closePopupUsage;
     },

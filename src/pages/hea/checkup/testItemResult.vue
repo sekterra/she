@@ -145,9 +145,9 @@ export default {
         heaCheckupOrgTestItemNo: 0,
         heaCheckupOrgNo: 2,
         heaCheckupOrgNm: '',
-        heaTestClassCd: '',
+        heaTestClassCd: null,
         heaTestClassNm: '',
-        heaTestItemCd: '',
+        heaTestItemCd: null,
         heaTestItemNm: '',
         year: '',
         heaCheckupTypeCd: 'A',
@@ -251,17 +251,17 @@ export default {
       this.$http.request((_result) => {
         this.gridItemResultData = _result.data;
       }, (_error) => {
-        window.getApp.$emit('APP_REQUEST_ERROR', _error);
+        window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
       });
     },    
     getHeaTestClassCdItems () {
       this.$http.url = this.$format(selectConfig.codeMaster.getSelect.url, 'HEA_TEST_CLASS');
       this.$http.type = 'get';
       this.$http.request((_result) => {
-        _result.data.splice(0, 0, { 'code': '', 'codeNm': '선택하세요' });
+        _result.data.splice(0, 0, { 'code': null, 'codeNm': '선택하세요' });
         this.heaTestClassCdItems = _result.data;        
       }, (_error) => {
-        window.getApp.$emit('APP_REQUEST_ERROR', _error);
+        window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
       });
     },
     getHeaTestItemCdItems () {
@@ -274,11 +274,11 @@ export default {
         'heaCheckupTypeCd': this.testItemResult.heaCheckupTypeCd
       };
       this.$http.request((_result) => {
-        _result.data.splice(0, 0, { 'heaTestItemCd': '', 'heaTestItemNm': '선택하세요' });
+        _result.data.splice(0, 0, { 'heaTestItemCd': null, 'heaTestItemNm': '선택하세요' });
         this.heaTestItemCdItems = _result.data;
-        this.testItemResult.heaTestItemCd = '';
+        this.testItemResult.heaTestItemCd = null;
       }, (_error) => {
-        window.getApp.$emit('APP_REQUEST_ERROR', _error);
+        window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
       });
     },
     getTestItem () {
@@ -288,7 +288,7 @@ export default {
         this.testItemResult.heaResultTypeCd = _result.data.heaResultTypeCd;
         this.testItemResult.heaResultTypeNm = _result.data.heaResultTypeNm;
       }, (_error) => {
-        window.getApp.$emit('APP_REQUEST_ERROR', _error);
+        window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
       });
     },
 
@@ -402,7 +402,7 @@ export default {
     */
     btnClickedErrorCallback (_result) {
       this.isCreateSubmit = false;
-      window.getApp.$emit('APP_REQUEST_ERROR', _result);
+      window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
     },
     /** /Button Event **/
     

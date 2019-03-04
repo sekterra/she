@@ -25,7 +25,8 @@
         </b-col>
       </b-col>
     </b-row>
-
+    <b-row class="mt-3"></b-row>
+    <!-- 탭영역 -->
     <el-tabs type="border-card" v-model="tabIndex" @tab-click="tabClick">
       <el-tab-pane
         v-for="(item, i) in tabItems"
@@ -37,7 +38,7 @@
           {{ item.title }}
         </span>
         <keep-alive>
-          <component :is="component" v-if="component" :paneName="paneName" :selectedPreventFacNo="ewtrPreventFacNo" />
+          <component :is="component" v-if="component" :paneName="paneName" :selectedPreventFacNo="ewtrPreventFacNo" @changePrevention="changePrevention" />
         </keep-alive>
       </el-tab-pane>
     </el-tabs>
@@ -99,11 +100,15 @@ export default {
       
       // 그리드 헤더 설정
       this.gridOptions.header = [
-        { text: '방지시설명', name: 'ewtrPreventFacNm', width: '20%', align: 'left' },
-        { text: '처리방법명', name: 'ewtrDispoMtdNm', width: '20%', align: 'left' },
-        { text: '비고', name: 'remark', width: '30%', align: 'left' },
-        { text: '출력순서', name: 'sortOrder', width: '8%', align: 'center' },
-        { text: '사용여부', name: 'useYnNm', width: '8%', align: 'center' },
+        { text: '방지시설명', name: 'ewtrPreventFacNm', width: '200px', align: 'left' },
+        { text: '처리방법명', name: 'ewtrDispoMtdNm', width: '200px', align: 'left' },
+        { text: '비고', name: 'remark', width: '300px', align: 'left' },
+        { text: '사용여부', name: 'useYnNm', width: '100px', align: 'center' },
+        { text: '정렬순서', name: 'sortOrder', width: '100px', align: 'center' },
+        { text: '등록일', name: 'createDt', width: '200px', align: 'center' },
+        { text: '등록자', name: 'createUserNm', width: '120px', align: 'center' },
+        { text: '수정일', name: 'updateDt', width: '200px', align: 'center' },
+        { text: '수정자', name: 'updateUserNm', width: '120px', align: 'center' }
       ];
 
       this.getList();
@@ -114,7 +119,7 @@ export default {
       this.$http.request((_result) => {
         this.gridOptions.data = this.$_.clone(_result.data);
       }, (_error) => {
-        window.getApp.$emit('APP_REQUEST_ERROR', _error);
+        window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
       });
     },
     selectedRow (data) {
@@ -127,6 +132,9 @@ export default {
     tabClick (tab) {
       var nowDate = new Date();
       this.paneName = tab.paneName + nowDate.getMilliseconds();
+    },
+    changePrevention (data) {
+      this.getList();
     }
   }
 };

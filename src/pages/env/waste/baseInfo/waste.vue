@@ -36,6 +36,7 @@
               <y-select
                 :width="8"
                 :editable="editable"
+                :required="true"
                 :comboItems="ewstClassCdItems"
                 itemText="ewstClassNm"
                 itemValue="ewstClassCd"
@@ -52,6 +53,7 @@
               <y-text
                 :width="8"
                 :editable="editable"
+                :required="true"
                 :maxlength="30"
                 ui="bootstrap"
                 label="폐기물명"
@@ -65,6 +67,7 @@
               <y-select
                 :width="8"
                 :editable="editable"
+                :required="true"
                 :comboItems="ewstDispoMtdCdItems"
                 itemText="ewstDispoMtdNm"
                 itemValue="ewstDispoMtdCd"
@@ -81,6 +84,7 @@
               <y-select
                 :width="8"
                 :editable="editable"
+                :required="true"
                 :comboItems="ewstPhaseCdItems"
                 itemText="codeNm"
                 itemValue="code"
@@ -97,6 +101,7 @@
               <y-select
                 :width="8"
                 :editable="editable"
+                :required="true"
                 :comboItems="ewstDispoDivCdItems"
                 itemText="codeNm"
                 itemValue="code"
@@ -120,8 +125,6 @@
                 name="ewstDispoCyCd"
                 label="처리주기"
                 v-model="waste.ewstDispoCyCd"
-                v-validate="'required'"
-                :state="validateState('ewstDispoCyCd')"
               >
               </y-select>
             </b-col>
@@ -132,7 +135,7 @@
                 :maxlength="5"
                 :hasSeperator="false"
                 ui="bootstrap"
-                label="출력순서"
+                label="정렬순서"
                 name="sortOrder"
                 v-model="waste.sortOrder"
               />
@@ -278,8 +281,8 @@ export default {
         { text: '성질/상태', name: 'ewstPhaseNm', width: '120px', align: 'center' },
         { text: '처리구분', name: 'ewstDispoDivNm', width: '120px', align: 'center' },
         { text: '처리주기', name: 'ewstDispoCyNm', width: '120px', align: 'center' },
-        { text: '출력순서', name: 'sortOrder', width: '100px', align: 'center' },
         { text: '사용여부', name: 'useYn', width: '100px', align: 'center' },
+        { text: '정렬순서', name: 'sortOrder', width: '100px', align: 'center' },
         { text: '등록일', name: 'createDt', width: '200px', align: 'center' },
         { text: '등록자', name: 'createUserNm', width: '120px', align: 'center' },
         { text: '수정일', name: 'updateDt', width: '200px', align: 'center' },

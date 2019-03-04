@@ -13,7 +13,7 @@ examples:
           <v-toolbar-title class="subheading">{{title}}</v-toolbar-title>
           <v-spacer></v-spacer>
           <v-btn 
-            v-if="createUrl || popupCallback"
+            v-if="createUrl"
             icon
             small
             color="indigo lighten-3"
@@ -180,7 +180,8 @@ examples:
           v-if="label"
           class="float-left">
           <y-label :label="label" icon="list-alt" color-class="cutstom-title-color" />
-          <y-label  :label="'(' + (datatableItems ? datatableItems.length : 0) + '건)'" style="font-size:15px;" />
+          <y-label :label="'(' + (datatableItems ? datatableItems.length : 0) + '건)'" style="font-size:15px;" />
+          <y-label v-if="messageCheck" :label="'*' + message + ''" style="font-size:15px; color:red" />
         </div>
         <div 
           class="float-right"
@@ -211,7 +212,7 @@ examples:
         :border="true"
         header-cell-class-name="default-th"
         cell-class-name="default-td"
-        style="width: 100%; min-height: 200px;"
+        style="width: 100%; min-height: 300px;"
         :height="height"
         :rows="rows"
         :row-class-name="tableRowClassName"
@@ -228,7 +229,7 @@ examples:
         <!-- <el-table-column type="index" label="No" width="55" align="center"></el-table-column> -->
         <el-table-column v-if="useRownum" label="No" width="55" align="center">
           <template slot-scope="scope">
-            <div>{{datatableItems.length - datatableItems.indexOf(scope.row)}}</div>
+            <div>{{datatableItems.indexOf(scope.row) + 1}}</div>
           </template>
         </el-table-column>
         <slot name="expand"></slot>
@@ -272,6 +273,7 @@ examples:
               <y-textarea
                 v-else-if="header.type && header.type.toLowerCase() === 'textarea'"
                 :editable="editable"
+                :rows="2"
                 rowClass=""
                 ui="bootstrap"
                 v-model="scope.row[header.name]"
@@ -279,6 +281,8 @@ examples:
               <y-number
                 v-else-if="header.type && header.type.toLowerCase() === 'number'"
                 :editable="editable"
+                :pointNumber="header.pointNumber ? header.pointNumber : 0"
+                :hasSeperator="header.hasSeperator ? header.hasSeperator : false"
                 rowClass=""
                 ui="bootstrap"
                 v-model="scope.row[header.name]"
@@ -329,9 +333,32 @@ examples:
                 ui="bootstrap"
                 v-model="scope.row[header.name]"
                 />
+                <y-switch
+                  v-else-if="header.type && header.type.toLowerCase() === 'switch'"
+                  :editable="editable"
+                  :true-value="header.trueValue ? header.trueValue : 'Y'"
+                  :false-value="header.falseValue ? header.falseValue : 'N'"
+                  ui="bootstrap"
+                  :selectText="header.selectText ? header.selectText : '사용'"
+                  :unselectText="header.unselectText ? header.unselectText : '미사용'"
+                  rowClass=""
+                  v-model="scope.row[header.name]"
+                  />
+                <b-form-checkbox
+                  v-else-if="header.type && header.type.toLowerCase() === 'singlecheckbox'"
+                  value="Y"
+                  unchecked-value="N"
+                  v-model="scope.row[header.name]"
+                />
               <div v-else class="cell">
-                {{scope.row[header.name]}}
+                <span v-if="header.textCalculate"
+                  v-html="header.textCalculate(scope.row, header.name)">
+                </span>
+                <span v-else>
+                  {{scope.row[header.name]}}
+                </span>                
               </div>
+
             </template>
           <el-table-column
               v-for="_header in header.child"
@@ -365,12 +392,15 @@ examples:
                 <y-text
                   v-else-if="_header.type && _header.type.toLowerCase() === 'text'"
                   :editable="editable"
+                  rowClass=""
                   ui="bootstrap"
                   v-model="scope.row[_header.name]"
                   />
                 <y-number
                   v-else-if="_header.type && _header.type.toLowerCase() === 'number'"
                   :editable="editable"
+                  :pointNumber="_header.pointNumber ? _header.pointNumber : 0"
+                  :hasSeperator="header.hasSeperator ? header.hasSeperator : false"
                   rowClass=""
                   ui="bootstrap"
                   v-model="scope.row[_header.name]"
@@ -412,6 +442,22 @@ examples:
                   :use-default="_header.useDefault ? _header.useDefault : false"
                   ui="bootstrap"
                   v-model="scope.row[_header.name]"
+                  />
+                  <y-switch
+                  v-else-if="_header.type && _header.type.toLowerCase() === 'switch'"
+                  :editable="editable"
+                  :true-value="_header.trueValue ? _header.trueValue : 'Y'"
+                  :false-value="_header.falseValue ? _header.falseValue : 'N'"
+                  ui="bootstrap"
+                  :selectText="_header.selectText ? _header.selectText : '사용'"
+                  :unselectText="_header.unselectText ? _header.unselectText : '미사용'"
+                  v-model="scope.row[_header.name]"
+                  />
+                  <b-form-checkbox
+                    v-else-if="header.type && header.type.toLowerCase() === 'singlecheckbox'"
+                    value="Y"
+                    unchecked-value="N"
+                    v-model="scope.row[header.name]"
                   />
                 <div v-else class="cell">
                   {{scope.row[_header.name]}}
@@ -536,12 +582,12 @@ export default {
     // 그리드 높이
     height: {
       type: [String, Number],
-      default: '200'
+      default: '300'
     },
     // 표시 되는 행 개수
     rows: {
       type: Number,
-      default: 10
+      default: 20
     },
     // 페이징 표시 여부
     usePaging: {
@@ -562,7 +608,22 @@ export default {
     },
     spanOptions: {
       type: Array
-    }
+    },
+    // merge 관련
+    mergeColumns: {
+      type: Array,
+      default: () => []
+      // { colName: 'col3', key: ['col1', 'col2'...]}, key 를 기준으로 colName 의 내용이 같으면 병합 함.
+    },    
+    // 테이블 라벨 이후 추가 메세지 여부
+    messageCheck: {
+      type: Boolean,
+      default: false,
+    },
+    message: {
+      type: String,
+      default: ''
+    },
     // TODO : 페이징 사이즈를 설정할 필요가 있을지 몰라서 일단 주석처리
     // pageSizes: {
     //   type: Array,
@@ -593,7 +654,8 @@ export default {
       multipleSelection: [],
       singleSelection: null,
       page: 1,
-      datatableItems: null
+      datatableItems: null,
+      mergeData: []
     };
   },
   computed: {
@@ -643,18 +705,15 @@ export default {
           })
         });
       }
+    },
+    datatableItems () {
+      this.createMergeData();
     }
   },
   /* Vue lifecycle: created, mounted, destroyed, etc */
   beforeMount () {
     // 이유 : vue.js는 SPA기반으로 동작하기 때문에 페이지를 이동하더라도 기존 입력된 정보가 그대로 남아 있는 문제가 있음
     Object.assign(this.$data, this.$options.data());
-    // TODO : 팝업이 닫힐때 선택 초기화: 버그로 사용 안함
-    // window.getApp.$on('POPUP_CLOSED', () => {
-    //   if (typeof this.$refs.datatable === 'undefined') return;
-    //   this.$refs.datatable.clearSelection();
-    // });
-
     this.getList();
   },
   mounted () {
@@ -668,6 +727,7 @@ export default {
         })
       });
     }
+    this.createMergeData();
   },
   beforeDestroy () {
   },
@@ -758,12 +818,14 @@ export default {
       this.$emit('expandChange', row, expandedRows);
     },
     tableRowClassName ({row, rowIndex}) {
+      var returnText = '';
       if (rowIndex%2 === 1) { 
-        return 'odd-row';
+        returnText = 'odd-row';
       } else if (rowIndex%2 === 0) {
-        return 'even-row';
+        returnText = 'even-row';
       }
-      return '';
+
+      return returnText;
     },
     selectionChanged (val) {
       this.multipleSelection = val;
@@ -782,21 +844,6 @@ export default {
      */
     linkClicked (_header, _row) {
       this.$emit('tableLinkClicked', _header, _row);
-      // 링크 타겟의 기본은 팝업
-      // var target = _header.target ? _header.target : 'popup';
-      // 여기는 버튼 클릭 팝업과 동일하게 
-      // window.getApp.$emit('POPUP_OPEN', {
-      //   isPopupOpen: true,
-      //   id: 'popup',
-      //   label: '팝업테스트',
-      //   editable: false,
-      //   type: 'checkupUser',
-      //   childProps: {
-      //     // 여기에 pk 정보를 _row에서 읽어와서 넣어주면 됨
-      //     checkupPlanNo: 10
-      //   }
-      // });
-
       // TODO : 페이지 이동은 준비중
     },
     /**
@@ -825,7 +872,67 @@ export default {
     onSpanMethod ({ row, column, rowIndex, columnIndex }) {
       // console.log(':::::::::::::::::: onSpanMethod :::::::::::::::::::::');
       if (!this.spanOptions) return;
-      return spanRow({ row, column, rowIndex, columnIndex }, this.datatableItems, this.spanOptions)
+      var options = { row, column, rowIndex, columnIndex }
+      // return spanRow({ row, column, rowIndex, columnIndex }, this.datatableItems, this.spanOptions)
+      return spanRow(options, this.datatableItems, this.spanOptions)
+    },    
+    mergeMethod ({ row, column, rowIndex, columnIndex }) {
+      var ret = null;
+      this.$_.forEach(this.mergeColumns, (mergeItem) => {
+        var findData = this.$_.find(this.mergeData, { 'colName': column['property'], 'rowIndex': rowIndex });
+        if (findData) {
+          // console.log('------------>log' + JSON.stringify(findData));
+          ret ={ rowspan: findData.span, colspan: 1 };
+        }
+      });
+
+      if (ret != null) return ret;
+    },
+    createMergeData () {
+      this.mergeData = [];      
+      var def = { 'colName': '', 'key': [] };
+      var data ={ 'colName': '', 'rowIndex': 0, 'span': 0 };       
+      if (this.mergeColumns.length === 0) return;
+      else {
+        // loop 를 통한 병합 데이터 생성
+        this.$_.forEach(this.mergeColumns, (mergeItem) =>{
+          var mergeColumn = this.$_.assign(def, mergeItem);
+          var selIndex = -1;
+          var selData = null;
+          for (var i = 0; i < this.datatableItems.length; i++) {
+            this.mergeData.push(this.$_.clone(data));
+            this.mergeData[this.mergeData.length - 1].colName = mergeColumn.colName;
+            this.mergeData[this.mergeData.length - 1].rowIndex = i;
+
+            var isLike = false;
+            var item = this.datatableItems[i];
+            var nextItem = {};
+            if (this.datatableItems.length - 1 === i) nextItem[mergeColumn.colName] = '#{NONE}';
+            else nextItem = this.datatableItems[i + 1];
+            
+            if (item[mergeColumn.colName] === nextItem[mergeColumn.colName]) {
+              isLike = true;              
+              this.$_.forEach(mergeColumn.key, (keyItem) => {
+                if (item[keyItem] !== nextItem[keyItem]) isLike = false;
+              });              
+            }
+            if (isLike) {
+              selIndex = selIndex > -1 ? selIndex : i;
+              selData = this.$_.find(this.mergeData, { 'colName': mergeColumn.colName, 'rowIndex': selIndex });
+              selData.span++;
+            }
+            else if (selIndex === -1) {
+              this.mergeData[this.mergeData.length - 1].span = 1;
+            }
+            else {
+              selData = this.$_.find(this.mergeData, { 'colName': mergeColumn.colName, 'rowIndex': selIndex });
+              selData.span++;
+              selIndex = -1;
+            }
+          }
+        });
+      }
+      // console.log('last===>' + JSON.stringify(this.mergeData));
     }
   }
 };
@@ -842,7 +949,7 @@ export default {
   font-size:12px;color:#212529;
 }
 .default-td .cell {
-  max-height:40px !important;overflow-y: auto; overflow-x: hidden;
+  max-height:100px !important;overflow-y: auto; overflow-x: hidden;
 }
 .even-row {
   background-color: #FAFAFA !important;
@@ -855,5 +962,9 @@ export default {
 }
 .selected-row:hover  td {
   background-color: #a5cca5 !important;
+}
+.el-tooltip__popper {
+  /* 테이블의 child 구성시 tooltip 가 무조건 보이는 현상을 제거하기 위해 작성함. */
+  display: none;
 }
 </style>

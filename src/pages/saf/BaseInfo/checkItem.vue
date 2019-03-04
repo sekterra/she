@@ -16,7 +16,7 @@
             <div class="float-right">
               <y-btn
                 :title="searchArea.title"
-                color="orange"
+                color="green"
                 @btnClicked="btnSearchVisibleClicked"
               />
               <y-btn
@@ -34,7 +34,7 @@
              <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
                 <y-select
                   :width="8"
-                  :comboItems="comboCheckKindItems"
+                  :comboItems="comboCheckKindSearch"
                   itemText="safCheckKindNm"
                   itemValue="safCheckKindNo"
                   ui="bootstrap"
@@ -59,8 +59,9 @@
             :items="gridOptions.data"
             :excel-down="true"
             :print="true"
+            :useRownum="false"
             @selectedRow="selectedRow"
-            label="점검항목"
+            label="안전점검 항목 목록"
           ></y-data-table>
         </b-col>
       </b-col>
@@ -79,13 +80,13 @@
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
                 <y-select
                   :width="8"
-                  :comboItems="comboCheckKindItems"
+                  :comboItems="comboCheckKindDetail"
                   :required="true"
                   itemText="safCheckKindNm"
                   itemValue="safCheckKindNo"
                   ui="bootstrap"
                   label="안전점검종류"
-                  name="checkKind"
+                  name="safCheckKindNo"
                   v-validate="'required'"
                   v-model="checkItem.safCheckKindNo"
                   :state="validateState('safCheckKindNo')"
@@ -95,12 +96,13 @@
               <y-text
                 :width="8"
                 :required="true"
+                :maxlength="50"
                 ui="bootstrap"
                 label="점검항목"
-                name="safCheckItemNm"
+                name="safCheckTypeNm"
                 v-validate="'required'"
                 v-model="checkItem.safCheckTypeNm"
-                :state="validateState('safCheckItemNm')"
+                :state="validateState('safCheckTypeNm')"
               ></y-text>
             </b-col>
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
@@ -109,7 +111,7 @@
                 :maxlength="5"
                 :hasSeperator="false"
                 ui="bootstrap"
-                label="정렬 순서"
+                label="정렬순서"
                 name="sortOrder"
                 v-model="checkItem.sortOrder"
               ></y-number>
@@ -172,9 +174,9 @@ export default {
   data: () => ({
     checkItem: {
       safCheckItemNo: "",
-      safCheckKindNo: "",
+      safCheckKindNo: null,
       safCheckTypeNm: "",
-      sortOrder: "",
+      sortOrder: 0,
       useYn: ""
     },
     searchParam: {
@@ -189,7 +191,9 @@ export default {
       data: [],
       height: "300"
     },
-    comboCheckKindItems: [],
+    
+    comboCheckKindSearch: [],
+    comboCheckKindDetail: [],
     baseWidth: 9,
     editable: false,
     isInsert: false,
@@ -202,12 +206,12 @@ export default {
   //* Vue lifecycle: created, mounted, destroyed, etc */
   beforeCreate () {},
   created () {},
-  update () {},
+  updated () {},
   beforeMount () {
     Object.assign(this.$data, this.$options.data());
     this.init();
     this.getCheckKindItems();
-
+    
   },
   mounted () {
     // 윈도우 resize event
@@ -233,15 +237,19 @@ export default {
         ];
       }, 1000);
 
+      
+
       // 그리드 헤더 설정
       this.gridOptions.header = [
       //  { text: "안전점검항목번호", name: "safCheckItemNo", },
-      //  { text: "안전점검종류번호", name: "safCheckKindNo", width: "180px" },
+        { text: "안전점검종류", name: "safCheckKindNm", width: "180px", align: "center" },
         { text: "안전점검항목명", name: "safCheckTypeNm", width: "180px" },
-        { text: "정렬순서", name: "sortOrder", width: "180px" },
-        { text: "사용여부", name: "useYn", width: "100px", align: "center" }
+        { text: "사용여부", name: "useYnNm", width: "180px", align: "center" },
+        { text: "정렬순서", name: "sortOrder", width: "100px", align: "center" },
       ];
       this.setGridSize();
+
+      
     },
     // 입력 setting
     selectedRow (data) {
@@ -257,16 +265,6 @@ export default {
         console.log(_error);
       });
 
-    },
-    // combo box list 공통
-    getComboItems (codeGroupCd) {
-      this.$http.url = this.$format(selectConfig.codeMaster.getSelect.url, codeGroupCd);
-      this.$http.type = 'GET';
-      this.$http.request((_result) => {
-        this.comboCheckKindItems = this.$_.clone(_result.data);
-      }, (_error) => {
-        console.log(_error);
-      });
     },
 
     /** 수정 하기전 UI단 유효성 검사 **/
@@ -285,7 +283,7 @@ export default {
     beforeInsert () {
       window.getApp.$emit('CONFIRM', {
         title: '확인',
-        message: '저장하시겠습니까?',
+        message: '등록하시겠습니까?',
         // TODO : 필요시 추가하세요.
         type: 'info',  // success / info / warning / error
         // 확인 callback 함수
@@ -303,9 +301,10 @@ export default {
         this.isEdit = _result;
         // TODO : 전역 성공 메시지 처리
         // 이벤트는 ./event.js 파일에 선언되어 있음
-        if (!this.isEdit) window.getApp.$emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
+        if (!this.isEdit) window.getApp.$emit('APP_VALID_ERROR', '필수 입력값을 입력해 주세요.');
       }).catch(() => {
         this.isEdit = false;
+        if (!this.isEdit) window.getApp.$emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
       });
     },
     checkValidationInsert () {
@@ -313,9 +312,10 @@ export default {
         this.isInsert = _result;
         // TODO : 전역 성공 메시지 처리
         // 이벤트는 ./event.js 파일에 선언되어 있음
-        if (!this.isInsert) window.getApp.$emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
+        if (!this.isInsert) window.getApp.$emit('APP_VALID_ERROR', '필수 입력값을 입력해 주세요.');
       }).catch(() => {
         this.isInsert = false;
+        window.getApp.$emit('APP_VALID_ERROR', '유효성 검사도중 에러가 발생하였습니다.');
       });
     },
     validateState (ref) {
@@ -329,8 +329,18 @@ export default {
       this.$http.url = selectConfig.saf.checkItem.getSelect.url;
       this.$http.type = 'GET';
       this.$http.request((_result) => {
-        this.comboCheckKindItems = this.$_.clone(_result.data);
-        this.searchParam.safCheckKindNo = this.$_.map(this.$_.clone(_result.data), 'safCheckKindNo')[0];
+        // this.comboCheckKindItems = this.$_.clone(_result.data);
+
+        var searchItems = this.$_.clone(_result.data);
+        var detailItems = this.$_.clone(_result.data);
+        searchItems.splice(0, 0, { 'safCheckKindNo': '', 'safCheckKindNm': '전체' });
+        detailItems.splice(0, 0, { 'safCheckKindNo': null, 'safCheckKindNm': '선택하세요' });
+        
+        this.comboCheckKindSearch = searchItems;
+        this.comboCheckKindDetail = detailItems;
+        
+
+        this.getList();
       }, (_error) => {
         console.log(_error);
       });
@@ -394,11 +404,20 @@ export default {
     btnSaveClickedCallback (result) {
       this.getList();
 
-      window.getApp.$emit('ALERT', {
-        title: '안내',
-        message: '수정되었습니다.',
-        type: 'success',  // success / info / warning / error
-      });
+      if (result.data === 0) {
+        window.getApp.$emit('ALERT', {
+          title: '안내',
+          message: '안전점검항목명이 중복 됩니다.',
+          type: 'warning',  // success / info / warning / error
+        });
+      }
+      else {
+        window.getApp.$emit('ALERT', {
+          title: '안내',
+          message: '저장되었습니다.',
+          type: 'success',  // success / info / warning / error
+        });
+      } 
       this.isEdit = false;
       // this.$emit('APP_REQUEST_SUCCESS', '수정 버튼이 클릭 되었습니다.');
     },
@@ -406,11 +425,22 @@ export default {
       // this.disease.heaDiseaseCd = _result.data;
       this.getList();
 
-      window.getApp.$emit('ALERT', {
-        title: '안내',
-        message: '저장되었습니다.',
-        type: 'success',  // success / info / warning / error
-      });
+      if (result.data === 0) {
+        window.getApp.$emit('ALERT', {
+          title: '안내',
+          message: '안전점검항목명이 중복 됩니다.',
+          type: 'warning',  // success / info / warning / error
+        });
+      }
+      else {
+        window.getApp.$emit('ALERT', {
+          title: '안내',
+          message: '저장되었습니다.',
+          type: 'success',  // success / info / warning / error
+        });
+        this.checkItem.safCheckItemNo = this.$_.clone(result.data);
+        
+      } 
       this.isInsert = false;
       this.editable = true;
     },

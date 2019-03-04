@@ -17,36 +17,6 @@
             <!-- </div> -->
             <div class="float-right">
               <y-btn
-                title="즉시조치임시팝업"
-                color="yellow"
-                @btnClicked="openDialogPage('NOW')" 
-              />
-              <y-btn
-                title="향후조치임시팝업"
-                color="yellow"
-                @btnClicked="openDialogPage('REQUEST')" 
-              />
-              <y-btn
-                title="접수임시팝업"
-                color="yellow"
-                @btnClicked="openDialogPage('ACCEPT')" 
-              />
-              <y-btn
-                title="조치임시팝업"
-                color="yellow"
-                @btnClicked="openDialogPage('IMPROVE')" 
-              />
-              <y-btn
-                title="확인임시팝업"
-                color="yellow"
-                @btnClicked="openDialogPage('CONFIRM')" 
-              />
-              <y-btn
-                title="상세임시팝업"
-                color="yellow"
-                @btnClicked="openDialogPage('DETAIL')" 
-              />
-              <y-btn
                 :action-url="searchUrl"
                 :param="searchParam"
                 title="검색"
@@ -142,47 +112,18 @@
             <y-data-table 
               label="요청/조치사항 목록"
               ref="dataTable"
+              :excel-down="true"
+              :print="true"
+              :use-paging="true"
               :height="gridOptions.height"
               :headers="gridOptions.header"
               :items="gridOptions.data"
-              @tableLinkClicked="tableLinkClicked"
+              @tableLinkClicked="tableLinkimprTitleClicked"
             />
           </b-col>
       </b-col>
     </b-row>
-    <b-row>
-      <b-col sm="12">
-        <y-label label="임시 Tab" icon="user-edit" color-class="cutstom-title-color" />
-      </b-col>
-    </b-row>
-    <el-tabs type="border-card" v-model="tabIndex" sm="12" md="12" lg="12" xl="12" class="col-xxl-12">
-      <el-tab-pane
-        v-for="(item, i) in tabItems"
-        :key="i"
-        stretch
-        class="default-tab-pane"
-      >
-      <span slot="label">
-        <i class="el-icon-date"></i>
-        {{ item.title }}
-      </span>
-      <keep-alive>
-        <component :is="component" v-if="component" :tabParam.sync="tabParam"/>
-      </keep-alive>
-        </el-tab-pane>
-    </el-tabs>
-    
-    <el-dialog
-      :title="popupOptions.title"
-      :visible.sync="popupOptions.visible"
-      :fullscreen="false"
-      :width="popupOptions.width"        
-      :close-on-click-modal="false"
-      :close-on-press-escape="false"
-      :show-close="false"
-      :top="popupOptions.top" >
-      <component :is="popupOptions.target" :popupParam="popupOptions.param" @closePopup="closePopup" />
-    </el-dialog>
+    <y-popup :param="popupOptions"></y-popup>
   </b-container>
 </template>
 
@@ -196,23 +137,20 @@ export default {
   },
   data () {
     return {
-      tabParam: {
-        imprClassCd: '',
-        refTableId: 0,
-        editable: true
-      },
       popupOptions: {
         target: null,
         title: '',
         visible: false,
         width: '1000px',
         top: '10px',
-        param: {}
+        param: {},
+        closeCallback: null
       },
       searchParam: {
         imprClassCd: '',
         imprRqstYmd: '',
         imprStepCd: '',
+        actClassCd: 'ACL02',
         imprTitle: '',
         imprRqstDeptCd: '',
         actDeptCd: ''
@@ -222,21 +160,11 @@ export default {
         data: [],
         height: 300
       },
-      tabItems: [
-        { title: '개선사항', url: './imprActTab' },
-        { title: '첨부파일', url: './fileUploadPage' },
-      ],
-      tabIndex: 0,
       component: null,
       comboDeptItems: [],
       comboImprStepItems: [],
       comboImprClassItems: [],
       searchUrl: ''
-    }
-  },
-  watch: {
-    tabIndex () {
-      this.loadComponent();
     }
   },
   //* Vue lifecycle: created, mounted, destroyed, etc */
@@ -251,33 +179,38 @@ export default {
     this.getComboItems('SAF_IMPR_STEP'); // 개선진행단계
     this.getDeptItems();
     this.setGridSize();
-    // this.getList();
   },
   mounted () {
     window.addEventListener('resize', this.setGridSize);
   },
-  beforeDestory () {
+  beforeDestroy () {
     window.removeEventListener('resize', this.setGridSize);
   },
   //* methods */
   methods: {
     init () {
+      var from = this.$comm.getCalculatedDate(this.$comm.getToday(), '-1m', 'YYYY-MM-DD', 'YYYY-MM-DD');
+      var to = this.$comm.getCalculatedDate(this.$comm.getToday(), '1m', 'YYYY-MM-DD', 'YYYY-MM-DD');
+
       setTimeout(() => {
         // Url Setting
-        this.searchUrl = selectConfig.saf.wkodMaster.list.url;
-      }, 1000);
+        this.searchUrl = selectConfig.saf.imprAct.list.url;
+
+        this.searchParam.imprRqstYmd = [from, to];
+        this.getList();
+      }, 100);
       
       // 그리드 헤더 설정
       this.gridOptions.header = [
-        { text: '업무구분', name: 'imprClassNm', width: '10%', align: 'center' },
-        { text: '제목', name: 'imprTitle', width: '20%' },
-        { text: '진행상태', name: 'imprStepNm', width: '10%' },
-        { text: '요청일', name: 'wkodKindNm', width: '10%', align: 'center' },
-        { text: '요청부서', name: 'imprRqstDeptNm', width: '10%', align: 'center' },
-        { text: '조치부서', name: 'actDeptNm', width: '10%', align: 'center' },
-        { text: '조치담당자', name: 'actUserNm', width: '10%', align: 'center' },
-        { text: '조치기간', name: 'actLimitYmd', width: '10%', align: 'center' },
-        { text: '조치처리일', name: 'actConfirmYmd', width: '10%', align: 'center' }
+        { text: '업무구분', name: 'imprClassNm', width: '100px', align: 'center' },
+        { text: '제목', name: 'imprTitle', width: '250px', url: 'true' },
+        { text: '진행상태', name: 'imprStepNm', width: '150px', align: 'center' },
+        { text: '요청일', name: 'imprRqstYmd', width: '130px', align: 'center' },
+        { text: '요청부서', name: 'imprRqstDeptNm', width: '130px', align: 'center' },
+        { text: '조치부서', name: 'actDeptNm', width: '130px', align: 'center' },
+        { text: '조치담당자', name: 'actUserNm', width: '130px', align: 'center' },
+        { text: '조치기간', name: 'actLimitYmd', width: '130px', align: 'center' },
+        { text: '조치처리일', name: 'actConfirmYmd', width: '130px', align: 'center' }
       ];
     },
     // combo box list
@@ -286,14 +219,8 @@ export default {
       this.$http.type = 'GET';
       this.$http.request((_result) => {
         _result.data.splice(0, 0, { 'code': '', 'codeNm': '전체' });
-        if (codeGroupCd === 'SAF_IMPR_CLASS')
-        {
-          this.comboImprClassItems = this.$_.clone(_result.data);
-        }
-        else
-        {
-          this.comboImprStepItems = this.$_.clone(_result.data);
-        }
+        if (codeGroupCd === 'SAF_IMPR_CLASS') this.comboImprClassItems = this.$_.clone(_result.data);
+        else this.comboImprStepItems = this.$_.clone(_result.data);
       }, (_error) => {
         this.$emit('APP_REQUEST_ERROR', _error);
       });
@@ -311,45 +238,57 @@ export default {
         this.$emit('APP_REQUEST_ERROR', _error);
       });
     },
-    tableLinkClicked (header, row) {
-      if (header.name === 'imprTitle') {
-        console.log("Title Click");
-      }
+    tableLinkimprTitleClicked (header, data) {
+      this.openDialogPage('DETAIL', data)
     },
     getList () {
-      this.$http.url = selectConfig.saf.wkodMaster.list.url;
+      this.$http.url = this.searchUrl;
       this.$http.type = 'GET';
       this.$http.param = this.searchParam;
       this.$http.request((_result) => {
-        this.gridOptions.data = _result.data;
+        this.gridOptions.data = this.$_.clone(_result.data);
       }, (_error) => {
         this.$emit('APP_REQUEST_ERROR', _error);
       });
     },
-    openDialogPage (flag) {
+    openDialogPage (flag, data) {
+      if (data.imprStepCd === 'IMST2') flag = 'ACCEPT';
+      else if (data.imprStepCd === 'IMST3') flag = 'IMPROVE';
+      else if (data.imprStepCd === 'IMST4') flag = 'CONFIRM';
+      else flag = 'DETAIL';
+
       this.popupOptions.param = {
-        'safImprActNo': 0,
+        'safImprActNo': data.safImprActNo,
+        'imprClassCd': data.imprClassCd,
+        'flag': flag
       };
-      
-      if (flag === 'NOW') this.popupOptions.target = () => import(`${'./immediateAction.vue'}`);
-      else if (flag === 'ACCEPT') this.popupOptions.target = () => import(`${'./actionAccept.vue'}`);
-      else if (flag === 'IMPROVE') this.popupOptions.target = () => import(`${'./improveAction.vue'}`);
-      else if (flag === 'CONFIRM') this.popupOptions.target = () => import(`${'./improveConfirm.vue'}`);
-      else if (flag === 'DETAIL') this.popupOptions.target = () => import(`${'./improveDetail.vue'}`);
-      else this.popupOptions.target = () => import(`${'./actionRequest.vue'}`);
+      // IMST1 요청등록 , IMST2 미접수, IMST3 조치부서조치중, IMST4 요청부서확인, IMST5 개선완료
+
+      if (flag === 'ACCEPT') {
+        this.popupOptions.target = () => import(`${'./actionAccept.vue'}`);
+        this.popupOptions.title = '개선조치부서 접수 및 확인';
+      } else {
+        if (flag === 'IMPROVE') this.popupOptions.title = '개선조치';
+        else if (flag === 'CONFIRM') this.popupOptions.title = '개선조치요청 확인';
+        else this.popupOptions.title = '상세정보';
+
+        this.popupOptions.target = () => import(`${'./improveDetail.vue'}`);
+      }
       
       this.popupOptions.top = "10px";
-      this.popupOptions.title = '즉시조치등록';
       this.popupOptions.visible = true;
+      this.popupOptions.closeCallback = this.closePopup;
     },
     setGridSize () {
       window.getApp.$emit('LOADING_SHOW');
       setTimeout(() => {
-        this.gridOptions.height = window.innerHeight - this.$refs.searchBox.clientHeight - 250;
+        this.gridOptions.height = window.innerHeight - this.$refs.searchBox.clientHeight - 310;
         window.getApp.$emit('LOADING_HIDE');
       }, 600);
     },
     closePopup () {
+      this.getList();
+      
       this.popupOptions.target = null;
       this.popupOptions.visible = false;
     },
@@ -361,17 +300,11 @@ export default {
     /** button 관련 이벤트 **/
     btnSearchClickedCallback (_result) {
       this.getList();
-      window.getApp.$emit('APP_REQUEST_SUCCESS', '조회 버튼이 클릭되었습니다.');
     },
     btnClickedErrorCallback (_result) {
       this.$emit('APP_REQUEST_ERROR', _result);
     },
     /** end button 관련 이벤트 **/
-    /** 추후 삭제 **/
-    loadComponent () {
-      var path = this.tabItems[this.tabIndex].url;
-      this.component = () => import(`${path}`);
-    },
   }
 };
 </script>

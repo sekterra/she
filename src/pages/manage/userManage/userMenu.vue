@@ -81,7 +81,7 @@
             label="사용자 목록"
             ref="userGrid"
             v-model="userGridOptions.selectedItems"
-            @rowDoubleClicked="userGridSelectedRow"
+            @selectedRow="userGridSelectedRow"
             @selectionChanged="userCheckedChanged"
           >
             <el-table-column
@@ -228,7 +228,7 @@ export default {
   mounted () {
   },
   beforeDestory () {
-    this.init();
+    window.getApp.$off('POPUP_SEND_DATA', this.popupSelectChanged);
   },
   /** methods **/
   methods: {
@@ -325,17 +325,29 @@ export default {
       console.log(':::::: userCheckedChanged :::::::');
       this.getUserMenus(this.userGridOptions.selectedItems);
     },
+    /**
+     * 팝업 창에서 확인 버튼을 눌렀을 경우 처리
+     */
     popupSelectChanged (_popupData) {
       var menuDatas = this.$_.clone(this.userMenuGridOptions.data);
       var addMenus = [];
       this.$_.forEach(this.userGridOptions.selectedItems, (_item) => {
         this.$_.forEach(_popupData, (__item) => {
           var userMenu = this.$_.clone(__item);
+
+          // TODO : 아래처럼 하지 않으면 순환 참조 오류 발생
+          if (userMenu.hasOwnProperty('children')) {
+            userMenu.children = null;
+            delete userMenu.children;
+          }
+          if (userMenu.hasOwnProperty('parent')) {
+            delete userMenu.parent;
+          }
           userMenu.userId = _item.userId;
           userMenu.userNm = _item.userNm;
           userMenu.deptNm = _item.deptNm;
-          // userMenu.accessYn = 'Y';
-          // userMenu.writeYn = 'Y';
+          // 기본적으로 접근 권한이 존재하고, 쓰기 권한은 팝업창의 정보를 그대로 따음
+          userMenu.accessYn = 'Y';
           userMenu.authGrpMenuYn = 'N';
           userMenu.createUserId = 'test';
           addMenus.push(userMenu);

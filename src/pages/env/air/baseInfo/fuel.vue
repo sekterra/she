@@ -36,6 +36,7 @@
               <y-text
                 :width="8"
                 :editable="editable"
+                :required="true"
                 :maxlength="30"
                 ui="bootstrap"
                 label="연료명"
@@ -49,6 +50,7 @@
               <y-select
                 :width="8"
                 :editable="editable"
+                :required="true"
                 :comboItems="envUnitCdItems"
                 itemText="codeNm"
                 itemValue="code"
@@ -73,18 +75,6 @@
                 :rows="2" />
             </b-col>            
             <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
-              <y-number
-                :width="8"
-                :editable="editable"
-                :maxlength="5"
-                :hasSeperator="false"
-                ui="bootstrap"
-                label="출력순서"
-                name="sortOrder"
-                v-model="fuel.sortOrder"
-              />
-            </b-col>
-            <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
                 <y-switch
                   :width="8"
                   :editable="editable"
@@ -97,6 +87,18 @@
                   unselectText="미사용"
                   v-model="fuel.useYn"
                   />
+            </b-col>
+            <b-col sm="6" md="6" lg="6" xl="6" class="col-xxl-3">
+              <y-number
+                :width="8"
+                :editable="editable"
+                :maxlength="5"
+                :hasSeperator="false"
+                ui="bootstrap"
+                label="정렬순서"
+                name="sortOrder"
+                v-model="fuel.sortOrder"
+              />
             </b-col>
           </b-row>
           <div class="float-right mt-3">
@@ -151,7 +153,7 @@ export default {
       fuel: {
         eairFuelCd: '',
         eairFuelNm: '',
-        envUnitCd: '',
+        envUnitCd: null,
         envUniNm: '',
         remark: '',
         sortOrder: null,
@@ -208,9 +210,9 @@ export default {
       this.gridOptions.header = [
         { text: '연료명', name: 'eairFuelNm', width: '200px' },
         { text: '단위', name: 'envUnitNm', width: '100px', align: 'center' },
-        { text: '출력순서', name: 'sortOrder', width: '100px', align: 'center' },
-        { text: '사용여부', name: 'useYn', width: '100px', align: 'center' },
         { text: '비고', name: 'remark', width: '500px' },        
+        { text: '사용여부', name: 'useYn', width: '100px', align: 'center' },
+        { text: '정렬순서', name: 'sortOrder', width: '100px', align: 'center' },
         { text: '등록일', name: 'createDt', width: '200px', align: 'center' },
         { text: '등록자', name: 'createUserNm', width: '120px', align: 'center' },
         { text: '수정일', name: 'updateDt', width: '200px', align: 'center' },
@@ -250,7 +252,7 @@ export default {
       this.$http.url = this.$format(selectConfig.manage.codeMaster.getSelect.url, 'ENV_UNIT');
       this.$http.type = 'get';
       this.$http.request((_result) => {
-        _result.data.splice(0, 0, { 'code': '', 'codeNm': '선택하세요' });
+        _result.data.splice(0, 0, { 'code': null, 'codeNm': '선택하세요' });
         this.envUnitCdItems = _result.data;
       }, (_error) => {
         window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
@@ -332,7 +334,7 @@ export default {
       this.updateMode = false;
       this.fuel.eairFuelCd = '';
       this.fuel.eairFuelNm = '';
-      this.fuel.envUnitCd = '';
+      this.fuel.envUnitCd = null;
       this.fuel.envUniNm = '';
       this.fuel.remark = '';
       this.fuel.sortOrder = null;

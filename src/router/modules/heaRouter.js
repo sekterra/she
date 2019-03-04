@@ -13,7 +13,7 @@ const heaRouter = {
   },
   // TODO : 2 Level
   children: [
-    // 기준 정보 메뉴
+    // 기준정보 메뉴
     {
       path: 'baseInfo',
       component: () => import('@/router/routeLevel'), // Parent router-view
@@ -40,12 +40,12 @@ const heaRouter = {
           name: 'disease',
           meta: { title: '질환', navi: '보건 > 기준정보 >' },
         },
-        {
-          path: 'workingEnvManage',
-          component: () => import('@/pages/hea/workingEnvManage/hazard'),
-          name: 'workingEnvManage',
-          meta: { title: '유해인자', navi: '보건 > 기준정보 >' }
-        },
+        // {
+        //   path: 'workingEnvManage',
+        //   component: () => import('@/pages/hea/workingEnvManage/hazard'),
+        //   name: 'workingEnvManage',
+        //   meta: { title: '유해인자', navi: '보건 > 기준정보 >' }
+        // },
         // {
         //   path: 'interviewItem',
         //   component: () => import('@/pages/hea/baseInfo/interviewItem'),

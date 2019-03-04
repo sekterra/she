@@ -90,18 +90,7 @@
         </b-col>
       </b-col>
     </b-row>
-    <el-dialog
-      :title="popupOptions.title"
-      :visible.sync="popupOptions.visible"
-      :fullscreen="false"
-      :append-to-body="true"
-      :close-on-click-modal="false"
-      :close-on-press-escape="false"
-      :show-close="false"
-      :width="popupOptions.width"
-      :top="popupOptions.top">
-      <component :is="popupOptions.target" :popupParam="popupOptions.param" @closePopup="popupOptions.closeCallback" />
-    </el-dialog>
+    <y-popup :param="popupOptions"></y-popup>
   </b-container>
 </template>
 
@@ -149,7 +138,7 @@ export default {
   },
   watch: {
     paneName (val) {
-      this.setGridSize();      
+      this.setGridSize();
     }
   },
   /** Vue lifecycle: created, mounted, destroyed, etc **/
@@ -172,14 +161,14 @@ export default {
     /** 초기화 관련 함수 **/
     init () {
       this.gridOptions.header = [
-        { text: '부서', name: 'deptNm', width: '15px', align: 'center' },
-        { text: '사번', name: 'userId', width: '15px', align: 'center' },
-        { text: '직원명', name: 'userNm', width: '15px', align: 'center' },
-        { text: '방문일', name: 'visitYmd', width: '20px', align: 'center' },
-        { text: '진료내역', name: 'heaTreatNm', width: '20px', align: 'left' },
-        { text: '주호소 및 증상', name: 'symptom', width: '20px', align: 'left' },
-        { text: '간호 및 상담내용', name: 'consult', width: '20px', align: 'left' },
-        { text: '특이사항', name: 'remark', width: '20px', align: 'left' },
+        { text: '부서', name: 'deptNm', width: '150px', align: 'center' },
+        { text: '사번', name: 'userId', width: '150px', align: 'center' },
+        { text: '직원명', name: 'userNm', width: '150px', align: 'center' },
+        { text: '방문일', name: 'visitYmd', width: '200px', align: 'center' },
+        { text: '진료내역', name: 'heaTreatNm', width: '200px', align: 'left' },
+        { text: '주호소 및 증상', name: 'symptom', width: '200px', align: 'left' },
+        { text: '간호 및 상담내용', name: 'consult', width: '200px', align: 'left' },
+        { text: '특이사항', name: 'remark', width: '200px', align: 'left' },
       ];
 
       this.searchUrl = selectConfig.infirmaryUsageHistory.list.url;
@@ -197,7 +186,7 @@ export default {
         _result.data.splice(0, 0, { 'deptCd': '', 'deptNm': '전체' });
         this.comboDeptItems = _result.data;
       }, (_error) => {
-        window.getApp.$emit('APP_REQUEST_ERROR', _error);
+        window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
       });
     },
     getDataList () {
@@ -207,7 +196,7 @@ export default {
       this.$http.request((_result) => {
         this.gridOptions.data = _result.data;
       }, (_error) => {
-        window.getApp.$emit('APP_REQUEST_ERROR', _error);
+        window.getApp.$emit('APP_REQUEST_ERROR', '작업 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
       });
     },
     /**

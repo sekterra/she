@@ -121,7 +121,7 @@
                   true-value="Y"
                   false-value="N"
                   ui="bootstrap"
-                  label="선택검진필수여부"
+                  label="선택검진 필수여부"
                   name="radioValue"
                   selectText="필수"
                   unselectText="선택가능"
@@ -136,7 +136,7 @@
                 :hasSeperator="false"
                 ui="bootstrap"
                 name="selectOptCount"
-                label="선택검진가능수"
+                label="선택검진 가능수"
                 v-model="checkupPlan.selectOptCount"
                 >
                 </y-number>
@@ -265,12 +265,12 @@ export default {
 
       // 검진 계획 그리드 헤더 설정
       this.gridOptions.header = [
-        { text: '검진종류', name: 'heaCheckupClassNm', width: '160px', align: 'center' },
+        { text: '검진종류', name: 'heaCheckupClassNm', width: '150px', align: 'center' },
         { text: '검진계획', name: 'heaCheckupPlanNm', width: '300px' },
         { text: '검진기간', name: 'heaCheckupPlanPeriod', width: '200px', align: 'center' },
-        { text: '예약마감일', name: 'finishYmd', width: '160px', align: 'center' },
-        { text: '선택검진필수여부', name: 'requiredOptYn', width: '180px', align: 'center' },
-        { text: '선택검진가능수', name: 'selectOptCount', width: '180px', align: 'center' },
+        { text: '예약마감일', name: 'finishYmd', width: '130px', align: 'center' },
+        { text: '선택검진 필수여부', name: 'requiredOptYnNm', width: '170px', align: 'center' },
+        { text: '선택검진 가능수', name: 'selectOptCount', width: '150px', align: 'center' },
       ];
     },
     
@@ -280,8 +280,7 @@ export default {
       this.$http.type = 'get';
       this.$http.request((_result) => {
         this.heaCheckupClassItems = this.$_.clone(_result.data);
-        this.heaCheckupClassItems.splice(0, 0, { 'code': '', 'codeNm': '선택하세요' });
-        this.checkupPlan.heaCheckupClassCd = '';
+        this.heaCheckupClassItems.splice(0, 0, { 'code': null, 'codeNm': '선택하세요' });
       }, (_error) => {
         window.getApp.$emit('APP_REQUEST_ERROR', _error);
       });
@@ -364,14 +363,47 @@ export default {
     },
     
     /** validation checking **/
-    beforeInsert () {
-      window.getApp.$emit('CONFIRM', {
-        title: '확인',
-        message: '저장하시겠습니까?',
-        type: 'info',
-        confirmCallback: () => {
-          this.checkValidationInsert();
+    checkDuplicate () {
+      var test = {
+        'heaCheckupPlanNm': this.checkupPlan.heaCheckupPlanNm
+      };
+      var item = this.$_.find(this.gridOptions.data, test);
+      console.log(this.editable);
+      console.log('111 : ' + this.checkupPlan.heaCheckupPlanNo);
+      console.log('222 : ' + item.heaCheckupPlanNo);
+      if (item != null) {
+        if (this.editable && !this.updateMode
+          && this.checkupPlan.heaCheckupPlanNo === item.heaCheckupPlanNo) {
+          return false;
         }
+
+        window.getApp.$emit('ALERT', {
+          title: '안내',
+          message: '이미 같은 이름의 검진계획명이 존재합니다.',
+          type: 'warning',
+        });
+        return true;
+      }
+      return false;
+    },
+    beforeInsert () {
+      if (this.checkDuplicate()) return;
+      this.$validator.validateAll().then((_result) => {
+        if (_result) {
+          window.getApp.$emit('CONFIRM', {
+            title: '확인',
+            message: '저장하시겠습니까?',
+            type: 'info',
+            confirmCallback: () => {
+              this.checkValidationInsert();
+            },
+            cancelCallback: () => {
+              this.isInsert = false;
+            }
+          });
+        }
+      }).catch(() => {
+        window.getApp.$emit('APP_VALID_ERROR', '유효성 검사 중 오류가 발생했습니다. 재시도 후 지속적인 문제 발생 시 관리자에게 문의하세요.');
       });
     },
     beforeEmit () {
@@ -478,6 +510,7 @@ export default {
         message: '삭제되었습니다.',
         type: 'success',
       });
+      this.btnClearClickedCallback();
     },
     /** /Button Event **/
   }

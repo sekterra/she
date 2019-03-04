@@ -86,7 +86,8 @@
               :print="true"
               :rows="5"
               :cellClick="true"
-              label="작업허가서 항목"
+              :useRownum="false"
+              label="항목 목록"
               ref="dataTable"
               @selectedRow="selectedRow"
               >
@@ -169,7 +170,7 @@
                     :maxlength="5"
                     :hasSeperator="false"
                     ui="bootstrap"
-                    label="출력순서"
+                    label="정렬순서"
                     name="sortOrder"
                     v-model="wkodChkItem.sortOrder"
                     >
@@ -186,7 +187,7 @@
                       :param="wkodChkItem"
                       :is-submit="isInsert"
                       title="신규등록"
-                      color="blue"
+                      color="orange"
                       action-type="POST"
                       beforeSubmit = "beforeInsert"
                       @beforeInsert="beforeInsert"
@@ -271,39 +272,38 @@ export default {
   beforeMount () {
     Object.assign(this.$data, this.$options.data());
     this.init();
-    this.getComboItems('SAF_WKOD_KIND'); // 작업종류
-    this.getComboItems('SAF_WKOD_DPTY'); // 점검부서구분
-    this.setGridSize();
-    this.getList();
   },
   mounted () {
     this.setGridSize();
   },
-  beforeDestory () {
+  beforeDestroy () {
   },
   //* methods */
   methods: {
     init () {
-      setTimeout(() => {
-        // Url Setting
-        this.searchUrl = selectConfig.saf.wkodChkItem.list.url;
-        this.editUrl = transactionConfig.saf.wkodChkItem.edit.url;
-        this.insertUrl = transactionConfig.saf.wkodChkItem.insert.url;
-        // radio 버튼 셋팅
-        this.radioItems = [
-          { useYn: 'Y', useName: '사용' },
-          { useYn: 'N', useName: '미사용' },
-        ];
-      }, 1000);
-      
+      // Url Setting
+      this.searchUrl = selectConfig.saf.wkodChkItem.list.url;
+      this.editUrl = transactionConfig.saf.wkodChkItem.edit.url;
+      this.insertUrl = transactionConfig.saf.wkodChkItem.insert.url;
+
+      this.radioItems = [
+        { useYn: 'Y', useName: '사용' },
+        { useYn: 'N', useName: '미사용' },
+      ];
+
       // 그리드 헤더 설정
       this.gridOptions.header = [
         { text: '작업종류', name: 'wkodKindNm', width: '15%', align: 'center' },
         { text: '점검부서구분', name: 'wkodDptyNm', width: '15%', align: 'center' },
         { text: '항목명', name: 'chkItemNm', width: '45%' },
-        { text: '출력순서', name: 'sortOrder', width: '10%', align: 'center' },
+        { text: '정렬순서', name: 'sortOrder', width: '10%', align: 'center' },
         { text: '사용여부', name: 'useYnNm', width: '10%', align: 'center' }
       ];
+
+      this.getComboItems('SAF_WKOD_KIND'); // 작업종류
+      this.getComboItems('SAF_WKOD_DPTY'); // 점검부서구분
+      this.setGridSize();
+      this.getList();
     },
     // combo box list
     getComboItems (codeGroupCd) {
@@ -315,20 +315,14 @@ export default {
           this.comboWkodKindItems = this.$_.clone(_result.data);
           this.comboDetailWkodKindItems = this.$_.clone(_result.data);
 
-          this.comboWkodKindItems.splice(0, 0, { 'code': '', 'codeNm': '전체' });
-          this.comboDetailWkodKindItems.splice(0, 0, { 'code': '', 'codeNm': '선택하세요' });
-
-          this.wkodChkItem.wkodKindCd = '';
-        }
-        else
-        {
+          this.comboWkodKindItems.splice(0, 0, { 'code': null, 'codeNm': '전체' });
+          this.comboDetailWkodKindItems.splice(0, 0, { 'code': null, 'codeNm': '선택하세요' });
+        } else {
           this.comboWkodDptyItems = this.$_.clone(_result.data);
           this.comboDetailWkodDptyItems = this.$_.clone(_result.data);
 
-          this.comboWkodDptyItems.splice(0, 0, { 'code': '', 'codeNm': '전체' });
-          this.comboDetailWkodDptyItems.splice(0, 0, { 'code': '', 'codeNm': '선택하세요' });
-          
-          this.wkodChkItem.wkodDptyCd = '';
+          this.comboWkodDptyItems.splice(0, 0, { 'code': null, 'codeNm': '전체' });
+          this.comboDetailWkodDptyItems.splice(0, 0, { 'code': null, 'codeNm': '선택하세요' });
         }
       }, (_error) => {
         this.$emit('APP_REQUEST_ERROR', _error);
@@ -446,7 +440,7 @@ export default {
       this.getList();
       this.isEdit = false;
       this.btnClearClickedCallback();
-      window.getApp.$emit('APP_REQUEST_SUCCESS', '조회 버튼이 클릭되었습니다.');
+      // window.getApp.$emit('APP_REQUEST_SUCCESS', '조회 버튼이 클릭되었습니다.');
     },
     btnSaveClickedCallback (_result) {
       this.getList();

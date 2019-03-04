@@ -241,7 +241,7 @@ export default {
   },
   mounted () {
   },
-  beforeDestory () {
+  beforeDestroy () {
     this.init();
   },
   /** methods **/
